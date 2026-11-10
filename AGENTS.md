@@ -76,6 +76,9 @@ purpose: a fix in one is carried to the other by hand, when it matters.
 ## Validators and formatters
 - The engines in `Blyant.Validator.Html`, `Blyant.Validator.Css` and `Blyant.Validator.Xml` do not touch the
   console or the file system, so they can be tested.
+- The program never goes online: formats with a spec (llms.txt, sitemaps) have their rules built in, and URLs are
+  only checked for their form. The Markdown validator looks up relative links through a function it is given (the
+  program passes `File.Exists`/`Directory.Exists`); without one they are not checked
 - XML is read with .NET's `XmlReader` with DTDs ignored and no resolver (`XmlResolver = null`): a file must never
   make the validator read other files or the network. `XmlValidatorTests.ExternalEntities_AreNotRead` checks it Reading, writing and printing belong in `Blyant.Validator.Cli`
 - A formatter changes only layout (whitespace, line breaks, indentation, a missing last `;`), never

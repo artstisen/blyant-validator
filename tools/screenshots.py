@@ -175,9 +175,27 @@ SITEMAP = """<?xml version="1.0" encoding="UTF-8"?>
 </urlset>
 """
 
+LLMS = """# Harbour Lights
+
+> A novel about a lighthouse, a logbook and a light that should not be lit.
+
+The site of the book: the story, the author, and readings at the harbour office.
+
+## Pages
+
+- [Home](https://harbour-lights.example/): The book, and where to buy it.
+- [About](https://harbour-lights.example/about.html): Maren Holt, the island and the lights.
+- News: readings and the second draft.
+
+## Optional
+
+- [Sitemap](https://harbour-lights.example/sitemap.xml)
+"""
+
 FILES = {
     'index.html': INDEX,
     'sitemap.xml': SITEMAP,
+    'llms.txt': LLMS,
     'about.html': ABOUT,
     'contact.html': CONTACT,
     'news.html': NEWS,
@@ -378,6 +396,8 @@ SCENES = [
     ('css', 'Blyant Validator: a style sheet in the peek', {'browsepane': '2'}, [], ['V', '<Tab>', 'n'], False),
     ('format', 'Blyant Validator: F, formatting a file after asking', {'browsesel1': 'news.html'}, [], ['F'], False),
     ('sitemap', 'Blyant Validator: a sitemap, checked by the rules of sitemaps.org', {'browsesel1': 'sitemap.xml'}, [],
+     ['V', '<Tab>', 'n'], False),
+    ('llms-txt', 'Blyant Validator: llms.txt, checked against the llms.txt format', {'browsesel1': 'llms.txt'}, [],
      ['V', '<Tab>', 'n'], False),
 ]
 

@@ -4,6 +4,7 @@ using Blyant.Validator.Core;
 using Blyant.Validator.Css;
 using Blyant.Validator.Html;
 using Blyant.Validator.Vnu;
+using Blyant.Validator.Markdown;
 using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Cli.Tui;
@@ -54,7 +55,7 @@ internal sealed class ResultStore : IDisposable
         }
     }
 
-    /// <summary>True for the files that are validated (HTML, CSS and XML).</summary>
+    /// <summary>True for the files that are validated (HTML, CSS, XML and Markdown).</summary>
     public static bool IsValidated(string path) => SourceDocument.DetectKind(path) != DocumentKind.Unknown;
 
     /// <summary>
@@ -146,6 +147,7 @@ internal sealed class ResultStore : IDisposable
             IValidator validator = document.Kind switch
             {
                 DocumentKind.Xml => new XmlValidator(),
+                DocumentKind.Markdown => new MarkdownValidator(p => File.Exists(p) || Directory.Exists(p)),
                 _ when _engine == "vnu" => new VnuValidator(_vnu),
                 DocumentKind.Css => new CssValidator(),
                 _ => new HtmlValidator(),

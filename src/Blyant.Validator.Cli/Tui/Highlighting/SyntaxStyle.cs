@@ -7,6 +7,23 @@
 internal enum SyntaxStyle
 {
     None,
+    // Markdown
+    Heading1,
+    Heading2,
+    Heading3,
+    Heading4,
+    Heading5,
+    Heading6,
+    Bold,
+    Italic,
+    Code, // `code` in a line
+    CodeBlock, // A line of a block of code (between lines starting with ```)
+    Quote,
+    ListMarker,
+    Link, // [text]
+    LinkUrl, // (address), <address> and plain web addresses
+    Rule, // A line like "---"
+    // Code
     Comment,
     String, // Text in quotes, and the values of attributes
     Keyword, // The words of a language, the tags of HTML, the selectors of CSS
@@ -26,6 +43,7 @@ internal static class SyntaxHighlighter
         Html,
         Css,
         Xml,
+        Markdown,
     }
 
     public static Kind KindOf(string fileName) =>
@@ -34,6 +52,8 @@ internal static class SyntaxHighlighter
             ".html" or ".htm" or ".xhtml" => Kind.Html,
             ".css" => Kind.Css,
             ".xml" or ".svg" => Kind.Xml,
+            ".md" or ".markdown" => Kind.Markdown,
+            _ when Path.GetFileName(fileName).ToLowerInvariant() is "llms.txt" or "llms-full.txt" => Kind.Markdown,
             _ => Kind.None,
         };
 
@@ -45,6 +65,13 @@ internal static class SyntaxHighlighter
     public static SyntaxStyle[]? Highlight(Kind kind, string line, int state, out int nextState)
     {
         nextState = state;
+        if (kind == Kind.Markdown)
+        {
+            // The state tells if the line is inside a block of code (and the fence that opened it), as in Blyant
+            nextState = MarkdownHighlighter.NextFenceState(line, state);
+            return MarkdownHighlighter.Highlight(line, state != 0);
+        }
+
         if (kind == Kind.None || line.Length == 0) return null;
         var styles = new SyntaxStyle[line.Length];
         nextState = kind switch
@@ -61,10 +88,18 @@ internal static class SyntaxHighlighter
     /// </summary>
     public static int ColorOf(SyntaxStyle style) => style switch
     {
-        SyntaxStyle.Keyword => 0,
-        SyntaxStyle.Name => 1,
-        SyntaxStyle.String => 2,
+        SyntaxStyle.Keyword or SyntaxStyle.Bold or SyntaxStyle.ListMarker => 0,
+        SyntaxStyle.Name or SyntaxStyle.Italic => 1,
+        SyntaxStyle.String or SyntaxStyle.Code or SyntaxStyle.CodeBlock => 2,
         SyntaxStyle.Number => 3,
+        SyntaxStyle.Link => 4,
+        SyntaxStyle.Heading1 => 6,
+        SyntaxStyle.Heading2 => 7,
+        SyntaxStyle.Heading3 => 8,
+        SyntaxStyle.Heading4 => 9,
+        SyntaxStyle.Heading5 => 10,
+        SyntaxStyle.Heading6 => 11,
+        // Comments, quotes, web addresses and rules
         _ => 5,
     };
 }

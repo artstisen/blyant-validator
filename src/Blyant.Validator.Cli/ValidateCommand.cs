@@ -3,6 +3,7 @@ using Blyant.Validator.Core;
 using Blyant.Validator.Css;
 using Blyant.Validator.Html;
 using Blyant.Validator.Vnu;
+using Blyant.Validator.Markdown;
 using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Cli;
@@ -22,8 +23,8 @@ internal static class ValidateCommand
         }
 
         IValidator[] validators = settings.Engine == "vnu"
-            ? [new VnuValidator(new VnuOptions(settings.VnuJar, settings.Java)), new XmlValidator()]
-            : [new HtmlValidator(), new CssValidator(), new XmlValidator()];
+            ? [new VnuValidator(new VnuOptions(settings.VnuJar, settings.Java)), new XmlValidator(), Markdown()]
+            : [new HtmlValidator(), new CssValidator(), new XmlValidator(), Markdown()];
 
         var all = new List<Diagnostic>();
         var checkedCount = 0;
@@ -33,7 +34,7 @@ internal static class ValidateCommand
             var validator = validators.FirstOrDefault(v => v.CanValidate(document.Kind));
             if (validator is null)
             {
-                Console.Error.WriteLine($"blyant-validator: skipping '{file}' (not an HTML, CSS or XML file).");
+                Console.Error.WriteLine($"blyant-validator: skipping '{file}' (not an HTML, CSS, XML or Markdown file).");
                 continue;
             }
 
@@ -58,6 +59,9 @@ internal static class ValidateCommand
 
         return all.Any(d => d.Severity == Severity.Error) ? 1 : 0;
     }
+
+    // Markdown, with relative links checked against the files on disk
+    private static MarkdownValidator Markdown() => new(path => File.Exists(path) || Directory.Exists(path));
 
     /// <summary>One line per finding, in the common <c>file:line:column: severity: message</c> form.</summary>
     private static void WriteText(List<Diagnostic> diagnostics, int fileCount, TextWriter output)

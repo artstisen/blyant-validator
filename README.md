@@ -1,6 +1,6 @@
 # Blyant Validator
 
-A cross-platform command-line tool that validates and formats HTML and CSS files, and validates XML files such as sitemaps. It's written in
+A cross-platform command-line tool that validates and formats HTML and CSS files, and validates XML files such as sitemaps, and Markdown files such as llms.txt. It's written in
 C#/.NET 10 and designed as an optional companion to the [Blyant editor](https://blyant-editor.com/),
 but it works on its own too.
 
@@ -37,7 +37,7 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 
 ![The files of a site in two panes, with the result of each file](docs/screenshots/file-browser.svg)
 
-- Each HTML, CSS and XML file shows its result: `ok`, the number of errors and warnings (`3E 1W`), `...` while it is
+- Each HTML, CSS, XML and Markdown file shows its result: `ok`, the number of errors and warnings (`3E 1W`), `...` while it is
   checked, or `failed`. Files are checked in the background, and checked again when they change on disk, so the
   list stays up to date while you edit the files in another program.
 - `V` peeks at the selected file: its text in colors, with a mark (`E`, `W`, `i`) in front of the lines with
@@ -81,10 +81,10 @@ site with mistakes on purpose, as Blyant's are.
 | `Tab` into the peek, and `n` to the next problem: its message on the bottom line | `P`: the problems of the file; `Enter` shows one in the file |
 | ![A style sheet in the peek](docs/screenshots/css.svg) | ![Formatting a file](docs/screenshots/format.svg) |
 | A style sheet: an unknown property and an unknown unit | `F`: formatting a file, after asking |
-| ![A sitemap](docs/screenshots/sitemap.svg) | |
-| A sitemap, checked by the rules of sitemaps.org | |
+| ![A sitemap](docs/screenshots/sitemap.svg) | ![llms.txt](docs/screenshots/llms-txt.svg) |
+| A sitemap, checked by the rules of sitemaps.org | `llms.txt`, checked against the llms.txt format |
 
-Paths can be files or directories. Directories are searched for `.html`, `.htm`, `.xhtml`, `.css`, `.xml` and `.svg` files;
+Paths can be files or directories. Directories are searched for `.html`, `.htm`, `.xhtml`, `.css`, `.xml`, `.svg`, `.md` and `.markdown` files, and `llms.txt` and `llms-full.txt`;
 add `--recursive` to include subdirectories.
 
 ### validate
@@ -178,6 +178,26 @@ SVG and MathML inside a page are only checked for parse errors.
   `xhtml:link`) are allowed.
 - XML is checked natively also with `--engine vnu`, and it is not formatted.
 
+### Markdown and llms.txt
+
+Markdown has no invalid documents, so its checks are warnings, about what probably does not show as meant:
+
+- A code block (````` or `~~~`) that is never closed, which makes the rest of the file code.
+- `#Heading` without a space (not a heading), empty headings, more than one level 1 heading, and levels that skip
+  one (`#` to `###`).
+- Links: `[text](` not closed on its line, empty targets `[text]()`, references `[text][label]` with no
+  `[label]: url`, labels defined twice, `#anchors` with no heading (or `id`) of that name in the file, and relative
+  links and images to files that do not exist.
+
+Code (fenced and indented), code spans and front matter are not checked. Web addresses are not visited: only the
+`#anchors` of the file and relative paths on the disk are looked up.
+
+`llms.txt` (and only that name: other `.txt` files are not checked) is also checked against the
+[llms.txt format](https://llmstxt.org/), whose rules are built in, so nothing is fetched: it starts with one `# Name`,
+(optionally) a `> summary` and some text, then `##` sections that are lists of links `- [name](url): notes`.
+Breaking the format is an error; a URL listed twice is a warning. `llms-full.txt` is checked as Markdown, with any
+number of level 1 headings.
+
 ## Formatting
 
 Formatting only changes layout; the formatted file means exactly the same as before.
@@ -248,6 +268,7 @@ dotnet publish src/Blyant.Validator.Cli -c Release -r win-x64 --self-contained
 | `src/Blyant.Validator.Html` | HTML reader with parse errors (`Parsing/`), validator rules (`Rules/`) and formatter. |
 | `src/Blyant.Validator.Css` | CSS tokenizer and parser (`Syntax/`), value grammars (`Values/`, `Data/`), validator and formatter. |
 | `src/Blyant.Validator.Xml` | XML validator: well-formedness and sitemaps. |
+| `src/Blyant.Validator.Markdown` | Markdown reader and validator, and the llms.txt format. |
 | `src/Blyant.Validator.Vnu` | Adapter that runs `vnu.jar` and converts its JSON output. |
 | `src/Blyant.Validator.Cli` | The `blyant-validator` program: the commands, and the TUI in `Tui/` (its terminal parts in `Tui/Terminal/` and the highlighters in `Tui/Highlighting/` are adapted from Blyant). |
 | `tests/Blyant.Validator.Tests` | xUnit tests. |
@@ -270,5 +291,6 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [ ] HTML: more content models (forms, headings, sectioning), and the attributes of `<input>` per type
 - [x] XML: well-formedness, and sitemaps
 - [ ] XML: formatting, and RSS/Atom feeds
+- [x] Markdown checks, and the llms.txt format
 - [ ] Comparison test suite against vnu output
 - [ ] Release builds for Windows, Linux and macOS

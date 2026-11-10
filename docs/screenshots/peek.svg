@@ -62,16 +62,18 @@
 <text x="702.8" y="196.8" fill="#F9F1A5" textLength="33.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">href</text>
 <text x="736.4" y="196.8" fill="#CCCCCC" textLength="8.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">=</text>
 <text x="744.8" y="196.8" fill="#16C60C" textLength="92.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">&quot;css/site.c</text>
-<text x="14.0" y="213.8" fill="#CCCCCC" textLength="100.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   news.html</text>
-<text x="350.0" y="213.8" fill="#16C60C" textLength="16.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ok</text>
+<text x="14.0" y="213.8" fill="#CCCCCC" textLength="92.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   llms.txt</text>
+<text x="350.0" y="213.8" fill="#E74856" textLength="16.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1E</text>
 <text x="425.6" y="213.8" fill="#767676" textLength="8.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">|</text>
 <text x="442.4" y="213.8" fill="#767676" textLength="25.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  7</text>
 <text x="492.8" y="213.8" fill="#61D6D6" textLength="58.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">&lt;/head&gt;</text>
-<text x="14.0" y="230.8" fill="#CCCCCC" textLength="117.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   sitemap.xml</text>
-<text x="350.0" y="230.8" fill="#E74856" textLength="16.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1E</text>
+<text x="14.0" y="230.8" fill="#CCCCCC" textLength="100.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   news.html</text>
+<text x="350.0" y="230.8" fill="#16C60C" textLength="16.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ok</text>
 <text x="425.6" y="230.8" fill="#767676" textLength="8.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">|</text>
 <text x="442.4" y="230.8" fill="#767676" textLength="25.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  8</text>
 <text x="492.8" y="230.8" fill="#61D6D6" textLength="50.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">&lt;body&gt;</text>
+<text x="14.0" y="247.8" fill="#CCCCCC" textLength="117.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   sitemap.xml</text>
+<text x="350.0" y="247.8" fill="#E74856" textLength="16.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1E</text>
 <text x="425.6" y="247.8" fill="#767676" textLength="8.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">|</text>
 <text x="442.4" y="247.8" fill="#767676" textLength="25.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  9</text>
 <text x="509.6" y="247.8" fill="#61D6D6" textLength="58.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">&lt;header</text>
@@ -155,8 +157,8 @@
 <text x="442.4" y="502.8" fill="#767676" textLength="25.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 24</text>
 <text x="509.6" y="502.8" fill="#61D6D6" textLength="58.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">&lt;/main&gt;</text>
 <text x="14.0" y="519.8" fill="#767676" textLength="16.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">--</text>
-<text x="30.8" y="519.8" fill="#E74856" textLength="260.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 2 with errors, 1 with warnings</text>
-<text x="299.6" y="519.8" fill="#767676" textLength="537.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">-------- 4/8 --+------------------------------------------------</text>
+<text x="30.8" y="519.8" fill="#E74856" textLength="260.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 3 with errors, 1 with warnings</text>
+<text x="299.6" y="519.8" fill="#767676" textLength="537.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">-------- 4/9 --+------------------------------------------------</text>
 <rect x="22.4" y="524" width="42.0" height="17" fill="#CCCCCC"/>
 <rect x="156.8" y="524" width="42.0" height="17" fill="#CCCCCC"/>
 <rect x="291.2" y="524" width="25.2" height="17" fill="#CCCCCC"/>

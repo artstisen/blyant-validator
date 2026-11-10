@@ -3,6 +3,13 @@
 ## Unreleased
 
 ### Added
+- Markdown (`.md`, `.markdown`): warnings for code blocks never closed, `#Heading` without a space, empty and
+  skipped headings, more than one H1, unclosed and empty links, undefined and duplicate references, anchors with no
+  heading, and relative links and images to files that do not exist
+- `llms.txt` is checked against the llms.txt format (built in, nothing fetched): one `# Name` first, sections under
+  `##` that are lists of links; `llms-full.txt` is checked as Markdown
+- Markdown in the TUI: listed with its result, and shown in the peek in Blyant's Markdown colors; an llms.txt in the
+  screenshots
 - XML: `.xml` and `.svg` files are checked for well-formedness, with the common mistakes (a bare `&`, `&nbsp;`) told
   in plain words. DTDs are ignored and nothing outside the file is loaded
 - Sitemaps and sitemap indexes are checked by the rules of sitemaps.org: namespace, UTF-8, `loc`, `lastmod`,

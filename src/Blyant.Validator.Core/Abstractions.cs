@@ -9,6 +9,9 @@ public enum DocumentKind
 
     /// <summary>XML files (.xml), sitemaps among them, and SVG files (.svg), which are XML.</summary>
     Xml,
+
+    /// <summary>Markdown files (.md, .markdown), and llms.txt and llms-full.txt (https://llmstxt.org/).</summary>
+    Markdown,
 }
 
 /// <summary>A document to validate or format.</summary>
@@ -21,8 +24,11 @@ public sealed record SourceDocument(string Path, string Content, DocumentKind Ki
     public bool HasUtf8Bom { get; init; }
 
     public static DocumentKind DetectKind(string path) =>
-        System.IO.Path.GetExtension(path).ToLowerInvariant() switch
+        System.IO.Path.GetFileName(path).ToLowerInvariant() is "llms.txt" or "llms-full.txt"
+            ? DocumentKind.Markdown
+            : System.IO.Path.GetExtension(path).ToLowerInvariant() switch
         {
+            ".md" or ".markdown" => DocumentKind.Markdown,
             ".html" or ".htm" or ".xhtml" => DocumentKind.Html,
             ".css" => DocumentKind.Css,
             ".xml" or ".svg" => DocumentKind.Xml,
