@@ -77,9 +77,15 @@ var useTabsOption = new Option<bool>("--use-tabs")
     Description = "Indent with tabs instead of spaces.",
 };
 
+var lineWidthOption = new Option<int>("--line-width")
+{
+    Description = "HTML elements whose content fits within this width are kept on one line.",
+    DefaultValueFactory = _ => 100,
+};
+
 var formatCommand = new Command("format", "Re-indent and tidy HTML and CSS files.")
 {
-    pathsArgument, recursiveOption, writeOption, checkOption, indentSizeOption, useTabsOption,
+    pathsArgument, recursiveOption, writeOption, checkOption, indentSizeOption, useTabsOption, lineWidthOption,
 };
 formatCommand.SetAction((parseResult, ct) => FormatCommand.RunAsync(
     new FormatCommand.Settings(
@@ -88,7 +94,8 @@ formatCommand.SetAction((parseResult, ct) => FormatCommand.RunAsync(
         parseResult.GetValue(writeOption),
         parseResult.GetValue(checkOption),
         parseResult.GetValue(indentSizeOption),
-        parseResult.GetValue(useTabsOption)),
+        parseResult.GetValue(useTabsOption),
+        parseResult.GetValue(lineWidthOption)),
     ct));
 
 // ---- credits ----------------------------------------------------------------------------------

@@ -1,9 +1,10 @@
-# Normalise line endings in the repository; check out with the platform's native endings.
 * text=auto
 
-*.cs      text diff=csharp
-*.csproj  text
-*.slnx    text
-*.props   text
-*.md      text
-*.json    text
+# Source files have CRLF, Markdown files have LF (AGENTS.md)
+*.cs      text eol=crlf diff=csharp
+*.csproj  text eol=crlf
+*.slnx    text eol=crlf
+*.props   text eol=crlf
+*.txt     text eol=crlf
+*.md      text eol=lf
+*.yml     text eol=lf

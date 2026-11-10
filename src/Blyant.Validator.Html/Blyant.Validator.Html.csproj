@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Blyant.Validator.Core\Blyant.Validator.Core.csproj" />
+    <ProjectReference Include="..\Blyant.Validator.Css\Blyant.Validator.Css.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Blyant.Validator.Core;
 
 namespace Blyant.Validator.Cli;

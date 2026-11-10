@@ -1,4 +1,4 @@
-using AngleSharp.Dom;
+﻿using AngleSharp.Dom;
 using Blyant.Validator.Core;
 
 namespace Blyant.Validator.Html.Rules;

@@ -1,4 +1,4 @@
-namespace Blyant.Validator.Cli;
+﻿namespace Blyant.Validator.Cli;
 
 /// <summary>Expands the paths given on the command line into a list of files.</summary>
 internal static class FileCollector

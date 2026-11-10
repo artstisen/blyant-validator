@@ -1,4 +1,4 @@
-using Blyant.Validator.Core;
+﻿using Blyant.Validator.Core;
 using Blyant.Validator.Css;
 using Blyant.Validator.Html;
 
@@ -7,7 +7,7 @@ namespace Blyant.Validator.Cli;
 internal static class FormatCommand
 {
     public sealed record Settings(
-        string[] Paths, bool Recursive, bool Write, bool Check, int IndentSize, bool UseTabs);
+        string[] Paths, bool Recursive, bool Write, bool Check, int IndentSize, bool UseTabs, int LineWidth);
 
     public static async Task<int> RunAsync(Settings settings, CancellationToken ct)
     {
@@ -18,13 +18,19 @@ internal static class FormatCommand
             return 2;
         }
 
-        var options = new FormatOptions { IndentSize = settings.IndentSize, UseTabs = settings.UseTabs };
+        var options = new FormatOptions
+        {
+            IndentSize = settings.IndentSize,
+            UseTabs = settings.UseTabs,
+            LineWidth = settings.LineWidth,
+        };
         IFormatter[] formatters = [new HtmlFormatter(), new CssFormatter()];
         var unformatted = 0;
+        var failed = 0;
 
         foreach (var file in files)
         {
-            var document = await SourceDocument.LoadAsync(file, ct);
+            var document = await DocumentIo.LoadAsync(file, ct);
             var formatter = formatters.FirstOrDefault(f => f.CanFormat(document.Kind));
             if (formatter is null)
             {
@@ -37,15 +43,17 @@ internal static class FormatCommand
             {
                 formatted = formatter.Format(document, options);
             }
-            catch (NotImplementedException ex)
+            catch (Core.FormatException ex)
             {
-                Console.Error.WriteLine($"blyant-validator: {ex.Message}");
-                return 2;
+                Console.Error.WriteLine($"blyant-validator: '{file}' was not formatted: {ex.Message}");
+                failed++;
+                continue;
             }
 
+            var changed = formatted != document.Content;
             if (settings.Check)
             {
-                if (formatted != document.Content)
+                if (changed)
                 {
                     Console.Out.WriteLine($"{file}: not formatted");
                     unformatted++;
@@ -53,8 +61,11 @@ internal static class FormatCommand
             }
             else if (settings.Write)
             {
-                if (formatted != document.Content)
-                    await File.WriteAllTextAsync(file, formatted, ct);
+                if (changed)
+                {
+                    DocumentIo.SafeWriteAllText(file, formatted, document.HasUtf8Bom);
+                    Console.Out.WriteLine($"{file}: formatted");
+                }
             }
             else
             {
@@ -62,6 +73,7 @@ internal static class FormatCommand
             }
         }
 
+        if (failed > 0) return 2;
         return unformatted > 0 ? 1 : 0;
     }
 }

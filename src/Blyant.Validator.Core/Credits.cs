@@ -1,4 +1,4 @@
-namespace Blyant.Validator.Core;
+﻿namespace Blyant.Validator.Core;
 
 /// <summary>
 /// Projects Blyant Validator is modelled on or built with. Shown by <c>blyant-validator credits</c>

@@ -1,4 +1,4 @@
-using Blyant.Validator.Core;
+﻿using Blyant.Validator.Core;
 using Blyant.Validator.Html;
 
 namespace Blyant.Validator.Tests;

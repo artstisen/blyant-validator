@@ -1,4 +1,4 @@
-namespace Blyant.Validator.Core;
+﻿namespace Blyant.Validator.Core;
 
 /// <summary>How serious a diagnostic is.</summary>
 public enum Severity

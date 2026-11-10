@@ -1,4 +1,4 @@
-namespace Blyant.Validator.Core;
+﻿namespace Blyant.Validator.Core;
 
 /// <summary>The kinds of documents Blyant Validator understands.</summary>
 public enum DocumentKind
@@ -14,6 +14,9 @@ public enum DocumentKind
 /// <param name="Kind">What kind of document it is.</param>
 public sealed record SourceDocument(string Path, string Content, DocumentKind Kind)
 {
+    /// <summary>True when the file started with a UTF-8 byte order mark (kept when it is written back).</summary>
+    public bool HasUtf8Bom { get; init; }
+
     public static DocumentKind DetectKind(string path) =>
         System.IO.Path.GetExtension(path).ToLowerInvariant() switch
         {
@@ -22,11 +25,8 @@ public sealed record SourceDocument(string Path, string Content, DocumentKind Ki
             _ => DocumentKind.Unknown,
         };
 
-    public static async Task<SourceDocument> LoadAsync(string path, CancellationToken cancellationToken = default)
-    {
-        var content = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
-        return new SourceDocument(path, content, DetectKind(path));
-    }
+    /// <summary>The line ending the document mostly uses: CRLF if any line ends with it, otherwise LF.</summary>
+    public string DetectNewLine() => Content.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
 }
 
 /// <summary>Checks a document and reports diagnostics.</summary>
@@ -45,15 +45,24 @@ public sealed record FormatOptions
 {
     public int IndentSize { get; init; } = 2;
     public bool UseTabs { get; init; }
-    public string NewLine { get; init; } = "\n";
+
+    /// <summary>Line ending to write. Null keeps the line ending the document already uses.</summary>
+    public string? NewLine { get; init; }
+
+    /// <summary>Elements whose content fits within this width are kept on one line (HTML).</summary>
+    public int LineWidth { get; init; } = 100;
 
     public string IndentUnit => UseTabs ? "\t" : new string(' ', IndentSize);
 }
+
+/// <summary>Thrown when a document cannot be formatted safely, e.g. because a block is never closed.</summary>
+public sealed class FormatException(string message) : Exception(message);
 
 /// <summary>Re-indents and normalises the layout of a document without changing its meaning.</summary>
 public interface IFormatter
 {
     bool CanFormat(DocumentKind kind);
 
+    /// <exception cref="FormatException">The document has errors that make formatting unsafe.</exception>
     string Format(SourceDocument document, FormatOptions options);
 }

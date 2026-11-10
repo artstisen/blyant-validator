@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Blyant.Validator.Core;
 using Blyant.Validator.Css;
 using Blyant.Validator.Html;
@@ -28,7 +28,7 @@ internal static class ValidateCommand
         var checkedCount = 0;
         foreach (var file in files)
         {
-            var document = await SourceDocument.LoadAsync(file, ct);
+            var document = await DocumentIo.LoadAsync(file, ct);
             var validator = validators.FirstOrDefault(v => v.CanValidate(document.Kind));
             if (validator is null)
             {
