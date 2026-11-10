@@ -22,11 +22,12 @@ W3C CSS Validation Service (<https://github.com/w3c/css-validator>), and written
   `credits` command (`Credits.cs`). Keep the three in step
 - No source code is copied from them. If code or data from another project is ever added, its licence
   text goes into `THIRD-PARTY-NOTICES.md` in the same change
-- A library added to the build is listed in `Credits.cs`, `CREDITS.md` and `THIRD-PARTY-NOTICES.md`
 
 ## Dependencies
-- Keep dependencies to a minimum, and add none without the owner's agreement. Blyant itself has no
-  dependencies besides .NET
+- No dependencies besides .NET itself, as in Blyant. The HTML reader (`Html/Parsing`), the CSS parser
+  (`Css/Syntax`) and the command-line parser (`Cli/CommandLine.cs`) are written for this project.
+  `ProjectRulesTests` fails on a `PackageReference` outside `tests`
+- The test project may use test libraries (xUnit); they are not part of the program
 - Validation data (lists of properties, value grammars) is kept as text files in the repository,
   embedded in the program: the program never downloads anything while it runs
 
@@ -37,6 +38,7 @@ W3C CSS Validation Service (<https://github.com/w3c/css-validator>), and written
   itself failed. Blyant relies on them: do not change their meaning
 - Results go to standard output, problems of the tool itself (a missing file, a bad option) to
   standard error
+- Options are declared in `Program.cs` (a `CommandSpec` per command); the help text is made from them
 - The JSON output (`--output json`) is read by Blyant: fields may be added, never renamed or removed
 - Diagnostic codes (`css.unknown-property`, `html.img-missing-alt` ...) are stable identifiers: do not
   rename them. Messages may be improved

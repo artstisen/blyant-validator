@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Product>Blyant Validator</Product>
     <Authors>Lars Brandt Stisen</Authors>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

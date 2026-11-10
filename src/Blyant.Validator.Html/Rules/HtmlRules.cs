@@ -1,5 +1,4 @@
-﻿using AngleSharp.Dom;
-using Blyant.Validator.Core;
+﻿using Blyant.Validator.Core;
 
 namespace Blyant.Validator.Html.Rules;
 
@@ -26,12 +25,9 @@ public sealed class RequireTitleRule : IHtmlRule
 {
     public void Check(HtmlRuleContext context)
     {
-        var head = context.Dom.Head;
-        if (head is null) return;
-
-        var title = head.QuerySelector("title");
+        var title = context.Find("title");
         if (title is null)
-            context.Report(head, Severity.Error, "html.head-missing-title",
+            context.Report(context.Find("head") ?? context.Find("html"), Severity.Error, "html.head-missing-title",
                 "Element “head” is missing a required instance of child element “title”.");
         else if (string.IsNullOrWhiteSpace(title.TextContent))
             context.Report(title, Severity.Error, "html.title-empty", "Element “title” must not be empty.");
@@ -43,8 +39,8 @@ public sealed class RequireLangRule : IHtmlRule
 {
     public void Check(HtmlRuleContext context)
     {
-        var root = context.Dom.DocumentElement;
-        if (root is not null && string.IsNullOrWhiteSpace(root.GetAttribute("lang")))
+        var root = context.Find("html");
+        if (string.IsNullOrWhiteSpace(root?.GetAttribute("lang")?.Value))
             context.Report(root, Severity.Warning, "html.missing-lang",
                 "Consider adding a “lang” attribute to the “html” start tag to declare the language of this document.");
     }
@@ -55,7 +51,7 @@ public sealed class ImgAltRule : IHtmlRule
 {
     public void Check(HtmlRuleContext context)
     {
-        foreach (var img in context.Dom.QuerySelectorAll("img"))
+        foreach (var img in context.FindAll("img"))
         {
             if (!img.HasAttribute("alt"))
                 context.Report(img, Severity.Error, "html.img-missing-alt",
@@ -70,9 +66,9 @@ public sealed class DuplicateIdRule : IHtmlRule
     public void Check(HtmlRuleContext context)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var element in context.Dom.QuerySelectorAll("[id]"))
+        foreach (var element in context.Root.Descendants())
         {
-            var id = element.Id;
+            var id = element.GetAttribute("id")?.Value;
             if (string.IsNullOrEmpty(id)) continue;
             if (!seen.Add(id))
                 context.Report(element, Severity.Error, "html.duplicate-id", $"Duplicate ID “{id}”.");

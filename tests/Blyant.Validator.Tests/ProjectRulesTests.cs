@@ -84,6 +84,17 @@ public partial class ProjectRulesTests
     }
 
     [Fact]
+    public void Program_HasNoDependenciesBesidesDotNet()
+    {
+        var found = RepositoryFiles(".csproj", ".props")
+            .Where(f => !Path.GetRelativePath(Root, f).StartsWith("tests", StringComparison.Ordinal))
+            .Where(f => File.ReadAllText(f).Contains("PackageReference", StringComparison.Ordinal))
+            .Select(f => Path.GetRelativePath(Root, f))
+            .ToList();
+        Assert.Empty(found);
+    }
+
+    [Fact]
     public void MarkdownFiles_HaveLf()
     {
         var wrong = RepositoryFiles(".md")

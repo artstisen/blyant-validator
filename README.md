@@ -4,8 +4,10 @@ A cross-platform command-line tool that validates and formats HTML and CSS files
 C#/.NET 10 and designed as an optional companion to the [Blyant editor](https://blyant-editor.com/),
 but it works on its own too.
 
-> **Status: early development (0.2.0).** CSS validation and both formatters work. HTML validation
+> **Status: early development (0.3.0).** CSS validation and both formatters work. HTML validation
 > reports parse errors and has a small starter rule set; more rules will follow.
+>
+> Blyant Validator has no dependencies besides .NET.
 
 ## Credits
 
@@ -78,7 +80,13 @@ replaces them safely (a temporary file is written first), keeping their encoding
 
 ### HTML
 
-- Parse errors from the HTML standard's parser (via AngleSharp).
+- **Parse errors**, as the HTML standard defines them: missing or obsolete doctype, unclosed elements,
+  stray end tags (`</span>` with no `<span>`, `</p>` with no `<p>`, `</br>`), duplicate attributes, missing
+  space between attributes, bad characters in unquoted values, `/>` on non-void elements, nested `<a>`,
+  `<form>` and `<button>`, text directly inside tables, broken comments (`<!-->`, `--!>`, nested `<!--`),
+  CDATA and `<?…?>` in HTML, bad character references (`&#xZZ;`, `&#0;`, `&copy` without `;`), and
+  the end of the file inside a tag, comment or element. End tags that HTML lets you leave out (`</li>`,
+  `</p>`, `</td>` …) are not reported.
 - Missing `<title>` and `lang`, `<img>` without `alt`, duplicate IDs.
 
 ## Formatting
@@ -144,7 +152,7 @@ dotnet publish src/Blyant.Validator.Cli -c Release -r win-x64 --self-contained
 | Project | Purpose |
 | --- | --- |
 | `src/Blyant.Validator.Core` | Shared types: `Diagnostic`, `IValidator`, `IFormatter`, credits. |
-| `src/Blyant.Validator.Html` | Native HTML validator (AngleSharp + rules in `Rules/`) and the formatter (own reader in `Formatting/`). |
+| `src/Blyant.Validator.Html` | HTML reader with parse errors (`Parsing/`), validator rules (`Rules/`) and formatter. |
 | `src/Blyant.Validator.Css` | CSS tokenizer and parser (`Syntax/`), value grammars (`Values/`, `Data/`), validator and formatter. |
 | `src/Blyant.Validator.Vnu` | Adapter that runs `vnu.jar` and converts its JSON output. |
 | `src/Blyant.Validator.Cli` | The `blyant-validator` command-line tool. |

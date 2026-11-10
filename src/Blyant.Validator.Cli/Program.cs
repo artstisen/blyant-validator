@@ -1,113 +1,111 @@
-﻿using System.CommandLine;
-using Blyant.Validator.Cli;
+﻿using Blyant.Validator.Cli;
 
 // Exit codes: 0 = no errors, 1 = errors found (or files need formatting), 2 = the tool itself failed.
 
-var pathsArgument = new Argument<string[]>("paths")
+var recursive = new OptionSpec("--recursive", "-r", "Search directories recursively for .html, .htm and .css files.");
+
+var validate = new CommandSpec("validate", "Check HTML and CSS files for errors.",
+[
+    recursive,
+    new("--engine", "-e", "Validation engine: 'native' (built in) or 'vnu' (Nu Html Checker, needs Java).",
+        OptionKind.Text, Choices: ["native", "vnu"], Default: "native"),
+    new("--output", "-o", "Output format: 'text' or 'json'.",
+        OptionKind.Text, Choices: ["text", "json"], Default: "text"),
+    new("--vnu-jar", null, "Path to vnu.jar (default: BLYANT_VNU_JAR environment variable).",
+        OptionKind.Text, ValueName: "<path>"),
+    new("--java", null, "Path to the java executable (default: JAVA_HOME, then PATH).",
+        OptionKind.Text, ValueName: "<path>"),
+], "<paths>", "HTML/CSS files or directories to process.");
+
+var format = new CommandSpec("format", "Re-indent and tidy HTML and CSS files.",
+[
+    recursive,
+    new("--write", "-w", "Overwrite files with the formatted result instead of printing it."),
+    new("--check", null, "Don't change anything; exit with code 1 if any file is not formatted."),
+    new("--indent-size", null, "Number of spaces per indentation level.",
+        OptionKind.Number, ValueName: "<n>", Default: "2", Min: 1, Max: 16),
+    new("--use-tabs", null, "Indent with tabs instead of spaces."),
+    new("--line-width", null, "HTML elements whose content fits within this width are kept on one line.",
+        OptionKind.Number, ValueName: "<n>", Default: "100", Min: 20),
+], "<paths>", "HTML/CSS files or directories to process.");
+
+var credits = new CommandSpec("credits", "Show the open-source projects Blyant Validator builds on.", []);
+
+CommandSpec[] commands = [validate, format, credits];
+
+if (args.Length == 0)
 {
-    Description = "HTML/CSS files or directories to process.",
-    Arity = ArgumentArity.OneOrMore,
+    Console.Error.Write(CommandLine.RootHelp(commands));
+    return 2;
+}
+if (args[0] is "-h" or "--help" or "-?" or "/?")
+{
+    Console.Out.Write(CommandLine.RootHelp(commands));
+    return 0;
+}
+if (args[0] == "--version")
+{
+    Console.Out.WriteLine(CommandLine.Version);
+    return 0;
+}
+
+var command = commands.FirstOrDefault(c => c.Name == args[0]);
+if (command is null)
+{
+    Console.Error.WriteLine($"{CommandLine.Program}: unknown command '{args[0]}'.");
+    Console.Error.WriteLine($"Run '{CommandLine.Program} --help' to see the commands.");
+    return 2;
+}
+
+ParsedArguments parsed;
+try
+{
+    parsed = CommandLine.Parse(command, args[1..]);
+}
+catch (UsageException ex)
+{
+    Console.Error.WriteLine($"{CommandLine.Program}: {ex.Message}");
+    Console.Error.WriteLine($"Run '{CommandLine.Program} {command.Name} --help' to see its options.");
+    return 2;
+}
+
+if (parsed.Help)
+{
+    Console.Out.Write(CommandLine.CommandHelp(command));
+    return 0;
+}
+
+using var cancel = new CancellationTokenSource();
+Console.CancelKeyPress += (_, e) =>
+{
+    e.Cancel = true;
+    cancel.Cancel();
 };
 
-var recursiveOption = new Option<bool>("--recursive", "-r")
+try
 {
-    Description = "Search directories recursively for .html, .htm and .css files.",
-};
-
-// ---- validate ---------------------------------------------------------------------------------
-
-var engineOption = new Option<string>("--engine", "-e")
+    return command.Name switch
+    {
+        "validate" => await ValidateCommand.RunAsync(new ValidateCommand.Settings(
+            [.. parsed.Arguments],
+            parsed.Flag("--recursive"),
+            parsed.Text("--engine")!,
+            parsed.Text("--output")!,
+            parsed.Text("--vnu-jar"),
+            parsed.Text("--java")), cancel.Token),
+        "format" => await FormatCommand.RunAsync(new FormatCommand.Settings(
+            [.. parsed.Arguments],
+            parsed.Flag("--recursive"),
+            parsed.Flag("--write"),
+            parsed.Flag("--check"),
+            parsed.Number("--indent-size"),
+            parsed.Flag("--use-tabs"),
+            parsed.Number("--line-width")), cancel.Token),
+        _ => CreditsCommand.Run(),
+    };
+}
+catch (OperationCanceledException)
 {
-    Description = "Validation engine: 'native' (built in) or 'vnu' (Nu Html Checker, needs Java).",
-    DefaultValueFactory = _ => "native",
-};
-engineOption.AcceptOnlyFromAmong("native", "vnu");
-
-var outputOption = new Option<string>("--output", "-o")
-{
-    Description = "Output format: 'text' or 'json'.",
-    DefaultValueFactory = _ => "text",
-};
-outputOption.AcceptOnlyFromAmong("text", "json");
-
-var vnuJarOption = new Option<string?>("--vnu-jar")
-{
-    Description = "Path to vnu.jar (default: BLYANT_VNU_JAR environment variable).",
-};
-
-var javaOption = new Option<string?>("--java")
-{
-    Description = "Path to the java executable (default: JAVA_HOME, then PATH).",
-};
-
-var validateCommand = new Command("validate", "Check HTML and CSS files for errors.")
-{
-    pathsArgument, recursiveOption, engineOption, outputOption, vnuJarOption, javaOption,
-};
-validateCommand.SetAction((parseResult, ct) => ValidateCommand.RunAsync(
-    new ValidateCommand.Settings(
-        parseResult.GetValue(pathsArgument)!,
-        parseResult.GetValue(recursiveOption),
-        parseResult.GetValue(engineOption)!,
-        parseResult.GetValue(outputOption)!,
-        parseResult.GetValue(vnuJarOption),
-        parseResult.GetValue(javaOption)),
-    ct));
-
-// ---- format -----------------------------------------------------------------------------------
-
-var writeOption = new Option<bool>("--write", "-w")
-{
-    Description = "Overwrite files with the formatted result instead of printing it.",
-};
-
-var checkOption = new Option<bool>("--check")
-{
-    Description = "Don't change anything; exit with code 1 if any file is not formatted.",
-};
-
-var indentSizeOption = new Option<int>("--indent-size")
-{
-    Description = "Number of spaces per indentation level.",
-    DefaultValueFactory = _ => 2,
-};
-
-var useTabsOption = new Option<bool>("--use-tabs")
-{
-    Description = "Indent with tabs instead of spaces.",
-};
-
-var lineWidthOption = new Option<int>("--line-width")
-{
-    Description = "HTML elements whose content fits within this width are kept on one line.",
-    DefaultValueFactory = _ => 100,
-};
-
-var formatCommand = new Command("format", "Re-indent and tidy HTML and CSS files.")
-{
-    pathsArgument, recursiveOption, writeOption, checkOption, indentSizeOption, useTabsOption, lineWidthOption,
-};
-formatCommand.SetAction((parseResult, ct) => FormatCommand.RunAsync(
-    new FormatCommand.Settings(
-        parseResult.GetValue(pathsArgument)!,
-        parseResult.GetValue(recursiveOption),
-        parseResult.GetValue(writeOption),
-        parseResult.GetValue(checkOption),
-        parseResult.GetValue(indentSizeOption),
-        parseResult.GetValue(useTabsOption),
-        parseResult.GetValue(lineWidthOption)),
-    ct));
-
-// ---- credits ----------------------------------------------------------------------------------
-
-var creditsCommand = new Command("credits", "Show the open-source projects Blyant Validator builds on.");
-creditsCommand.SetAction(_ => CreditsCommand.Run());
-
-// ---- root -------------------------------------------------------------------------------------
-
-var root = new RootCommand("Blyant Validator: validate and format HTML and CSS files.")
-{
-    validateCommand, formatCommand, creditsCommand,
-};
-
-return await root.Parse(args).InvokeAsync();
+    Console.Error.WriteLine($"{CommandLine.Program}: stopped.");
+    return 2;
+}

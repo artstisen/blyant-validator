@@ -26,9 +26,5 @@ added in the future, its licence text will be added to [THIRD-PARTY-NOTICES.md](
 
 ## Built with
 
-| Library | Used for | Licence |
-| --- | --- | --- |
-| [AngleSharp](https://github.com/AngleSharp/AngleSharp) | Spec-compliant HTML5 parsing | MIT |
-| [System.CommandLine](https://github.com/dotnet/command-line-api) | Command-line parsing | MIT |
-
-Licence texts for these libraries are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Blyant Validator is built with [.NET](https://dotnet.microsoft.com/) only, and has no other dependencies.
+The tests use [xUnit](https://xunit.net/), which is not part of the program.

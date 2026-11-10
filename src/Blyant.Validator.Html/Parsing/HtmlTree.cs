@@ -1,34 +1,51 @@
 ﻿using System.Collections.Frozen;
 
-namespace Blyant.Validator.Html.Formatting;
+namespace Blyant.Validator.Html.Parsing;
 
-/// <summary>A node of the lightweight tree the formatter works on. It keeps the source text of every part.</summary>
-internal abstract class HNode
+/// <summary>
+/// A node of the lightweight tree made by <see cref="HtmlReader"/>, used by both the formatter and the
+/// validator. It keeps the source text of every part.
+/// </summary>
+public abstract class HNode
 {
+    /// <summary>Offset of the first character in the source.</summary>
     public int Start { get; init; }
 }
 
-internal sealed class HText(string raw) : HNode
+public sealed class HText(string raw) : HNode
 {
     public string Raw { get; } = raw;
 }
 
 /// <summary>A comment, CDATA section, processing instruction or doctype, kept exactly as written.</summary>
-internal sealed class HVerbatim(string raw, bool isDoctype) : HNode
+public sealed class HVerbatim(string raw, bool isDoctype) : HNode
 {
     public string Raw { get; } = raw;
     public bool IsDoctype { get; } = isDoctype;
 }
 
 /// <summary>An end tag with no open element to close. Kept as written.</summary>
-internal sealed class HStrayEndTag(string raw) : HNode
+public sealed class HStrayEndTag(string raw) : HNode
 {
     public string Raw { get; } = raw;
 }
 
-internal sealed record HAttribute(string Name, string? RawValue);
+/// <param name="Name">The name as written.</param>
+/// <param name="RawValue">The value as written, with its quotes; null for an attribute without a value.</param>
+/// <param name="Start">Offset of the name in the source.</param>
+public sealed record HAttribute(string Name, string? RawValue, int Start)
+{
+    /// <summary>The value without quotes ("" for an attribute without a value). Character references are not decoded.</summary>
+    public string Value => RawValue switch
+    {
+        null => "",
+        ['"', .. var inner, '"'] => inner,
+        ['\'', .. var inner, '\''] => inner,
+        _ => RawValue,
+    };
+}
 
-internal sealed class HElement(string name) : HNode
+public sealed class HElement(string name) : HNode
 {
     /// <summary>The name as written.</summary>
     public string Name { get; } = name;
@@ -50,10 +67,38 @@ internal sealed class HElement(string name) : HNode
     /// <summary>For script, style, textarea, title and the like: the text content, exactly as written.</summary>
     public string? RawContent { get; set; }
 
+    /// <summary>True inside &lt;svg&gt; or &lt;math&gt; (and for those elements themselves).</summary>
+    public bool IsForeign { get; init; }
+
     public bool IsVoid => HtmlNames.Void.Contains(Lower);
+
+    public HAttribute? GetAttribute(string name) =>
+        Attributes.FirstOrDefault(a => a.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    public bool HasAttribute(string name) => GetAttribute(name) is not null;
+
+    /// <summary>All elements below this one, in document order.</summary>
+    public IEnumerable<HElement> Descendants()
+    {
+        foreach (var child in Children)
+        {
+            if (child is not HElement e) continue;
+            yield return e;
+            foreach (var d in e.Descendants()) yield return d;
+        }
+    }
+
+    /// <summary>The text of the element and its descendants, as written (character references not decoded).</summary>
+    public string TextContent =>
+        RawContent ?? string.Concat(Children.Select(c => c switch
+        {
+            HText t => t.Raw,
+            HElement e => e.TextContent,
+            _ => "",
+        }));
 }
 
-internal static class HtmlNames
+public static class HtmlNames
 {
     private static readonly StringComparer Ci = StringComparer.OrdinalIgnoreCase;
 
@@ -67,6 +112,13 @@ internal static class HtmlNames
     public static readonly FrozenSet<string> RawText = new[]
     {
         "script", "style", "xmp", "iframe", "noembed", "noframes", "textarea", "title",
+    }.ToFrozenSet(Ci);
+
+    /// <summary>Elements whose end tag may be left out (HTML standard, "Optional tags").</summary>
+    public static readonly FrozenSet<string> OptionalEndTag = new[]
+    {
+        "html", "head", "body", "p", "li", "dt", "dd", "option", "optgroup", "tr", "td", "th", "thead",
+        "tbody", "tfoot", "colgroup", "caption", "rb", "rt", "rtc", "rp",
     }.ToFrozenSet(Ci);
 
     /// <summary>Block-level elements: whitespace around them does not matter, so they get lines of their own.</summary>

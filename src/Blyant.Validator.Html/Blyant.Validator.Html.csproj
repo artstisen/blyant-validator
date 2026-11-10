@@ -5,10 +5,6 @@
     <ProjectReference Include="..\Blyant.Validator.Css\Blyant.Validator.Css.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="AngleSharp" Version="1.10.1" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

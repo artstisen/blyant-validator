@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text;
+using Blyant.Validator.Core;
 
 namespace Blyant.Validator.Css.Syntax;
 

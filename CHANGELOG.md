@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+### Changed
+- No dependencies besides .NET: AngleSharp and System.CommandLine are removed
+- HTML parse errors come from Blyant Validator's own HTML reader (the one the formatter uses). It
+  reports doctype problems, unclosed elements, stray end tags, attribute mistakes, broken comments,
+  bad character references, nested `<a>`/`<form>`/`<button>` and text inside tables. Error codes are now
+  named (`html.parse.stray-end-tag`) instead of numbered
+- The command line is read by Blyant Validator's own parser. Options are the same; `--version` is new,
+  `--indent-size` must be 1–16 and `--line-width` at least 20
+
 ## 0.2.0
 
 ### Added

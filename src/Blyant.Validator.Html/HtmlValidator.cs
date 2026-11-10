@@ -1,16 +1,12 @@
-﻿using AngleSharp.Dom;
-using AngleSharp.Html.Dom;
-using AngleSharp.Html.Dom.Events;
-using AngleSharp.Html.Parser;
-using AngleSharp.Text;
-using Blyant.Validator.Core;
+﻿using Blyant.Validator.Core;
+using Blyant.Validator.Html.Parsing;
 using Blyant.Validator.Html.Rules;
 
 namespace Blyant.Validator.Html;
 
 /// <summary>
-/// Native HTML validator. Parses with AngleSharp (which reports WHATWG parse errors) and then runs
-/// conformance rules over the resulting DOM.
+/// Native HTML validator. Reads the document with <see cref="HtmlReader"/> (which reports parse errors)
+/// and then runs conformance rules over the tree.
 /// </summary>
 public sealed class HtmlValidator : IValidator
 {
@@ -27,25 +23,16 @@ public sealed class HtmlValidator : IValidator
     public Task<IReadOnlyList<Diagnostic>> ValidateAsync(SourceDocument document, CancellationToken cancellationToken = default)
     {
         var diagnostics = new List<Diagnostic>();
+        var lines = new LineMap(document.Content);
+        var result = HtmlReader.Read(document.Content);
 
-        var parser = new HtmlParser(new HtmlParserOptions
+        foreach (var error in result.Errors)
         {
-            IsKeepingSourceReferences = true,
-        });
+            var pos = lines[error.Offset];
+            diagnostics.Add(new Diagnostic(document.Path, Severity.Error, error.Code, error.Message, pos, pos, Engine));
+        }
 
-        parser.Error += (_, ev) =>
-        {
-            if (ev is HtmlErrorEvent error)
-            {
-                var pos = ToPosition(error.Position);
-                diagnostics.Add(new Diagnostic(
-                    document.Path, Severity.Error, $"html.parse.{error.Code}", error.Message, pos, pos, Engine));
-            }
-        };
-
-        var dom = parser.ParseDocument(document.Content);
-
-        var context = new HtmlRuleContext(document, dom, diagnostics);
+        var context = new HtmlRuleContext(document, result.Root, lines, diagnostics);
         foreach (var rule in _rules)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -55,23 +42,26 @@ public sealed class HtmlValidator : IValidator
         IReadOnlyList<Diagnostic> sorted = [.. diagnostics.OrderBy(d => d.Start.Line).ThenBy(d => d.Start.Column)];
         return Task.FromResult(sorted);
     }
-
-    internal static SourcePosition ToPosition(TextPosition position) =>
-        position.Line > 0 ? new SourcePosition(position.Line, position.Column) : SourcePosition.Unknown;
-
-    internal static SourcePosition PositionOf(INode node) =>
-        node is IElement { SourceReference: { } source } ? ToPosition(source.Position) : SourcePosition.Unknown;
 }
 
 /// <summary>State passed to each <see cref="IHtmlRule"/>.</summary>
-public sealed class HtmlRuleContext(SourceDocument document, IHtmlDocument dom, List<Diagnostic> sink)
+public sealed class HtmlRuleContext(SourceDocument document, HElement root, LineMap lines, List<Diagnostic> sink)
 {
     public SourceDocument Document { get; } = document;
-    public IHtmlDocument Dom { get; } = dom;
 
-    public void Report(INode node, Severity severity, string code, string message)
+    /// <summary>The document; its children are the top-level nodes.</summary>
+    public HElement Root { get; } = root;
+
+    /// <summary>The first element with the given name outside SVG and MathML, if any.</summary>
+    public HElement? Find(string name) =>
+        Root.Descendants().FirstOrDefault(e => e.Lower == name && !e.IsForeign);
+
+    public IEnumerable<HElement> FindAll(string name) =>
+        Root.Descendants().Where(e => e.Lower == name && !e.IsForeign);
+
+    public void Report(HNode? node, Severity severity, string code, string message)
     {
-        var pos = HtmlValidator.PositionOf(node);
+        var pos = lines[node?.Start ?? 0];
         sink.Add(new Diagnostic(Document.Path, severity, code, message, pos, pos));
     }
 }

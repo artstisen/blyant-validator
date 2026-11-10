@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Blyant.Validator.Core;
+﻿using Blyant.Validator.Core;
 
 namespace Blyant.Validator.Cli;
 
@@ -7,21 +6,14 @@ internal static class CreditsCommand
 {
     public static int Run()
     {
-        var version = typeof(CreditsCommand).Assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "?";
-        var plus = version.IndexOf('+');
-        if (plus >= 0) version = version[..plus];
-
-        Console.WriteLine($"Blyant Validator {version}");
+        Console.WriteLine($"Blyant Validator {CommandLine.Version}");
         Console.WriteLine("A companion to the Blyant editor: https://blyant-editor.com/");
         Console.WriteLine();
         Console.WriteLine("Blyant Validator is modelled on these open-source projects, with thanks:");
         Print(Credits.Inspiration);
         Console.WriteLine();
-        Console.WriteLine("Built with:");
-        Print(Credits.Libraries);
-        Console.WriteLine();
-        Console.WriteLine("See CREDITS.md and THIRD-PARTY-NOTICES.md for details.");
+        Console.WriteLine("Built with .NET only: Blyant Validator has no other dependencies.");
+        Console.WriteLine("See CREDITS.md for details.");
         return 0;
     }
 

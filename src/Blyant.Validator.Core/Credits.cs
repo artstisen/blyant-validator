@@ -19,10 +19,4 @@ public static class Credits
             "https://github.com/w3c/css-validator",
             "W3C Software and Document Notice and License"),
     ];
-
-    public static IReadOnlyList<Entry> Libraries { get; } =
-    [
-        new("AngleSharp", "Spec-compliant HTML5 parser", "https://github.com/AngleSharp/AngleSharp", "MIT"),
-        new("System.CommandLine", "Command-line parsing", "https://github.com/dotnet/command-line-api", "MIT"),
-    ];
 }

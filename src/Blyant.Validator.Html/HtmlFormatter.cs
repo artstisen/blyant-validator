@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Blyant.Validator.Core;
 using Blyant.Validator.Css;
-using Blyant.Validator.Html.Formatting;
+using Blyant.Validator.Html.Parsing;
 
 namespace Blyant.Validator.Html;
 
@@ -20,7 +20,7 @@ public sealed class HtmlFormatter : IFormatter
     public string Format(SourceDocument document, FormatOptions options)
     {
         var newline = options.NewLine ?? document.DetectNewLine();
-        var root = HtmlReader.Read(document.Content);
+        var root = HtmlReader.Read(document.Content).Root;
         var writer = new Writer(document.Content, options, newline);
         writer.FormatChildren(root.Children, 0, container: false, foreign: false);
         var text = writer.ToString();
