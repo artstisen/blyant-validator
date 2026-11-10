@@ -48,9 +48,11 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
   list stays up to date while you edit the files in another program.
 - `V` peeks at the selected file: its text in colors, with a mark (`E`, `W`, `i`) in front of the lines with
   problems and the place of each error highlighted. `P` shows the list of its problems instead.
-- `Tab` goes into the peek: `j`/`k` move, `]`/`[` go to the next and previous problem (its message is shown on
+- `Tab` goes into the peek: `j`/`k` move, `n`/`N` go to the next and previous problem (its message is shown on
   the bottom line), `/` searches, `h`/`l` scroll sideways, and in the list of problems `Enter` shows a problem in
   the file. `Tab` or `Esc` goes back to the list.
+- As in Vim, `n`/`N` follow what you looked for last: after a `/` search they go to the matches, and `]`/`[` (which
+  always go to problems) make them go to the problems again.
 - `F` formats the selected file, or the files marked with `Space`, after asking.
 - `T` shows one pane or two, `/` filters the list, `:` opens the command line (`:cd`, `:engine vnu`, `:all` to
   list all files …, with `Tab` completion), and `?` shows all keys. `q` quits.

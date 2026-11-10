@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- In the peek, `n`/`N` go to the next and previous problem, as `]`/`[` do. After a `/` search they go to the
+  matches instead (as in Vim and Blyant), and `]`/`[` make them go to the problems again
+
 ## 0.4.0
 
 ### Added

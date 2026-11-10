@@ -15,7 +15,8 @@ internal static partial class Browser
         Problems,
     }
 
-    private const string PeekTextKeys = "j/k Line | ]/[ Problem | / Search | h/l Scroll | P Problems | Tab Back";
+    private const string PeekTextKeys = "j/k Line | n/N Problem | / Search | h/l Scroll | P Problems | Tab Back";
+    private const string PeekSearchKeys = "j/k Line | n/N Match | ]/[ Problem | / Search | P Problems | Tab Back";
     private const string PeekProblemKeys = "j/k Select | Enter Show in file | P Text | Tab Back";
 
     private static bool _peeking;
@@ -36,6 +37,9 @@ internal static partial class Browser
     private static int _problemSelected;
     private static int _problemTop;
     private static string _peekSearch = string.Empty;
+
+    // n and N go to the next search match (after "/") or the next problem (when the peek is entered, and after ] or [)
+    private static bool _nextFindsSearch;
 
     // V (text) or P (problems): the peek on, in that mode; the same key again ends it, the other key switches
     private static void TogglePeek(PeekMode mode)
@@ -427,6 +431,7 @@ internal static partial class Browser
         }
 
         _peekFocused = true;
+        _nextFindsSearch = false;
         try
         {
             DrawPaneHeader(0);
@@ -559,23 +564,36 @@ internal static partial class Browser
         else if (key.KeyChar == '0' || key.Key == ConsoleKey.Home) _peekLeft = 0;
         else if (key.KeyChar is ']' or '[')
         {
-            if (document.NextProblemLine(_peekCursor, key.KeyChar == ']') is { } line) _peekCursor = line;
-            else return "No problems in this file";
+            // n and N go to the problems again
+            _nextFindsSearch = false;
+            return GoToProblem(document, key.KeyChar == ']');
         }
         else if (key.KeyChar == '/')
         {
             var text = CommandPrompt.Read('/');
             if (text == null) return string.Empty;
             _peekSearch = text;
+            _nextFindsSearch = true;
             if (document.Find(text, _peekCursor, true) is { } line) _peekCursor = line;
             else return "Not found: " + text;
         }
-        else if (key.KeyChar is 'n' or 'N' && _peekSearch.Length > 0)
+        else if (key.KeyChar is 'n' or 'N')
         {
+            // As in Vim: what was looked for last, the text searched for or the problems
+            if (!_nextFindsSearch) return GoToProblem(document, key.KeyChar == 'n');
             if (document.Find(_peekSearch, _peekCursor, key.KeyChar == 'n') is { } line) _peekCursor = line;
+            else return "Not found: " + _peekSearch;
         }
 
         _peekCursor = Math.Clamp(_peekCursor, 0, last);
+        return string.Empty;
+    }
+
+    // The cursor to the next (or previous) line with a problem, going round
+    private static string GoToProblem(PeekDocument document, bool forward)
+    {
+        if (document.NextProblemLine(_peekCursor, forward) is not { } line) return "No problems in this file";
+        _peekCursor = line;
         return string.Empty;
     }
 
@@ -613,7 +631,8 @@ internal static partial class Browser
             : [.. document.On(_peekCursor)];
         if (problems.Count == 0)
         {
-            Menu.WriteKeyHints(_peekMode == PeekMode.Problems ? PeekProblemKeys : PeekTextKeys);
+            Menu.WriteKeyHints(_peekMode == PeekMode.Problems ? PeekProblemKeys
+                : _nextFindsSearch ? PeekSearchKeys : PeekTextKeys);
             return;
         }
 
