@@ -27,6 +27,9 @@ public sealed record MarkdownLine(int Number, string Text, LineKind Kind)
 
     /// <summary>For a heading: its text, without the #s.</summary>
     public string HeadingText { get; init; } = string.Empty;
+
+    /// <summary>A line of an HTML block (a comment over several lines, a div up to a blank line …): not Markdown.</summary>
+    public bool InHtmlBlock { get; init; }
 }
 
 /// <summary>A link or image: inline [text](target), or by reference [text][label].</summary>
@@ -77,6 +80,9 @@ public sealed partial class MarkdownReader
 
         string? fence = null; // The fence that is open ("```" or "~~~~" …)
         var fenceLine = 0;
+        var fenceIndent = 0; // The columns of the list item the fence is in (its lines are read without them)
+        var fenceQuoted = false; // The fence is in a block quote (its lines are read without the "> ")
+        string? htmlEnd = null; // What ends the open HTML block: "-->", "</script>" … ("": a blank line)
         var previous = LineKind.Blank;
         var inList = false; // Indented lines belong to a list item, not to code
         var listIndent = 0; // The column where the text of the last list item starts (0-based)
@@ -89,16 +95,37 @@ public sealed partial class MarkdownReader
             if (fence != null)
             {
                 Lines.Add(new MarkdownLine(number, text, LineKind.Code));
-                if (FenceClose(text, fence)) fence = null;
+                var inner = fenceQuoted ? Unquote(text) : text;
+                if (FenceClose(StripColumns(inner, fenceIndent), fence)) fence = null;
                 continue;
             }
 
-            if (FenceOpen().Match(text) is { Success: true } open)
+            if (htmlEnd != null)
+            {
+                // An HTML block goes on to its end (a blank line ends it, or is kept in it)
+                if (htmlEnd.Length > 0 || text.Trim().Length > 0)
+                {
+                    Lines.Add(new MarkdownLine(number, text, LineKind.Html) { InHtmlBlock = true });
+                    if (htmlEnd.Length > 0 && text.Contains(htmlEnd, StringComparison.OrdinalIgnoreCase)) htmlEnd = null;
+                    previous = LineKind.Html;
+                    continue;
+                }
+
+                htmlEnd = null;
+            }
+
+            // A fence: at the margin, in the text of a list item, or in a block quote
+            var quoted = text.TrimStart(' ').StartsWith('>');
+            var unquoted = quoted ? Unquote(text) : text;
+            var columns = !quoted && inList && Indent(text) >= listIndent ? listIndent : 0;
+            if (FenceOpen().Match(StripColumns(unquoted, columns)) is { Success: true } open)
             {
                 // A fence at the margin after a blank line ends a list
                 if (previous == LineKind.Blank && Indent(text) < listIndent) inList = false;
                 fence = open.Groups[1].Value;
                 fenceLine = number;
+                fenceIndent = columns;
+                fenceQuoted = quoted;
                 Lines.Add(new MarkdownLine(number, text, LineKind.Code));
                 previous = LineKind.Code;
                 continue;
@@ -128,12 +155,26 @@ public sealed partial class MarkdownReader
 
             inIndentedCode = false;
 
+            // An HTML block (CommonMark, 4.6): its lines are HTML, not Markdown
+            if (HtmlBlockEnd(text, previous) is { } end)
+            {
+                Lines.Add(new MarkdownLine(number, text, LineKind.Html) { InHtmlBlock = true });
+                var startTag = HtmlBlockStart().Match(text);
+                var rest = startTag.Success ? text[(startTag.Index + startTag.Length)..] : text;
+                htmlEnd = end.Length > 0 && rest.Contains(end, StringComparison.OrdinalIgnoreCase) ? null : end;
+                previous = LineKind.Html;
+                continue;
+            }
+
             var kind = Classify(text, previous, out var level, out var headingText);
             if (kind == LineKind.Heading && level > 0 && headingText == null)
             {
-                // Setext: the line below a paragraph makes the paragraph a heading
+                // Setext: the line below a paragraph makes the paragraph a heading (all its lines are its text)
                 var above = Lines[^1];
-                Lines[^1] = above with { Kind = LineKind.Heading, Level = level, HeadingText = above.Text.Trim() };
+                var first = Lines.Count - 1;
+                while (first > 0 && Lines[first - 1].Kind == LineKind.Text) first--;
+                var paragraph = string.Join(' ', Lines.Skip(first).Select(l => l.Text.Trim()));
+                Lines[^1] = above with { Kind = LineKind.Heading, Level = level, HeadingText = paragraph };
                 Lines.Add(new MarkdownLine(number, text, LineKind.Rule));
                 previous = LineKind.Rule;
                 continue;
@@ -164,6 +205,61 @@ public sealed partial class MarkdownReader
 
         CollectDefinitionsAndAnchors();
         foreach (var line in Lines) FindLinks(line);
+    }
+
+    // What ends an HTML block that starts on the line ("": a blank line), or null when none starts there (CommonMark,
+    // 4.6: comments, script/pre/style/textarea, processing instructions, declarations, CDATA, block-level tags, and a
+    // tag alone on its line that does not interrupt a paragraph)
+    private static string? HtmlBlockEnd(string text, LineKind previous)
+    {
+        if (HtmlBlockStart().Match(text) is not { Success: true } start) return null;
+        var opening = start.Value.TrimStart(' ');
+        if (opening.StartsWith("<!--", StringComparison.Ordinal)) return "-->";
+        if (opening.StartsWith("<?", StringComparison.Ordinal)) return "?>";
+        if (opening.StartsWith("<![CDATA[", StringComparison.Ordinal)) return "]]>";
+        if (opening.StartsWith("<!", StringComparison.Ordinal)) return ">";
+        var name = start.Groups["name"].Value.ToLowerInvariant();
+        if (name is "script" or "pre" or "style" or "textarea" && !opening.StartsWith("</", StringComparison.Ordinal))
+            return $"</{name}>";
+        if (BlockTags.Contains(name)) return string.Empty;
+        return previous != LineKind.Text && LoneTag().IsMatch(text) ? string.Empty : null;
+    }
+
+    private static readonly HashSet<string> BlockTags = new(StringComparer.Ordinal)
+    {
+        "address", "article", "aside", "base", "basefont", "blockquote", "body", "caption", "center", "col", "colgroup",
+        "dd", "details", "dialog", "dir", "div", "dl", "dt", "fieldset", "figcaption", "figure", "footer", "form",
+        "frame", "frameset", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hr", "html", "iframe", "legend", "li",
+        "link", "main", "menu", "menuitem", "nav", "noframes", "ol", "optgroup", "option", "p", "param", "search",
+        "section", "summary", "table", "tbody", "td", "tfoot", "th", "thead", "title", "tr", "track", "ul",
+    };
+
+    // A line without the "> " of block quotes in front of it
+    private static string Unquote(string text)
+    {
+        var i = 0;
+        while (true)
+        {
+            var j = i;
+            while (j < text.Length && j - i < 3 && text[j] == ' ') j++;
+            if (j >= text.Length || text[j] != '>') return text[i..];
+            i = j + 1;
+            if (i < text.Length && text[i] == ' ') i++;
+        }
+    }
+
+    // A line without the first columns of blank space (as many as there are, up to the given number)
+    private static string StripColumns(string text, int columns)
+    {
+        var i = 0;
+        var taken = 0;
+        while (i < text.Length && taken < columns && text[i] is ' ' or '\t')
+        {
+            taken += text[i] == '\t' ? 4 - taken % 4 : 1;
+            i++;
+        }
+
+        return text[i..];
     }
 
     // The columns of blank space at the start of a line (a tab counts as up to the next multiple of 4)
@@ -260,7 +356,7 @@ public sealed partial class MarkdownReader
 
     private void FindLinks(MarkdownLine line)
     {
-        if (line.Kind is LineKind.Code or LineKind.Blank or LineKind.ReferenceDefinition) return;
+        if (line.Kind is LineKind.Code or LineKind.Blank or LineKind.ReferenceDefinition || line.InHtmlBlock) return;
         var text = BlankCodeSpans(line.Text);
         for (var i = 0; i < text.Length; i++)
         {
@@ -290,7 +386,7 @@ public sealed partial class MarkdownReader
                 Links.Add(new MarkdownLink(line.Number, column, linkText, Destination(text[(close + 2)..end]), null, image));
                 i = end;
             }
-            else if (close + 1 < text.Length && text[close + 1] == '[')
+            else if (close + 1 < text.Length && text[close + 1] == '[' && !IsIndexing(text, i))
             {
                 var labelEnd = text.IndexOf(']', close + 2);
                 if (labelEnd < 0) continue;
@@ -305,6 +401,10 @@ public sealed partial class MarkdownReader
             }
         }
     }
+
+    // "arr[0][1]": brackets right after a name are indexing in prose (or code), not a reference link
+    private static bool IsIndexing(string text, int bracket) =>
+        bracket > 0 && (char.IsLetterOrDigit(text[bracket - 1]) || text[bracket - 1] is '_' or ']' or ')');
 
     // The destination of an inline link: before a title ("…", '…' or (…)), without < >
     private static string Destination(string inside)
@@ -395,6 +495,13 @@ public sealed partial class MarkdownReader
 
     [GeneratedRegex(@"^ {0,3}</?[A-Za-z][A-Za-z0-9-]*(\s|/?>|$)|^ {0,3}<!--")]
     private static partial Regex HtmlStart();
+
+    [GeneratedRegex(@"^ {0,3}(<!--|<\?|<![A-Za-z\[]|</?(?<name>[A-Za-z][A-Za-z0-9-]*)(?=[\s/>]|$))")]
+    private static partial Regex HtmlBlockStart();
+
+    // A complete open or closing tag alone on its line
+    [GeneratedRegex(@"^ {0,3}(<[A-Za-z][A-Za-z0-9-]*(\s+[A-Za-z_:][A-Za-z0-9_.:-]*(\s*=\s*(""[^""]*""|'[^']*'|[^\s""'=<>`]+))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)\s*$")]
+    private static partial Regex LoneTag();
 
     [GeneratedRegex(@"\b(id|name)\s*=\s*[""']([^""']+)[""']")]
     private static partial Regex HtmlId();

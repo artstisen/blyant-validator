@@ -160,6 +160,8 @@ internal static class SelectorChecker
             problems.Add(new(nameToken, Severity.Info, "css.vendor-extension", $"“{display}” is a vendor extension."));
         else if (element && !PseudoElements.Contains(name))
             problems.Add(new(nameToken, Severity.Error, "css.selector.unknown-pseudo-element", $"Unknown pseudo-element “{display}”."));
+        else if (!element && (WebKitScrollbarStates.Contains(name) && AfterVendorPseudoElement(tokens, i) || name.Equals("window-inactive", StringComparison.OrdinalIgnoreCase)))
+            problems.Add(new(nameToken, Severity.Info, "css.vendor-extension", $"“{display}” is a vendor extension."));
         else if (!element && !PseudoClasses.Contains(name))
             problems.Add(new(nameToken, Severity.Error, "css.selector.unknown-pseudo-class",
                 PseudoElements.Contains(name)
@@ -167,6 +169,29 @@ internal static class SelectorChecker
                     : $"Unknown pseudo-class “{display}”."));
 
         return nameToken.Type == CssTokenType.Function ? SkipBlock(tokens, nameIndex) : nameIndex;
+    }
+
+    /// <summary>The pseudo-classes of WebKit's scrollbar pseudo-elements (::-webkit-scrollbar-thumb:horizontal …).</summary>
+    private static readonly HashSet<string> WebKitScrollbarStates = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "horizontal", "vertical", "decrement", "increment", "start", "end", "double-button", "single-button",
+        "no-button", "corner-present",
+    };
+
+    // True when the compound selector before the pseudo-class at i has a vendor pseudo-element (::-webkit-…)
+    private static bool AfterVendorPseudoElement(List<CssToken> tokens, int i)
+    {
+        for (var k = i - 1; k >= 1; k--)
+        {
+            var t = tokens[k];
+            if (t.Type is CssTokenType.Whitespace or CssTokenType.Comma || t.IsDelim('>') || t.IsDelim('+') || t.IsDelim('~'))
+                return false;
+            if (t.Type == CssTokenType.Ident && CssData.IsVendorPrefixed(t.Value) &&
+                tokens[k - 1].Type == CssTokenType.Colon && k >= 2 && tokens[k - 2].Type == CssTokenType.Colon)
+                return true;
+        }
+
+        return false;
     }
 
     private static int CheckAttribute(List<CssToken> tokens, int i, List<SelectorProblem> problems)

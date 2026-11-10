@@ -68,7 +68,8 @@ public sealed partial class AttributeRule : IHtmlRule
 
         var known = HtmlSpec.GlobalAttributes.Contains(name) ||
                     HtmlSpec.Elements.TryGetValue(el, out var own) && own.Contains(name) ||
-                    HtmlSpec.ObsoleteAttributes.ContainsKey("* " + name);
+                    HtmlSpec.ObsoleteAttributes.ContainsKey("* " + name) ||
+                    HtmlSpec.ObsoleteAttributes.ContainsKey(el + " " + name);
         if (!known)
         {
             if (!custom)

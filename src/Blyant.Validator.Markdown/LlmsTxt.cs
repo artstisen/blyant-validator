@@ -102,7 +102,9 @@ internal static partial class LlmsTxt
 
     private static string Shorten(string text) => text.Length > 60 ? text[..60] + "…" : text;
 
-    [GeneratedRegex(@"^\s{0,3}[-*+]\s+\[([^\]]+)\]\(([^)]*)\)(\s*:\s*.*)?\s*$")]
+    // "- [name](url): notes", also indented (a list in a list), with brackets in the name and parentheses in the URL
+    // (one level: "[a [b]]", "https://en.wikipedia.org/wiki/Foo_(bar)")
+    [GeneratedRegex(@"^\s*[-*+]\s+\[((?:[^\[\]]|\[[^\[\]]*\])+)\]\(((?:[^()]|\([^()]*\))*)\)(\s*:\s*.*)?\s*$")]
     private static partial Regex FileListItem();
 
     [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9+.-]*:")]

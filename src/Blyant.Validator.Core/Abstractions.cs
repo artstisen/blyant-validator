@@ -29,9 +29,10 @@ public sealed record SourceDocument(string Path, string Content, DocumentKind Ki
             : System.IO.Path.GetExtension(path).ToLowerInvariant() switch
         {
             ".md" or ".markdown" => DocumentKind.Markdown,
-            ".html" or ".htm" or ".xhtml" => DocumentKind.Html,
+            ".html" or ".htm" => DocumentKind.Html,
             ".css" => DocumentKind.Css,
-            ".xml" or ".svg" or ".rss" or ".atom" => DocumentKind.Xml,
+            // (XHTML is XML: checked for well-formedness, not by the rules of HTML's syntax)
+            ".xml" or ".svg" or ".rss" or ".atom" or ".xhtml" => DocumentKind.Xml,
             _ => DocumentKind.Unknown,
         };
 

@@ -50,14 +50,14 @@ public sealed class XmlValidatorTests : IDisposable
     [Fact]
     public void ExternalEntities_AreNotRead()
     {
-        // An entity that points at a file: the DTD is ignored, so the entity is unknown (an error), and never read
+        // An entity that points at a file: it is never read (there is no resolver), and told about
         var secret = Path.Combine(_dir, "secret.txt");
         File.WriteAllText(secret, "SECRET");
         var xml = $"<!DOCTYPE r [<!ENTITY s SYSTEM \"file:///{secret.Replace('\\', '/')}\">]><r>&s;</r>";
 
         var result = Validate(xml);
         Assert.All(result, d => Assert.DoesNotContain("SECRET", d.Message));
-        Assert.Contains(result, d => d.Code == "xml.not-well-formed");
+        Assert.Contains(result, d => d.Code == "xml.external-entity");
     }
 
     [Fact]

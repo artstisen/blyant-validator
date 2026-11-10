@@ -1,4 +1,5 @@
 ﻿using Blyant.Validator.Core;
+using Blyant.Validator.Html.Parsing;
 
 namespace Blyant.Validator.Html.Rules;
 
@@ -104,18 +105,30 @@ public sealed class ImgAltRule : IHtmlRule
     }
 }
 
-/// <summary>id values must be unique within a document.</summary>
+/// <summary>
+/// id values must be unique within a document. The content of a template is a document of its own (it is copied into
+/// the page by a script), so its IDs are not counted with those of the page
+/// </summary>
 public sealed class DuplicateIdRule : IHtmlRule
 {
     public void Check(HtmlRuleContext context)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var element in context.Root.Descendants())
+        var stack = new Stack<HElement>([context.Root]);
+        while (stack.Count > 0)
         {
-            var id = element.GetAttribute("id")?.Value;
+            var parent = stack.Pop();
+            // (the children in reverse, so they are taken in the order of the file)
+            foreach (var element in parent.Children.OfType<HElement>().Reverse())
+            {
+                if (element.Lower != "template" || element.IsForeign) stack.Push(element);
+            }
+
+            if (parent == context.Root) continue;
+            var id = parent.GetAttribute("id")?.Value;
             if (string.IsNullOrEmpty(id)) continue;
             if (!seen.Add(id))
-                context.Report(element, Severity.Error, "html.duplicate-id", $"Duplicate ID “{id}”.");
+                context.Report(parent, Severity.Error, "html.duplicate-id", $"Duplicate ID “{id}”.");
         }
     }
 }

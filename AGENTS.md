@@ -79,8 +79,11 @@ purpose: a fix in one is carried to the other by hand, when it matters.
 - The program never goes online: formats with a spec (llms.txt, sitemaps) have their rules built in, and URLs are
   only checked for their form. The Markdown validator looks up relative links through a function it is given (the
   program passes `File.Exists`/`Directory.Exists`); without one they are not checked
-- XML is read with .NET's `XmlReader` with DTDs ignored and no resolver (`XmlResolver = null`): a file must never
-  make the validator read other files or the network. `XmlValidatorTests.ExternalEntities_AreNotRead` checks it Reading, writing and printing belong in `Blyant.Validator.Cli`
+- XML is read with .NET's `XmlReader` with no resolver (`XmlResolver = null`): a file must never make the validator
+  read other files or the network. Only the internal DTD subset of the file is read (`DtdProcessing.Parse`, for the
+  entities it declares), and entities may expand to at most `XmlValidator.MaxEntityCharacters` characters.
+  `XmlValidatorTests.ExternalEntities_AreNotRead` and `FalsePositiveTests.EntitiesThatExpandWithoutEnd_AreStopped`
+  check it. Reading, writing and printing belong in `Blyant.Validator.Cli`
 - A formatter changes only layout (whitespace, line breaks, indentation, a missing last `;`), never
   what the document means. Tests check that formatting twice gives the same result as formatting once,
   and that the tokens of a CSS file are the same before and after

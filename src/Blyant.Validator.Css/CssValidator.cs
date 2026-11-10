@@ -57,7 +57,7 @@ public sealed class CssValidator : IValidator
         "charset", "import", "namespace", "media", "supports", "layer", "container", "scope",
         "starting-style", "font-face", "keyframes", "page", "counter-style", "property",
         "font-feature-values", "font-palette-values", "view-transition", "position-try", "color-profile",
-        "document",
+        "document", "function",
     }.ToFrozenSet(Ci);
 
     /// <summary>At-rules whose block holds rules (and, inside a style rule, declarations).</summary>
@@ -248,6 +248,14 @@ public sealed class CssValidator : IValidator
                 return;
             }
 
+            if (name == "scope")
+            {
+                // The rules of @scope are relative to the scope root ("> img", "+ p"), and declarations in it apply to
+                // the root itself (as in a style rule)
+                Walk(at.Block.Items, Context.StyleRule, insideStyleRule: true);
+                return;
+            }
+
             if (GroupAtRules.Contains(name))
             {
                 Walk(at.Block.Items, insideStyleRule ? Context.StyleRule : Context.GroupRule, insideStyleRule);
@@ -265,7 +273,8 @@ public sealed class CssValidator : IValidator
                 case "page":
                     Walk(at.Block.Items, Context.Page, insideStyleRule: false);
                     break;
-                // The descriptors of the other at-rules are not checked yet.
+                // The descriptors of the other at-rules are not checked yet (nor the body of @function, whose
+                // "result" and local variables are not properties).
             }
         }
 
@@ -325,7 +334,9 @@ public sealed class CssValidator : IValidator
             var components = CssComponent.Build(declaration.Value);
             var all = components.SelectMany(c => c.Descendants()).ToList();
 
-            if (all.Any(c => c.Type == CssTokenType.Function && CssData.SubstitutionFunctions.Contains(c.Token.Value)))
+            // (a custom function, --name(…) of @function, is substituted too)
+            if (all.Any(c => c.Type == CssTokenType.Function &&
+                             (CssData.SubstitutionFunctions.Contains(c.Token.Value) || c.Token.Value.StartsWith("--", StringComparison.Ordinal))))
                 return;
 
             var badUnit = false;
@@ -344,8 +355,9 @@ public sealed class CssValidator : IValidator
                 CssData.CssWideKeywords.Contains(components[0].Token.Value))
                 return;
 
-            // In font lists a name like "-apple-system" is just a font name.
-            var fontList = name is "font" or "font-family";
+            // In font lists a name like "-apple-system" is just a font name ("font: -apple-system-body", a system font
+            // keyword alone, is a vendor value)
+            var fontList = name == "font-family" || name == "font" && components.Count > 1;
             if (!fontList && components.Any(c => c.Type is CssTokenType.Ident or CssTokenType.Function && CssData.IsVendorPrefixed(c.Token.Value)))
             {
                 Report(declaration.Value[0].Start, declaration.Value[^1].End, Severity.Info, "css.vendor-extension",

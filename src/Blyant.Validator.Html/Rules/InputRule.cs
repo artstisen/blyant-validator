@@ -37,7 +37,8 @@ public sealed partial class InputRule : IHtmlRule
         ["popovertargetaction"] = "submit image reset button",
         ["autocomplete"] = $"{TextLike} {DateLike} number range color hidden",
         ["checked"] = "checkbox radio",
-        ["dirname"] = "text search",
+        // (dirname applies to more types since 2023: all that submit text, and the buttons)
+        ["dirname"] = $"{TextLike} hidden submit reset button",
         ["list"] = $"text search url tel email {DateLike} number range color",
         ["max"] = $"{DateLike} number range",
         ["min"] = $"{DateLike} number range",
@@ -73,7 +74,7 @@ public sealed partial class InputRule : IHtmlRule
                     continue;
                 }
 
-                if (Problem(type, name, attribute.Value) is { } problem)
+                if (Problem(type, name, attribute.Value, input.HasAttribute("alpha") || input.HasAttribute("colorspace")) is { } problem)
                     context.Report(attribute.ValueStart >= 0 ? attribute.ValueStart : attribute.Start, Severity.Error,
                         "html.bad-value", $"Bad value “{Shorten(attribute.Value)}” for attribute “{name}” on element “input”: {problem}");
             }
@@ -87,7 +88,7 @@ public sealed partial class InputRule : IHtmlRule
     }
 
     // What is wrong with the value of min, max, step or value for the type, or null
-    private static string? Problem(string type, string name, string value)
+    private static string? Problem(string type, string name, string value, bool hasCssColor)
     {
         if (name == "step")
             return value.Trim().Equals("any", StringComparison.OrdinalIgnoreCase) ||
@@ -108,7 +109,8 @@ public sealed partial class InputRule : IHtmlRule
             "time" => IsTime(value) ? null : "Expected a time (as “14:30” or “14:30:15”).",
             "datetime-local" => DateTimeLocal().Match(value) is { Success: true } dt && IsDate(dt.Groups[1].Value) && IsTime(dt.Groups[2].Value)
                 ? null : "Expected a date and time (as “2026-11-10T14:30”).",
-            "color" when name == "value" => ColorValue().IsMatch(value) ? null : "Expected a color as “#rrggbb” (as “#336699”).",
+            // (with alpha or colorspace, a color input takes any CSS color: not checked)
+            "color" when name == "value" && !hasCssColor => ColorValue().IsMatch(value) ? null : "Expected a color as “#rrggbb” (as “#336699”).",
             "url" when name == "value" => Uri.TryCreate(value.Trim(), UriKind.Absolute, out _) ? null : "Expected an absolute URL.",
             _ => null,
         };

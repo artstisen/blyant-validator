@@ -38,13 +38,15 @@ public sealed class ContentModelRule : IHtmlRule
             ["ol"] = "li script template",
             ["menu"] = "li script template",
             ["dl"] = "dt dd div script template",
-            ["table"] = "caption colgroup thead tbody tfoot tr script template",
+            // (a col right in a table is in a colgroup whose start tag is left out)
+            ["table"] = "caption colgroup col thead tbody tfoot tr script template",
             ["thead"] = "tr script template",
             ["tbody"] = "tr script template",
             ["tfoot"] = "tr script template",
             ["tr"] = "td th script template",
             ["colgroup"] = "col template",
-            ["select"] = "option optgroup hr script template button",
+            // (customizable select: a button first, and div around options)
+            ["select"] = "option optgroup hr script template button div noscript",
             ["optgroup"] = "option script template legend",
             ["head"] = "base link meta noscript script style template title",
             ["html"] = "head body",
@@ -67,7 +69,8 @@ public sealed class ContentModelRule : IHtmlRule
             ["caption"] = "table",
             ["colgroup"] = "table",
             ["col"] = "colgroup table",
-            ["option"] = "select datalist optgroup",
+            // (a div in a customizable select can hold options)
+            ["option"] = "select datalist optgroup div",
             ["optgroup"] = "select",
             ["figcaption"] = "figure",
             ["legend"] = "fieldset optgroup",
@@ -169,7 +172,8 @@ public sealed class ContentModelRule : IHtmlRule
         {
             if (child is HText text)
             {
-                if (NoText.Contains(parent.Lower) && !parent.IsForeign && text.Raw.Any(c => !char.IsWhiteSpace(c)))
+                if (NoText.Contains(parent.Lower) && !parent.IsForeign && text.Raw.Any(c => !char.IsWhiteSpace(c)) &&
+                    !(parent.Lower == "html" && BodyOf(parent) is null))
                     context.Report(text.Start + text.Raw.TakeWhile(char.IsWhiteSpace).Count(), Severity.Error,
                         "html.text-not-allowed", $"Text not allowed in element “{parent.Lower}” in this context.");
                 continue;
@@ -187,6 +191,10 @@ public sealed class ContentModelRule : IHtmlRule
     private static bool IsUnchecked(HElement element) =>
         element.Lower.Contains('-') || !HtmlSpec.Elements.ContainsKey(element.Lower);
 
+    private static HElement? BodyOf(HElement html) => html.Children.OfType<HElement>().FirstOrDefault(e => e.Lower == "body");
+
+    private static bool IsHeadContent(string name) => AllowedChildren["head"].Contains(name);
+
     private static void CheckElement(HtmlRuleContext context, HElement element, HElement parent, List<HElement> ancestors)
     {
         var name = element.Lower;
@@ -196,6 +204,11 @@ public sealed class ContentModelRule : IHtmlRule
 
         void NotAllowed() => context.Report(element, Severity.Error, "html.content-model",
             $"Element “{name}” not allowed as child of element “{parentName}” in this context.");
+
+        // The start and end tags of head and body may be left out: in an html without a body element, its other
+        // children are in the head and the body that are left out; before a body, metadata is in the head
+        if (parentName == "html" && BodyOf(parent) is { } body ? element.Start < body.Start && IsHeadContent(name) : parentName == "html")
+            parentChecked = false;
 
         if (parentChecked && AllowedChildren.TryGetValue(parentName, out var children) && !children.Contains(name))
         {

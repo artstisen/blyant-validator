@@ -37,7 +37,16 @@ public sealed class HtmlReader
         "address", "article", "aside", "blockquote", "center", "details", "dialog", "dir", "div", "dl",
         "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header",
         "hgroup", "hr", "main", "menu", "nav", "ol", "p", "pre", "search", "section", "table", "ul",
-        "listing", "xmp", "plaintext",
+        "listing", "xmp", "plaintext", "li", "dd", "dt", "summary",
+    }.ToFrozenSet(Ci);
+
+    /// <summary>
+    /// The elements that may be in head. Another start tag, or text, ends a head whose end tag is left out (the
+    /// content then goes in the body, whose start tag may be left out too)
+    /// </summary>
+    private static readonly FrozenSet<string> HeadContent = new[]
+    {
+        "base", "basefont", "bgsound", "link", "meta", "noframes", "noscript", "script", "style", "template", "title",
     }.ToFrozenSet(Ci);
 
     /// <summary>Named character references that the parser also takes without a semicolon (a common subset).</summary>
@@ -101,6 +110,15 @@ public sealed class HtmlReader
             _pos++;
             while (_pos < _s.Length && !(_s[_pos] == '<' && IsMarkupStart(_pos))) _pos++;
             var text = _s[start.._pos];
+            if (Current.Lower == "head" && !Current.IsForeign && text.AsSpan().IndexOfAnyExcept(" \t\n\r\f") is var solid and >= 0)
+            {
+                // Text ends a head whose end tag is left out: the whitespace before it stays in the head
+                Current.Children.Add(new HText(text[..solid]) { Start = start });
+                CloseHead(start + solid);
+                start += solid;
+                text = text[solid..];
+            }
+
             Current.Children.Add(new HText(text) { Start = start });
             CheckText(text, start);
         }
@@ -191,7 +209,8 @@ public sealed class HtmlReader
         }
 
         var close = _s.IndexOf("-->", _pos + 4, StringComparison.Ordinal);
-        var bangClose = _s.IndexOf("--!>", _pos + 4, StringComparison.Ordinal);
+        var searchEnd = close < 0 ? _s.Length : close + 3;
+        var bangClose = _s.IndexOf("--!>", _pos + 4, searchEnd - (_pos + 4), StringComparison.Ordinal);
         if (bangClose >= 0 && (close < 0 || bangClose < close))
         {
             Error(bangClose, "comment-bang", "Comment ended with “--!>”. Use “-->” to end a comment.");
@@ -209,6 +228,7 @@ public sealed class HtmlReader
 
         var raw = _s[start.._pos];
         var nested = raw.IndexOf("<!--", 4, StringComparison.Ordinal);
+        if (nested >= 0 && nested + 4 < raw.Length && raw[nested + 4] == '>') nested = -1;
         if (nested >= 0) Error(start + nested, "nested-comment", "Saw “<!--” within a comment. Probable cause: Nested comment (not allowed).");
         Current.Children.Add(new HVerbatim(raw, false) { Start = start });
     }
@@ -374,7 +394,7 @@ public sealed class HtmlReader
 
         if (lower is "html" or "head" or "body" && !_seenStructural.Add(lower))
             Error(start, "duplicate-structure", $"Start tag “{name}” seen but an element of the same type was already open.");
-        if (lower is "a" or "form" or "button" && _stack.Any(e => e.Lower == lower))
+        if (lower is "a" or "form" or "button" && !foreign && _stack.Any(e => e.Lower == lower && !e.IsForeign))
             Error(start, "nested-element", $"Start tag “{name}” seen but an element of the same type was already open.");
 
         element.ContentStart = _pos;
@@ -524,13 +544,19 @@ public sealed class HtmlReader
                 CloseUpTo(["dt", "dd"], ["dl"], at);
                 break;
             case "tr":
-                CloseUpTo(["tr"], ["table", "thead", "tbody", "tfoot"], at);
+                CloseUpTo(["tr", "colgroup", "caption"], ["table", "thead", "tbody", "tfoot"], at);
+                break;
+            case "colgroup":
+                CloseUpTo(["colgroup", "caption"], ["table"], at);
+                break;
+            case "col":
+                CloseUpTo(["caption"], ["table", "colgroup"], at);
                 break;
             case "td" or "th":
                 CloseUpTo(["td", "th"], ["tr", "table"], at);
                 break;
             case "thead" or "tbody" or "tfoot":
-                CloseUpTo(["thead", "tbody", "tfoot"], ["table"], at);
+                CloseUpTo(["thead", "tbody", "tfoot", "colgroup", "caption"], ["table"], at);
                 break;
             case "option":
                 CloseUpTo(["option"], ["select", "datalist", "optgroup"], at);
@@ -543,6 +569,10 @@ public sealed class HtmlReader
                 break;
             case "body":
                 CloseUpTo(["head"], ["html"], at);
+                break;
+            default:
+                // Any other start tag ends a head whose end tag is left out
+                if (!HeadContent.Contains(name) && Current.Lower == "head" && !Current.IsForeign) CloseHead(at);
                 break;
         }
 
@@ -559,6 +589,13 @@ public sealed class HtmlReader
                 if (HtmlNames.Block.Contains(lower) || HtmlNames.Container.Contains(lower) || lower == "button") return;
             }
         }
+    }
+
+    // Ends the head (its end tag may be left out)
+    private void CloseHead(int at)
+    {
+        Current.ContentEnd = at;
+        _stack.RemoveAt(_stack.Count - 1);
     }
 
     private void CloseUpTo(string[] targets, string[] boundaries, int at)

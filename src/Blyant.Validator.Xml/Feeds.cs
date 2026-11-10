@@ -270,10 +270,12 @@ internal static partial class Feeds
                     $"Element “{person.Name.LocalName}” is missing required child element “name”.");
     }
 
-    // RFC 3339: 2026-11-10T14:30:00Z, 2026-11-10T14:30:00.5+01:00
+    // RFC 3339: 2026-11-10T14:30:00Z, 2026-11-10T14:30:00.5+01:00. A leap second (":60") is valid there, though .NET
+    // does not take it: it is checked as second 59
     private static bool IsRfc3339(string value) =>
         Rfc3339().IsMatch(value) &&
-        DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
+        DateTimeOffset.TryParse(value.Length > 19 && value[17..19] == "60" ? value[..17] + "59" + value[19..] : value,
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
 
     #endregion
 

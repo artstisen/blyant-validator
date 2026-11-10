@@ -222,10 +222,12 @@ SVG and MathML inside a page are only checked for parse errors.
 
 ### XML
 
-- **Well-formedness** of `.xml` and `.svg` files (XML 1.0): unclosed and mismatched tags, duplicate attributes,
-  a bare `&`, HTML entities such as `&nbsp;` that XML does not know, more than one root element … The first
-  mistake is reported, at its line and column (XML stops there, as browsers do). DTDs are ignored and nothing outside
-  the file is ever loaded.
+- **Well-formedness** of `.xml`, `.svg` and `.xhtml` files (XML 1.0): unclosed and mismatched tags, duplicate
+  attributes, a bare `&`, HTML entities such as `&nbsp;` that XML does not know, more than one root element … The
+  first mistake is reported, at its line and column (XML stops there, as browsers do). Entities declared in the file
+  itself (its internal DTD subset, as Adobe Illustrator's SVG has) are known; nothing outside the file is ever
+  loaded: an entity of an external DTD is a warning (`xml.undeclared-entity`), as is an entity declared to be in
+  another file (`xml.external-entity`), and entities may expand to at most 10,000,000 characters.
 - **Sitemaps** (`urlset` and `sitemapindex`), by the rules of [sitemaps.org](https://www.sitemaps.org/protocol.html):
   the namespace, UTF-8, a required `<loc>` with an absolute http(s) URL of at most 2,048 characters, `lastmod` as a
   W3C date (`2026-11-10`), `changefreq` and `priority` values, unknown or repeated elements, at most 50,000 entries

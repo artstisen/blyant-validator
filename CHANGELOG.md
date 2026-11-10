@@ -28,8 +28,29 @@
 - XML formatting: SVG text (`<text>`, `<tspan>`), XHTML and elements with only whitespace in them are kept as written
 - Line endings: a file with CR line endings (old Mac) was written with LF; the line ending a file mostly uses is kept
 - A 4-digit year below 100 in an RSS date was read as a 2-digit year
+- False errors on valid HTML:
+  - pages that leave out the optional `<head>`, `</head>` and `<body>` tags (as minifiers write them);
+  - `&quot;` and other character references in a `style` attribute, which are now decoded before the CSS is checked;
+  - `<col>` right in a `<table>`, and `</colgroup>` or `</caption>` left out;
+  - an `<a>` in SVG inside an `<a>`, a comment ending in `<!-->`, and a `<p>` closed by `<li>`, `<dt>`, `<dd>` or
+    `<summary>`;
+  - IDs inside a `<template>` counted with those of the page, and CSS in a CDATA section of an SVG `<style>`;
+  - `table background` reported twice;
+  - newer HTML: `dirname` on more input types, CSS colors in `<input type=color alpha>`, and the customizable
+    `<select>` (a `<button>`, and `<div>` around options)
+- False errors on valid XML: entities declared in the file itself (every Adobe Illustrator SVG); an entity of an
+  external DTD (as `&nbsp;` in XHTML) is now a warning, `xml.undeclared-entity`. `.xhtml` files are XML, and no
+  longer checked by the rules of HTML's syntax. Atom dates with a leap second (`23:59:60`)
+- False warnings on valid Markdown: HTML blocks over several lines (a comment, `<details>` …) were read as Markdown,
+  fences in list items or block quotes were not seen, `arr[0][1]` was a reference link, and a setext heading over
+  several lines had the anchor of its last line only. llms.txt: links with brackets in their name or parentheses in
+  their URL, and lists in lists
+- False errors on valid CSS: relative selectors and declarations in `@scope`, WebKit's scrollbar pseudo-classes
+  (`::-webkit-scrollbar-thumb:horizontal`), `font: -apple-system-body`, the old names `color-adjust` and
+  `inset-area`, `@function` and calls of custom functions (`--double(4px)`)
 
 ### Added
+- XML: an entity declared to be in another file is a warning, `xml.external-entity` (it is never read)
 - TUI: `:number` and `:nonumber` number the rows of the panes, kept in `settings.ini` (`filenumbers`), and a count in
   front of a key moves that many rows or goes to that row (`5j`, `5k`, `12gg`, `12G`), as in Blyant's file browser
 - Fragment mode, for HTML written to be inserted in a page made elsewhere (a CMS article): `validate --fragment`,
