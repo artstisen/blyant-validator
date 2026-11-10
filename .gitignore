@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# The template of the read-me of the releases (not a build folder)
+!/docs/release/

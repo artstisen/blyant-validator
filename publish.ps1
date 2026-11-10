@@ -9,16 +9,21 @@
 # Each version is also packed for a release in "publish/release", named by the version: a zip for Windows and the
 # portable version (BlyantValidator-0.4.0-win-x64.zip), and a tar.gz for Linux and macOS
 # (BlyantValidator-0.4.0-linux-x64.tar.gz), where the program is marked as one that can be run. Each has a folder
-# "BlyantValidator" with the program, README.md, CHANGELOG.md, CREDITS.md, THIRD-PARTY-NOTICES.md and LICENSE.
+# "BlyantValidator" with the program, README.txt and LICENSE. README.txt is made from docs/release/README.txt: a short
+# read-me for the downloaded program, with the credits and the notices of the licences (the .NET runtime is in the
+# program file), and the address of the repository on GitHub (from the Git remote "origin"). It has LF line endings
+# in the versions for Linux and macOS, CRLF in the others.
 # The tests are run first (nothing is published when one fails), and the version must be the same in the places it
 # is told: Version in Directory.Build.props, and the status line of README.md.
 # The archives of a version that is published again are replaced, also those of an earlier version.
 # Usage:  ./publish.ps1                     (all versions)
 #         ./publish.ps1 portable,win-x64    (one or more versions)
 #         ./publish.ps1 -SkipTests          (without running the tests first)
+#         ./publish.ps1 -Repository https://github.com/owner/name   (the address for README.txt, without a remote)
 param(
     [string[]]$Platforms = @("portable", "win-x64", "win-arm64", "linux-x64", "linux-arm64", "linux-arm", "osx-x64", "osx-arm64"),
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [string]$Repository
 )
 
 $ErrorActionPreference = "Stop"
@@ -28,9 +33,9 @@ $release = Join-Path $output "release"
 $known = @("portable", "win-x64", "win-arm64", "linux-x64", "linux-arm64", "linux-arm", "osx-x64", "osx-arm64")
 $program = "blyant-validator"
 $folderName = "BlyantValidator"
-# The files that go with the program in every archive (LICENSE and THIRD-PARTY-NOTICES.md: the licences must go with
-# every copy)
-$documents = @("README.md", "CHANGELOG.md", "CREDITS.md", "THIRD-PARTY-NOTICES.md", "LICENSE")
+# The files that go with the program in every archive, besides README.txt (the licence must go with every copy)
+$documents = @("LICENSE")
+$readmeTemplate = Join-Path $PSScriptRoot "docs/release/README.txt"
 
 # "portable,win-x64" as one argument (as when started with pwsh -File) is a list too
 $Platforms = @($Platforms | ForEach-Object { $_ -split "," } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
@@ -38,8 +43,17 @@ foreach ($platform in $Platforms) {
     if ($known -notcontains $platform) { throw "Unknown version: '$platform' (known: $($known -join ', '))" }
 }
 
-foreach ($document in $documents) {
+foreach ($document in $documents + @("docs/release/README.txt")) {
     if (-not (Test-Path (Join-Path $PSScriptRoot $document))) { throw "$document is missing: nothing was published" }
+}
+
+# The address of the repository on GitHub, for README.txt: from the remote "origin" (an SSH or HTTPS address of
+# a/b.git becomes https://github.com/a/b)
+$repository = $Repository
+if (-not $repository) {
+    $remote = git -C $PSScriptRoot remote get-url origin 2>$null
+    if (-not $remote) { throw "There is no Git remote 'origin' (the repository on GitHub, told in README.txt): add it, or give -Repository" }
+    $repository = ($remote.Trim() -replace '^git@github\.com:', 'https://github.com/') -replace '\.git$', ''
 }
 
 # The version (0.4.0), for the names of the archives: the same in Directory.Build.props and in README.md
@@ -48,6 +62,14 @@ $version = $props.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-
 $readme = [regex]::Match((Get-Content (Join-Path $PSScriptRoot "README.md") -Raw), 'Status: [^(]*\(([0-9][^)]*)\)').Groups[1].Value
 if (-not $version -or $readme -ne $version) {
     throw "The version is not the same everywhere: Directory.Build.props $version, README.md $readme"
+}
+
+# README.txt with the version and the address filled in. It is read on its own, next to the program: no images or
+# links to files of the repository (a Markdown link or image), and nothing left to fill in
+$readmeText = (Get-Content $readmeTemplate -Raw) -replace "`r`n", "`n"
+$readmeText = $readmeText.Replace("{version}", $version).Replace("{repository}", $repository)
+if ($readmeText -match '\{[a-z]+\}' -or $readmeText -match '\]\(' -or $readmeText -match '!\[') {
+    throw "docs/release/README.txt has a placeholder that is not known, or a Markdown link or image: nothing was published"
 }
 
 if (-not $SkipTests) {
@@ -137,6 +159,10 @@ foreach ($platform in $Platforms) {
     }
     if ($LASTEXITCODE -ne 0) { throw "Publishing $platform failed" }
     foreach ($document in $documents) { Copy-Item (Join-Path $PSScriptRoot $document) $folder }
+    # (LF for Linux and macOS, CRLF for Windows and the portable version)
+    $newline = if ($platform -like "linux-*" -or $platform -like "osx-*") { "`n" } else { "`r`n" }
+    [System.IO.File]::WriteAllText((Join-Path $folder "README.txt"), $readmeText.Replace("`n", $newline),
+        [System.Text.UTF8Encoding]::new($false))
     New-ReleaseArchive $platform $folder
 }
 

@@ -162,7 +162,13 @@ GitHub workflow `Build and test` builds and tests it on all three systems.
   names of the archives in its section "Installation": change them together. `publish.ps1` stops when the first two
   differ
 - `publish.ps1` builds the release versions in `publish` (not in Git), as Blyant's: it runs the tests first, and packs
-  each version for the releases page in `publish/release`, with `README.md`, `CHANGELOG.md`, `CREDITS.md`,
-  `THIRD-PARTY-NOTICES.md` and `LICENSE` next to the program (the licences must go with every copy)
+  each version for the releases page in `publish/release`, with `README.txt` and `LICENSE` next to the program (the
+  licences must go with every copy). The address of the repository for `README.txt` is taken from the Git remote
+  `origin` (or `-Repository`)
+- `README.txt` of the releases is made from `docs/release/README.txt`: a short read-me for the program as it is
+  downloaded, in plain text of at most 79 columns, with no images or links to the files of the repository (`publish.ps1`
+  stops on a Markdown link or image, or an unknown `{placeholder}`). It tells the commands, the keys of the file browser,
+  the credits and the notices of the licences: keep it current with `README.md`, `CREDITS.md` and
+  `THIRD-PARTY-NOTICES.md` (a command or key added or changed, a credit or a licence)
 - A release is made in this order: push `main`, wait until `Build and test` has passed on Windows, Linux
   and macOS, and only then tag it and publish the release

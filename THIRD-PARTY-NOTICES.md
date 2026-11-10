@@ -1,6 +1,10 @@
 # Third-party notices
 
-Blyant Validator includes no third-party libraries: it is built with .NET only.
+The source of Blyant Validator uses no third-party libraries: it is built with .NET only. The release builds are
+self-contained: the program file includes the .NET runtime (MIT License, Copyright (c) .NET Foundation and
+Contributors; its own third-party notices are in
+<https://github.com/dotnet/runtime/blob/main/THIRD-PARTY-NOTICES.TXT>). The read-me of the releases
+(`docs/release/README.txt`) has these notices too.
 
 ## Blyant
 

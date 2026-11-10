@@ -29,8 +29,8 @@ See [CREDITS.md](CREDITS.md) for details, and run `blyant-validator credits`.
 
 Download the archive for your system from the [releases page](../../releases), and unpack it in a folder of your
 choosing: it holds a folder _BlyantValidator_ with the program, `blyant-validator` (`blyant-validator.exe` on
-Windows), and this read-me, the changelog, the credits and the licences. The program is a single file with the .NET
-runtime in it: nothing else has to be installed.
+Windows), a short read-me (`README.txt`, with the keys, the commands, the credits and the notices of the licences)
+and the licence. The program is a single file with the .NET runtime in it: nothing else has to be installed.
 
 | System | Archive |
 | --- | --- |
@@ -396,7 +396,9 @@ The release versions are built by `publish.ps1` (PowerShell 7.3 or later), as Bl
 first, checks that the version is the same in `Directory.Build.props` and in the status line of this read-me, and
 builds a self-contained single file for Windows, Linux and macOS (x64 and ARM), and the portable version, in
 _publish_. Each is also packed for the [releases page](../../releases) in _publish/release_: a zip for Windows and the
-portable version, and a tar.gz for Linux and macOS (where the program is marked as one that can be run).
+portable version, and a tar.gz for Linux and macOS (where the program is marked as one that can be run), with
+`README.txt` (made from `docs/release/README.txt`, with the version and the address of the repository filled in) and
+`LICENSE` next to the program.
 
 ```
 ./publish.ps1                     (all versions)

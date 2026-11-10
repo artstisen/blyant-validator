@@ -94,6 +94,9 @@
 - Release builds: `publish.ps1` builds a self-contained single file for Windows (x64, ARM64), Linux (x64, ARM64,
   ARM) and macOS (Intel, Apple silicon), and a portable version, packed as zip and tar.gz for the releases page, as
   Blyant's. README has a section "Installation"
+- The release archives hold the program, `LICENSE` and a short `README.txt` of their own (`docs/release/README.txt`):
+  the commands, the keys, the credits and the notices of the licences, also of the .NET runtime that the program file
+  includes, without the screenshots and links of the repository's files
 - A licence: MIT (`LICENSE`), as Blyant's
 - README: a section "Standards", telling what HTML, CSS, XML, sitemaps, feeds, Markdown and llms.txt are checked
   against, and when the rules were last brought up to date
