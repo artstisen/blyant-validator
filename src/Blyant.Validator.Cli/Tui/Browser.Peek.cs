@@ -88,8 +88,13 @@ internal static partial class Browser
         var result = _results.Last(item.Path);
         var summary = result == null || _results.IsPending(item.Path) ? "checking..."
             : result.Failure != null ? "could not be checked"
-            : result.Errors + result.Warnings == 0 ? "no problems"
-            : Plural(result.Errors, "error") + ", " + Plural(result.Warnings, "warning");
+            : (result.Errors, result.Warnings) switch
+            {
+                (0, 0) => "no problems",
+                (_, 0) => Plural(result.Errors, "error"),
+                (0, _) => Plural(result.Warnings, "warning"),
+                _ => Plural(result.Errors, "error") + ", " + Plural(result.Warnings, "warning"),
+            };
         return item.Name + " - " + summary;
     }
 

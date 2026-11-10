@@ -9,6 +9,8 @@ but it works on its own too.
 >
 > Blyant Validator has no dependencies besides .NET.
 
+![The TUI: the files of a site with their results, and the peek of a file going from problem to problem](docs/screenshots/peek-problem.svg)
+
 ## Credits
 
 Blyant Validator is modelled on two excellent open-source projects:
@@ -21,7 +23,7 @@ See [CREDITS.md](CREDITS.md) for details, and run `blyant-validator credits`.
 ## Usage
 
 ```
-blyant-validator                          (the TUI, in the current directory)
+blyant-validator                          (the TUI, where it was left last)
 blyant-validator browse   [folder] [options]
 blyant-validator validate <paths>... [options]
 blyant-validator format   <paths>... [options]
@@ -33,15 +35,7 @@ blyant-validator credits
 Started without a command (or with `browse`), Blyant Validator is a file browser in the terminal, in the style of
 the file browser of the Blyant editor: one or two panes, and a peek of the selected file in the other pane.
 
-```
- FILES                                   Blyant Validator
- ~/sites/blog                          | about.html - 3 errors, 1 warning
--- PANE 1 -----------------------------+-- PEEK --------------------------
--> ..                                  |     10   <main>
-   css/                                | E   11     <div><span>Welcome
-   about.html          3E 1W    2.1 KB |     12     </div>
-   index.html          ok       1.4 KB |     13   </main>
-```
+![The files of a site in two panes, with the result of each file](docs/screenshots/file-browser.svg)
 
 - Each HTML and CSS file shows its result: `ok`, the number of errors and warnings (`3E 1W`), `...` while it is
   checked, or `failed`. Files are checked in the background, and checked again when they change on disk, so the
@@ -63,7 +57,22 @@ It remembers where it was: the folder and the selected file of both panes, the p
 or two panes were shown. `blyant-validator` (or `browse` without a folder) starts there again; `browse <folder>`
 shows that folder in the pane with the focus. The first time, it starts in the current directory. This is kept in
 `settings.ini`, in Blyant's format, in the folder `data` next to the program (or, if that folder cannot be written
-to, in `Blyant Validator/data` in your application data folder).
+to, in `Blyant Validator/data` in your application data folder). As in Blyant, a folder `data` with a
+`settings.ini` in the directory the program is started in is used instead, for a portable setup.
+
+### Screenshots
+
+The screenshots are of the real program, made with [tools/screenshots.py](tools/screenshots.py) from a made-up
+site with mistakes on purpose, as Blyant's are.
+
+| | |
+|---|---|
+| ![The files of a site with their results](docs/screenshots/file-browser.svg) | ![The peek of a file](docs/screenshots/peek.svg) |
+| The files of a site in two panes, each with its result | `V`: the peek, with the lines that have problems marked and each error's place highlighted |
+| ![From problem to problem](docs/screenshots/peek-problem.svg) | ![The problems of a file](docs/screenshots/problems.svg) |
+| `Tab` into the peek, and `n` to the next problem: its message on the bottom line | `P`: the problems of the file; `Enter` shows one in the file |
+| ![A style sheet in the peek](docs/screenshots/css.svg) | ![Formatting a file](docs/screenshots/format.svg) |
+| A style sheet: an unknown property and an unknown unit | `F`: formatting a file, after asking |
 
 Paths can be files or directories. Directories are searched for `.html`, `.htm`, `.xhtml` and `.css` files;
 add `--recursive` to include subdirectories.

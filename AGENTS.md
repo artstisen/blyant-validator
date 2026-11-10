@@ -65,6 +65,9 @@ purpose: a fix in one is carried to the other by hand, when it matters.
 - The settings file is `settings.ini` in the data directory, in Blyant's format (`[SETTINGS]` and `name=value` read
   by name). A new setting is read and written by name in `Settings.cs`, and tested in `SettingsTests`
 - The icon (`BlyantValidator.ico` and `.svg`) is drawn by `tools/icon.py`: change the script, not the files
+- The screenshots in `docs/screenshots` are made by `tools/screenshots.py` (Windows, with the Python packages
+  `pyte` and `pywinpty`), from the release build and a made-up site in `C:\Sites`. When a screen changes, run it
+  again in the same change. Like Blyant's, it never changes a `C:\Sites` that it did not make
 - Text from files (names, lines) is written with `TextMetrics.Printable` or `Tools.TruncateString`, so a file can
   never send escape codes to the terminal
 - `PeekDocument`, `ResultStore` and the command line classes do not touch the console, and are tested. The drawing

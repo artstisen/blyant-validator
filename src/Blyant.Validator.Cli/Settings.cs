@@ -34,11 +34,14 @@ internal sealed class Settings
     private static string? _dataDirectory;
 
     /// <summary>
-    /// The data directory: "data" next to the program, so the same settings are used wherever it is started from. If
-    /// the program directory cannot be written to (a program installed for all users), "Blyant Validator/data" in
-    /// the user's application data is used. As in Blyant
+    /// The data directory, chosen as Blyant chooses its own: "data" in the directory the program is started in, if
+    /// there is one there with a settings file in it (a portable setup, and the screenshots of tools/screenshots.py);
+    /// else "data" next to the program, so the same settings are used wherever it is started from. If the program
+    /// directory cannot be written to (a program installed for all users), "Blyant Validator/data" in the user's
+    /// application data is used
     /// </summary>
-    internal static string DataDirectory => DirectoryOverride ?? (_dataDirectory ??= FindDataDirectory());
+    internal static string DataDirectory => DirectoryOverride ?? (_dataDirectory ??=
+        File.Exists(Path.Combine(DataDirectoryName, FileName)) ? Path.GetFullPath(DataDirectoryName) : FindDataDirectory());
 
     internal static string FilePath => Path.Combine(DataDirectory, FileName);
 
