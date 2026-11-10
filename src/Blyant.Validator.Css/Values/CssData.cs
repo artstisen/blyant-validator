@@ -141,6 +141,9 @@ public static class CssData
             ["timeline-function"] = new[] { "scroll", "view" }.ToFrozenSet(Ci),
             ["palette-mix-function"] = new[] { "palette-mix" }.ToFrozenSet(Ci),
             ["path-function"] = new[] { "path", "shape" }.ToFrozenSet(Ci),
+            ["ray-function"] = new[] { "ray" }.ToFrozenSet(Ci),
+            ["superellipse-function"] = new[] { "superellipse" }.ToFrozenSet(Ci),
+            ["dynamic-range-limit-mix-function"] = new[] { "dynamic-range-limit-mix" }.ToFrozenSet(Ci),
         }.ToFrozenDictionary(Ci);
 
     public static readonly FrozenSet<string> NamedColors = new[]

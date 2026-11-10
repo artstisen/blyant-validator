@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Added
+- CSS: grammars for the last 27 properties: anchor positioning (`position-area`, `position-try`,
+  `position-try-fallbacks`), motion paths (`offset-*`), `mask-border-*`, `animation-range`, `corner-shape` and more.
+  All properties but the non-standard `font-smooth` have their values checked
 - HTML: sectioning (`header`/`footer` nesting, `address`, `main` placement), elements not allowed inside
   themselves, labels with more than one control or a mismatched `for`, `hgroup`, and empty headings (warning)
 - HTML: the attributes of `<input>` per type, and the form of `min`, `max`, `step` and `value` per type

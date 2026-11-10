@@ -128,10 +128,10 @@ replaces them safely (a temporary file is written first), keeping their encoding
   “background-color”?"). Vendor-prefixed names (`-webkit-…`) are reported as info.
 - **Property values**, checked against grammars written in the notation of the CSS specifications
   (`src/Blyant.Validator.Css/Data/properties.txt`), with ranges such as “no negative padding”. Values
-  that use `var()`, `env()` or `attr()` are not checked: a false error is worse than a missed one. 469 of the
-  497 known properties have a grammar, grid templates (`repeat()`, `minmax()`, line names, `subgrid`),
-  `content`, masks, SVG strokes and scroll-driven animations included; the rest are new or rare features
-  whose values are not checked yet (anchor positioning areas, `offset-*`, `mask-border-*` …).
+  that use `var()`, `env()` or `attr()` are not checked: a false error is worse than a missed one. All 497 known
+  properties have a grammar but the non-standard `font-smooth`: grid templates (`repeat()`, `minmax()`, line names,
+  `subgrid`), `content`, masks and mask borders, SVG strokes, motion paths (`offset-*`), scroll-driven animations and
+  anchor positioning (`position-area`, `position-try-fallbacks`) included.
 - **Units**: unknown units (`10pz`) are errors everywhere.
 - **Selectors**: unknown pseudo-classes and pseudo-elements, IDs starting with a digit, misplaced
   combinators, empty selectors. Nested rules (CSS Nesting) are supported.
@@ -305,7 +305,7 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] CSS: grammars for grid templates, generated content, masks, SVG and more (469 of 497 properties)
 - [x] HTML: content-model rules, attribute checks, obsolete elements
 - [x] HTML: check `<style>` elements and `style` attributes with the CSS validator
-- [ ] CSS: grammars for the last new features (anchor positioning areas, `offset-*`, `mask-border-*`)
+- [x] CSS: grammars for the last new features (anchor positioning areas, `offset-*`, `mask-border-*`)
 - [x] HTML: more content models (forms, headings, sectioning), and the attributes of `<input>` per type
 - [x] XML: well-formedness, and sitemaps
 - [x] XML: formatting, and RSS/Atom feeds

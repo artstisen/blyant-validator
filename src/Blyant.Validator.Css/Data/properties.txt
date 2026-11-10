@@ -21,9 +21,9 @@ animation-fill-mode = <single-animation-fill-mode>#
 animation-iteration-count = <single-animation-iteration-count>#
 animation-name = [ none | <keyframes-name> ]#
 animation-play-state = <single-animation-play-state>#
-animation-range
-animation-range-end
-animation-range-start
+animation-range = [ <range-point> <range-point>? ]#
+animation-range-end = <range-point>#
+animation-range-start = <range-point>#
 animation-timeline = [ auto | none | <dashed-ident> | <timeline-function> ]#
 animation-timing-function = <easing-function>#
 appearance = none | auto | base | base-select | textfield | menulist-button | searchfield | textarea
@@ -154,7 +154,7 @@ container-name = none | <custom-ident>+
 container-type = normal | [ size | inline-size ] || scroll-state
 content = normal | none | <content-item>+ [ / [ <string> | <counter-function> ]+ ]?
 content-visibility = visible | auto | hidden
-corner-shape
+corner-shape = <corner-shape-value>{1,4}
 counter-increment = none | <counter-item>+
 counter-reset = none | <counter-item>+
 counter-set = none | <counter-item>+
@@ -166,7 +166,7 @@ direction = ltr | rtl
 display = [ <display-outside> || <display-inside> ] | <display-listitem> | <display-internal>
     | <display-box> | <display-legacy>
 dominant-baseline = auto | text-bottom | alphabetic | ideographic | middle | central | mathematical | hanging | text-top
-dynamic-range-limit
+dynamic-range-limit = standard | no-limit | constrained | <dynamic-range-limit-mix-function>
 empty-cells = show | hide
 field-sizing = fixed | content
 fill = <paint>
@@ -244,7 +244,7 @@ hyphenate-limit-chars = [ auto | <integer> ]{1,3}
 hyphens = none | manual | auto
 image-orientation = from-image | none | [ <angle> || flip ]
 image-rendering = auto | smooth | high-quality | pixelated | crisp-edges | optimizeSpeed | optimizeQuality
-image-resolution
+image-resolution = [ from-image || <resolution> ] && snap?
 initial-letter = normal | <number [1,∞]> <integer [1,∞]> | <number [1,∞]> && [ drop | raise ]?
 inline-size = <width-value>
 inset = <inset-value>{1,4}
@@ -290,13 +290,13 @@ marker-end = none | <url>
 marker-mid = none | <url>
 marker-start = none | <url>
 mask = <mask-layer>#
-mask-border
-mask-border-mode
-mask-border-outset
-mask-border-repeat
-mask-border-slice
-mask-border-source
-mask-border-width
+mask-border = <'mask-border-source'> || <'mask-border-slice'> [ / <'mask-border-width'>? [ / <'mask-border-outset'> ]? ]? || <'mask-border-repeat'> || <'mask-border-mode'>
+mask-border-mode = luminance | alpha
+mask-border-outset = [ <length [0,∞]> | <number [0,∞]> ]{1,4}
+mask-border-repeat = [ stretch | repeat | round | space ]{1,2}
+mask-border-slice = [ <number [0,∞]> | <percentage [0,∞]> ]{1,4} fill?
+mask-border-source = none | <image>
+mask-border-width = [ <length-percentage [0,∞]> | <number [0,∞]> | auto ]{1,4}
 mask-clip = [ <coord-box> | no-clip ]#
 mask-composite = <compositing-operator>#
 mask-image = <mask-reference>#
@@ -321,12 +321,12 @@ mix-blend-mode = <blend-mode> | plus-darker | plus-lighter
 object-fit = fill | contain | cover | none | scale-down
 object-position = <position>
 object-view-box = none | <basic-shape>
-offset
-offset-anchor
+offset = [ <'offset-position'>? [ <'offset-path'> [ <'offset-distance'> || <'offset-rotate'> ]? ]? ] [ / <'offset-anchor'> ]?
+offset-anchor = auto | <position>
 offset-distance = <length-percentage>
-offset-path
-offset-position
-offset-rotate
+offset-path = none | <offset-path-value>
+offset-position = normal | auto | <position>
+offset-rotate = [ auto | reverse ] || <angle>
 opacity = <alpha-value>
 order = <integer>
 orphans = <integer [1,∞]>
@@ -374,16 +374,16 @@ pointer-events = auto | none | visiblePainted | visibleFill | visibleStroke | vi
     | stroke | all | bounding-box
 position = static | relative | absolute | sticky | fixed
 position-anchor = auto | <dashed-ident>
-position-area
-position-try
-position-try-fallbacks
+position-area = none | <position-area-value>
+position-try = <'position-try-order'>? <'position-try-fallbacks'>
+position-try-fallbacks = none | [ [ <dashed-ident> || <try-tactic> ] | <position-area-value> ]#
 position-try-order = normal | most-width | most-height | most-block-size | most-inline-size
 position-visibility = always | [ anchors-valid || anchors-visible || no-overflow ]
 print-color-adjust = economy | exact
 quotes = auto | none | match-parent | [ <string> <string> ]+
 r = <length-percentage>
-reading-flow
-reading-order
+reading-flow = normal | sink | source-order | flex-visual | flex-flow | grid-rows | grid-columns | grid-order
+reading-order = <integer>
 resize = none | both | horizontal | vertical | block | inline
 right = <inset-value>
 rotate = none | <angle> | [ x | y | z | <number>{3} ] && <angle>
@@ -396,7 +396,7 @@ rx = <length-percentage> | auto
 ry = <length-percentage> | auto
 scale = none | [ <number> | <percentage> ]{1,3}
 scroll-behavior = auto | smooth
-scroll-initial-target
+scroll-initial-target = none | nearest
 scroll-margin = <length>{1,4}
 scroll-margin-block = <length>{1,2}
 scroll-margin-block-end = <length>
@@ -408,7 +408,7 @@ scroll-margin-inline-start = <length>
 scroll-margin-left = <length>
 scroll-margin-right = <length>
 scroll-margin-top = <length>
-scroll-marker-group
+scroll-marker-group = none | before | after
 scroll-padding = [ auto | <length-percentage [0,∞]> ]{1,4}
 scroll-padding-block = [ auto | <length-percentage [0,∞]> ]{1,2}
 scroll-padding-block-end = auto | <length-percentage [0,∞]>
@@ -423,7 +423,7 @@ scroll-padding-top = auto | <length-percentage [0,∞]>
 scroll-snap-align = [ none | start | end | center ]{1,2}
 scroll-snap-stop = normal | always
 scroll-snap-type = none | [ x | y | block | inline | both ] [ mandatory | proximity ]?
-scroll-target-group
+scroll-target-group = none | auto
 scroll-timeline = [ [ none | <dashed-ident> ] <timeline-axis>? ]#
 scroll-timeline-axis = <timeline-axis>#
 scroll-timeline-name = [ none | <dashed-ident> ]#
@@ -459,7 +459,7 @@ text-decoration = <'text-decoration-line'> || <'text-decoration-style'> || <'tex
     || <'text-decoration-thickness'>
 text-decoration-color = <color>
 text-decoration-line = <text-decoration-line-value>
-text-decoration-skip
+text-decoration-skip = none | auto | [ objects || [ spaces | [ leading-spaces || trailing-spaces ] ] || edges || box-decoration ]
 text-decoration-skip-ink = auto | all | none
 text-decoration-style = solid | double | dotted | dashed | wavy
 text-decoration-thickness = auto | from-font | <length-percentage>

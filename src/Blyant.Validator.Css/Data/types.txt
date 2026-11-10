@@ -152,3 +152,20 @@
 
 // Timelines (scroll-driven animations)
 <timeline-axis> = block | inline | x | y
+
+// Motion paths, scroll-driven ranges and anchor positioning
+<offset-path-value> = [ <ray-function> | <url> | <basic-shape> ] || <coord-box>
+<timeline-range-name> = cover | contain | entry | exit | entry-crossing | exit-crossing
+<range-point> = normal | <length-percentage> | <timeline-range-name> <length-percentage>?
+<try-tactic> = flip-block || flip-inline || flip-start || flip-x || flip-y
+<position-area-value> = [ left | center | right | span-left | span-right | x-start | x-end | span-x-start
+    | span-x-end | self-x-start | self-x-end | span-self-x-start | span-self-x-end | span-all ]
+    || [ top | center | bottom | span-top | span-bottom | y-start | y-end | span-y-start | span-y-end
+    | self-y-start | self-y-end | span-self-y-start | span-self-y-end | span-all ]
+    | [ block-start | center | block-end | span-block-start | span-block-end | span-all ]
+    || [ inline-start | center | inline-end | span-inline-start | span-inline-end | span-all ]
+    | [ self-block-start | center | self-block-end | span-self-block-start | span-self-block-end | span-all ]
+    || [ self-inline-start | center | self-inline-end | span-self-inline-start | span-self-inline-end | span-all ]
+    | [ start | center | end | span-start | span-end | span-all ]{1,2}
+    | [ self-start | center | self-end | span-self-start | span-self-end | span-all ]{1,2}
+<corner-shape-value> = round | scoop | bevel | notch | square | squircle | <superellipse-function>
