@@ -87,6 +87,8 @@
 - The target framework and the language options are set once, in `Directory.Build.props`
 
 ### Added
+- README: a section "Standards", telling what HTML, CSS, XML, sitemaps, feeds, Markdown and llms.txt are checked
+  against, and when the rules were last brought up to date
 - XML: an entity declared to be in another file is a warning, `xml.external-entity` (it is never read)
 - TUI: `:number` and `:nonumber` number the rows of the panes, kept in `settings.ini` (`filenumbers`), and a count in
   front of a key moves that many rows or goes to that row (`5j`, `5k`, `12gg`, `12G`), as in Blyant's file browser

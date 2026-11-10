@@ -94,6 +94,11 @@ purpose: a fix in one is carried to the other by hand, when it matters.
 - What HTML allows (elements, attributes, values, obsolete features) is kept in `Html/Rules/HtmlSpec.cs`, and
   read by the rules. A new rule gets tests of real-world markup that must pass, and of mistakes it must find
   (`HtmlRuleTests.RealWorldPage_HasNoProblems` is the page that must stay without problems)
+- The "Standards" section of `README.md` tells what each kind of file is checked against, and the month the rules
+  and data were last brought up to date with the standards (HTML and CSS have no versions, so that date is what tells
+  how current the validator is). When the rules or data are brought up to date with newer standards
+  (`HtmlSpec.cs`, `Css/Data/properties.txt` and `types.txt`, the rules of XML, Markdown and llms.txt), change that
+  month in the same change; when a standard is added or another one is followed, change the table too
 - Fragment mode (`--fragment`, `:fragment`) checks HTML as the content of a `<body>`: the rules about the page
   around it (doctype, title, language) are left out of `HtmlRuleSet.Fragment`. A new rule about the page as a whole
   is left out there too

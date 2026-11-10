@@ -177,6 +177,22 @@ gives the same result wherever it runs.
 Fragment mode cannot know the page the fragment goes into: an `id` that is also used by the CMS's template, for
 example, is only found by checking the published page.
 
+## Standards
+
+HTML and CSS no longer have version numbers: both are standards that keep changing. Blyant Validator follows them
+as they are now; its rules and data were last brought up to date in **November 2026**. A newer element, attribute or
+property that is reported is a gap in the validator, not in your file: please tell about it.
+
+| Files | Checked against |
+| --- | --- |
+| HTML | The [HTML Living Standard](https://html.spec.whatwg.org/multipage/) of the WHATWG (what "HTML5" is today), as the Nu Html Checker. There is no older version to choose: an HTML 4.01 or XHTML 1.x page is checked by today's rules, and its old features are reported as obsolete. |
+| CSS | The current CSS modules of the W3C ([an overview](https://www.w3.org/Style/CSS/current-work)): [Syntax Level 3](https://www.w3.org/TR/css-syntax-3/), [Values and Units Level 4](https://www.w3.org/TR/css-values-4/) (the notation of the grammars), [Selectors Level 4](https://www.w3.org/TR/selectors-4/), [Nesting](https://www.w3.org/TR/css-nesting-1/), [Style Attributes](https://www.w3.org/TR/css-style-attr/), and the modules of the properties, up to the newest (anchor positioning, `@scope`, `@function`). Unlike the W3C CSS Validator, there is no profile to choose (as CSS level 2.1). |
+| XML | [XML 1.0](https://www.w3.org/TR/xml/) and [Namespaces in XML](https://www.w3.org/TR/xml-names/): well-formedness, without reading DTDs from outside the file. |
+| Sitemaps | The [sitemap protocol 0.9](https://www.sitemaps.org/protocol.html), with dates in the [W3C Datetime](https://www.w3.org/TR/NOTE-datetime) format. |
+| Feeds | [RSS 2.0](https://www.rssboard.org/rss-specification) (the RSS Advisory Board), with dates as [RFC 822](https://www.rfc-editor.org/rfc/rfc822); [Atom](https://www.rfc-editor.org/rfc/rfc4287) (RFC 4287), with dates as [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339). |
+| Markdown | [CommonMark](https://spec.commonmark.org/), as far as the checks need it, with the heading anchors GitHub makes. |
+| llms.txt | The [llms.txt format](https://llmstxt.org/), built in: nothing is fetched. |
+
 ## What is checked
 
 ### CSS
