@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
 using System.Text;
-using Blyant.Validator.Core;
 
 namespace Blyant.Validator.Css.Syntax;
 
@@ -14,16 +13,11 @@ public sealed record CssSyntaxError(int Offset, string Code, string Message);
 public sealed class CssTokenizer
 {
     private readonly string _s;
-    private readonly LineMap _lines;
     private int _pos;
 
     public List<CssSyntaxError> Errors { get; } = [];
 
-    private CssTokenizer(string source)
-    {
-        _s = source;
-        _lines = new LineMap(source);
-    }
+    private CssTokenizer(string source) => _s = source;
 
     /// <summary>Tokenizes <paramref name="source"/>. The list always ends with an EndOfFile token.</summary>
     public static List<CssToken> Tokenize(string source, out List<CssSyntaxError> errors)
@@ -45,7 +39,7 @@ public sealed class CssTokenizer
     private bool AtEnd(int ahead = 0) => _pos + ahead >= _s.Length;
 
     private CssToken Make(CssTokenType type, int start, string value = "") =>
-        new(type, start, _pos, value) { Position = _lines[start] };
+        new(type, start, _pos, value);
 
     private void Error(int offset, string code, string message) => Errors.Add(new CssSyntaxError(offset, code, message));
 
@@ -142,7 +136,8 @@ public sealed class CssTokenizer
         if (char.IsAsciiDigit(c)) return ConsumeNumeric();
         if (IsNameStart(c)) return ConsumeIdentLike();
 
-        _pos += char.IsSurrogatePair(_s, _pos) ? 2 : 1;
+        // (an ASCII character: all others start a name)
+        _pos++;
         return Make(CssTokenType.Delim, start, _s[start.._pos]);
     }
 

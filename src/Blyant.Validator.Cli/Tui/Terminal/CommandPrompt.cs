@@ -157,8 +157,6 @@ internal sealed class CommandTable(IReadOnlyList<string> names, IReadOnlyList<st
     public IReadOnlyList<string> ShortForms { get; } = shortForms;
     public IReadOnlyDictionary<string, string[]> Arguments { get; } = arguments;
     public CommandHistory History { get; } = new();
-
-    public bool IsKnown(string name) => Names.Contains(name) || ShortForms.Contains(name);
 }
 
 /// <summary>

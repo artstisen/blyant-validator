@@ -73,7 +73,6 @@ public sealed class CssBogus(List<CssToken> tokens) : CssItem
 public sealed class CssBlock(CssToken open)
 {
     public CssToken Open { get; } = open;
-    public CssToken? Close { get; set; }
     public List<CssItem> Items { get; } = [];
 }
 
@@ -172,7 +171,7 @@ public sealed class CssParser
         return count;
     }
 
-    private void Add(List<CssItem> items, CssItem item, (bool BlankLine, bool LineBreak) space)
+    private static void Add(List<CssItem> items, CssItem item, (bool BlankLine, bool LineBreak) space)
     {
         item.BlankLineBefore = items.Count > 0 && space.BlankLine;
         item.SameLineAsPrevious = items.Count > 0 && !space.LineBreak;
@@ -284,15 +283,15 @@ public sealed class CssParser
     {
         var block = new CssBlock(Current);
         _i++;
-        block.Close = ParseBlockItems(block.Items, block.Open);
+        ParseBlockItems(block.Items, block.Open);
         return block;
     }
 
     /// <summary>
-    /// The declarations, nested rules and at-rules of a block, to its <c>}</c> (returned), or to the end of the text
-    /// when there is no opening brace (a style attribute)
+    /// The declarations, nested rules and at-rules of a block, to its <c>}</c>, or to the end of the text when there is
+    /// no opening brace (a style attribute)
     /// </summary>
-    private CssToken? ParseBlockItems(List<CssItem> items, CssToken? open)
+    private void ParseBlockItems(List<CssItem> items, CssToken? open)
     {
         while (true)
         {
@@ -303,14 +302,14 @@ public sealed class CssParser
                 case CssTokenType.EndOfFile:
                     if (open != null)
                         Error(open, "css.parse.unclosed-block", "Block is never closed (missing “}”).", structural: true);
-                    return null;
+                    return;
                 case CssTokenType.RightCurly when open == null:
                     Error(token, "css.parse.unexpected-close", "Unexpected “}”: there is no block to close.", structural: true);
                     _i++;
                     break;
                 case CssTokenType.RightCurly:
                     _i++;
-                    return token;
+                    return;
                 case CssTokenType.Semicolon:
                     _i++;
                     break;

@@ -207,7 +207,7 @@ internal static partial class Feeds
     public static void CheckAtom(string path, XElement feed, List<Diagnostic> diagnostics)
     {
         var report = MakeReporter(path, diagnostics);
-        XName Atom(string name) => XName.Get(name, AtomNamespace);
+        static XName Atom(string name) => XName.Get(name, AtomNamespace);
 
         CheckAtomElement(feed, "feed", FeedSingles, report);
         var feedHasAuthor = feed.Elements(Atom("author")).Any();
@@ -241,7 +241,7 @@ internal static partial class Feeds
     // A feed or an entry: the required elements, those that may appear once, ids, dates, links and people
     private static void CheckAtomElement(XElement element, string name, HashSet<string> singles, Reporter report)
     {
-        XName Atom(string local) => XName.Get(local, AtomNamespace);
+        static XName Atom(string local) => XName.Get(local, AtomNamespace);
         foreach (var required in new[] { "id", "title", "updated" })
             if (element.Element(Atom(required)) == null)
                 report(element, Severity.Error, "atom.missing-element", $"Element “{name}” is missing required child element “{required}”.");

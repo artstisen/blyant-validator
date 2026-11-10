@@ -65,12 +65,12 @@ internal static partial class Browser
                 // The full path of the selected file or directory (on ".." the directory shown) to the clipboard, as
                 // ":path" in Blyant's file browser
                 var selected = SelectedItem() is { Path.Length: > 0 } item ? item.Path : ActivePane.Directory;
-                if (selected.Length > 0) _message = Clipboard.Copy(selected, selected);
+                if (selected.Length > 0) _message = Clipboard.Copy(selected);
                 break;
             case "name":
                 // The name of the selected file or directory to the clipboard, as ":name" in Blyant's file browser
                 var selectedName = SelectedName();
-                if (selectedName.Length > 0) _message = Clipboard.Copy(selectedName, selectedName);
+                if (selectedName.Length > 0) _message = Clipboard.Copy(selectedName);
                 break;
             case "all":
                 // All files are listed, or only HTML, CSS, XML and Markdown
@@ -260,7 +260,7 @@ internal static partial class Browser
             ? $"{changes[0].Before} lines become {changes[0].After}. Only layout changes."
             : "Only layout changes.";
         if (refused.Count > 0) note += $" {refused.Count} cannot be formatted.";
-        if (!ChoiceBox.Confirm("Format", question, note, false)) return;
+        if (!ChoiceBox.Confirm("Format", question, note)) return;
 
         var done = new List<string>();
         foreach (var change in changes)

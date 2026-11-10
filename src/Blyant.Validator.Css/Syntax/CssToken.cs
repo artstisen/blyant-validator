@@ -1,6 +1,4 @@
-﻿using Blyant.Validator.Core;
-
-namespace Blyant.Validator.Css.Syntax;
+﻿namespace Blyant.Validator.Css.Syntax;
 
 /// <summary>Token types from CSS Syntax Level 3 (https://www.w3.org/TR/css-syntax-3/#tokenization), plus comments.</summary>
 public enum CssTokenType
@@ -51,8 +49,6 @@ public sealed record CssToken(CssTokenType Type, int Start, int End, string Valu
 
     /// <summary>True for a hash whose name is a valid identifier (an ID selector).</summary>
     public bool IsIdHash { get; init; }
-
-    public SourcePosition Position { get; init; }
 
     public bool IsDelim(char c) => Type == CssTokenType.Delim && Value.Length == 1 && Value[0] == c;
 

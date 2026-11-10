@@ -24,7 +24,7 @@ public sealed class CssFormatter : IFormatter
     /// Formats a style sheet and returns it without a final line break. Every line is indented by
     /// <paramref name="baseIndent"/> (used for &lt;style&gt; elements in HTML).
     /// </summary>
-    /// <exception cref="FormatException">A block is never closed, or a <c>}</c> has no block.</exception>
+    /// <exception cref="Core.FormatException">A block is never closed, or a <c>}</c> has no block.</exception>
     public static string FormatStylesheet(string css, FormatOptions options, string newline, string baseIndent = "")
     {
         var sheet = CssParser.Parse(css);

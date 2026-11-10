@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using System.Xml;
 using Blyant.Validator.Core;
 
 namespace Blyant.Validator.Xml;

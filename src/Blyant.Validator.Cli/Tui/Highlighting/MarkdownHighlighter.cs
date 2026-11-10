@@ -2,24 +2,15 @@
 namespace Blyant.Validator.Cli.Tui.Highlighting;
 
 /// <summary>
-/// Finds the parts of a line of Markdown that are to be colored in the editor: headings, bold, italic, code,
-/// quotes, list markers, links and rules. It looks at one line at a time and knows nothing about the editor
-/// or the console. The only thing a line depends on is whether it is inside a block of code.
+/// Finds the parts of a line of Markdown that are to be colored in the peek: headings, bold, italic, code,
+/// quotes, list markers, links and rules. It looks at one line at a time and knows nothing about the console. The
+/// only thing a line depends on is whether it is inside a block of code.
 ///
 /// This is a simple reading of Markdown and not a complete one: emphasis inside emphasis, emphasis over
 /// several lines and tables are not found.
 /// </summary>
 internal static class MarkdownHighlighter
 {
-    /// <summary>
-    /// True if the name of a file says it is a Markdown file
-    /// </summary>
-    internal static bool IsMarkdownFile(string fileName)
-    {
-        var extension = Path.GetExtension(fileName).ToLowerInvariant();
-        return extension is ".md" or ".markdown" or ".mdown" or ".mkd";
-    }
-
     /// <summary>
     /// True if a line starts or ends a block of code: it starts with ``` or ~~~
     /// </summary>

@@ -11,8 +11,6 @@ public enum Severity
 /// <summary>A 1-based position in a source file. Zero means "unknown".</summary>
 public readonly record struct SourcePosition(int Line, int Column)
 {
-    public static readonly SourcePosition Unknown = new(0, 0);
-
     public override string ToString() => Line > 0 ? $"{Line}:{Column}" : "?";
 }
 

@@ -1,4 +1,4 @@
-﻿// Copied from Blyant (Editor/HtmlHighlighter.cs), MIT License, same author.
+﻿// Copied from Blyant (Editor/HtmlHighlighter.cs), MIT License, same author. Blyant's PHP is left out.
 namespace Blyant.Validator.Cli.Tui.Highlighting;
 
 /// <summary>
@@ -6,8 +6,6 @@ namespace Blyant.Validator.Cli.Tui.Highlighting;
 /// character entities (like &amp;amp;). What is between &lt;style&gt; and &lt;/style&gt; is read as CSS,
 /// and what is between &lt;script&gt; and &lt;/script&gt; as JavaScript.
 /// XML is read the same way, without the CSS and JavaScript, and with its CDATA sections.
-/// PHP is HTML with code between &lt;?php (or &lt;?=) and ?&gt;, read as PHP (CStyleHighlighter.Php), also over
-/// several lines; a block of PHP inside the value of an attribute or in a script or style is read on its line.
 /// </summary>
 internal static class HtmlHighlighter
 {
@@ -18,10 +16,9 @@ internal static class HtmlHighlighter
     private const int InScript = 3;
     private const int InStyle = 4;
     private const int InCData = 5; // <![CDATA[ text that is not read as tags ]]>
-    private const int InPhp = 6; // <?php code ?>
 
     // The state is kept in one number: where the line starts (3 bits), what the tag it is in starts when it
-    // ends (2 bits: nothing, script or style), and the state of the JavaScript, CSS or PHP it is in (the rest)
+    // ends (2 bits: nothing, script or style), and the state of the JavaScript or CSS it is in (the rest)
     private const int ModeBits = 3;
     private const int PendingBits = 2;
     private const int PendingScript = 1;
@@ -34,9 +31,8 @@ internal static class HtmlHighlighter
     /// <param name="state">The state the line starts in (0 at the start of a document)</param>
     /// <param name="styles">The styles of the line, to fill in</param>
     /// <param name="xml">True for XML: script and style are tags like the others</param>
-    /// <param name="php">True for PHP: the code between &lt;?php and ?&gt; is read as PHP</param>
     /// <returns>The state after the line</returns>
-    internal static int Scan(string line, int state, SyntaxStyle[] styles, bool xml = false, bool php = false)
+    internal static int Scan(string line, int state, SyntaxStyle[] styles, bool xml = false)
     {
         var mode = state & ((1 << ModeBits) - 1);
         var pending = (state >> ModeBits) & ((1 << PendingBits) - 1);
@@ -66,7 +62,6 @@ internal static class HtmlHighlighter
                     inner = mode == InScript
                         ? JavaScriptHighlighter.Scan(line, i, stop, inner, styles)
                         : CssHighlighter.Scan(line, i, stop, inner, styles);
-                    if (php) ColorPhpBlocks(line, i, stop, styles);
                     if (close >= 0)
                     {
                         mode = InText;
@@ -89,34 +84,10 @@ internal static class HtmlHighlighter
                     i = close < 0 ? end : close + 3;
                     break;
                 }
-                case InPhp:
-                {
-                    // To "?>", which goes back to the HTML
-                    inner = CStyleHighlighter.Scan(CStyleHighlighter.Php, line, i, end, inner, styles, out var stop);
-                    if (stop < end)
-                    {
-                        JavaScriptHighlighter.Fill(styles, stop, stop + 2, SyntaxStyle.Keyword);
-                        mode = InText;
-                        inner = 0;
-                        stop += 2;
-                    }
-
-                    i = stop;
-                    break;
-                }
                 case InTag:
-                    i = ScanTag(line, i, styles, ref mode, ref pending, php);
+                    i = ScanTag(line, i, styles, ref mode, ref pending);
                     break;
                 default:
-                    if (php && PhpOpening(line, i) is var opening and > 0)
-                    {
-                        JavaScriptHighlighter.Fill(styles, i, i + opening, SyntaxStyle.Keyword);
-                        mode = InPhp;
-                        inner = 0;
-                        i += opening;
-                        break;
-                    }
-
                     i = ScanText(line, i, styles, ref mode, ref pending);
                     if (xml) pending = 0;
                     break;
@@ -188,87 +159,18 @@ internal static class HtmlHighlighter
         return i + 1;
     }
 
-    // The mark that starts a block of PHP at a place: "<?php", "<?=" or "<?" with a blank space after it (not
-    // "<?xml"), and its length; 0 if there is none
-    private static int PhpOpening(string line, int i)
+    // Where the value of an attribute in quotes ends: after its closing quote
+    private static int ValueEnd(string line, int value)
     {
-        if (i + 1 >= line.Length || line[i] != '<' || line[i + 1] != '?') return 0;
-        if (string.Compare(line, i, "<?php", 0, 5, StringComparison.OrdinalIgnoreCase) == 0) return 5;
-        if (i + 2 < line.Length && line[i + 2] == '=') return 3;
-        return i + 2 == line.Length || char.IsWhiteSpace(line[i + 2]) ? 2 : 0;
-    }
-
-    // The blocks of PHP in a part of a line read as something else (the value of an attribute, a script or a
-    // style): each from its mark to "?>" (or the end of the part), colored on top
-    private static void ColorPhpBlocks(string line, int from, int to, SyntaxStyle[] styles)
-    {
-        SyntaxStyle[]? block = null;
-        var i = from;
-        while (i < to)
-        {
-            var start = line.IndexOf("<?", i, to - i, StringComparison.Ordinal);
-            if (start < 0) return;
-            var opening = PhpOpening(line, start);
-            if (opening == 0)
-            {
-                i = start + 2;
-                continue;
-            }
-
-            // Read on its own (the blocks of the part do not overlap: one array for all), and put in place of what
-            // the part had there
-            block ??= new SyntaxStyle[line.Length];
-            var end = PhpBlock(line, start, opening, to, block);
-            Array.Copy(block, start, styles, start, end - start);
-            i = end;
-        }
-    }
-
-    // A block of PHP from its mark: colored to its "?>" (with it), or to "to" if it does not end before. Where it ends
-    private static int PhpBlock(string line, int start, int opening, int to, SyntaxStyle[] styles)
-    {
-        JavaScriptHighlighter.Fill(styles, start, start + opening, SyntaxStyle.Keyword);
-        CStyleHighlighter.Scan(CStyleHighlighter.Php, line, start + opening, to, 0, styles, out var stop);
-        if (stop >= to) return to;
-        var end = Math.Min(to, stop + 2);
-        JavaScriptHighlighter.Fill(styles, stop, end, SyntaxStyle.Keyword);
-        return end;
-    }
-
-    // Where the value of an attribute in quotes ends: after its closing quote. In PHP a quote or ">" inside a block
-    // of PHP in it is not its end (<a href="<?= $a["x"] ?>">)
-    private static int ValueEnd(string line, int value, bool php)
-    {
-        var quote = line[value];
-        var i = value + 1;
-        while (i < line.Length)
-        {
-            if (php && PhpOpening(line, i) > 0)
-            {
-                var close = line.IndexOf("?>", i, StringComparison.Ordinal);
-                if (close < 0) return line.Length;
-                i = close + 2;
-                continue;
-            }
-
-            if (line[i] == quote) return i + 1;
-            i++;
-        }
-
-        return line.Length;
+        var close = line.IndexOf(line[value], value + 1);
+        return close < 0 ? line.Length : close + 1;
     }
 
     // Inside a tag: the attributes, to the ">" that ends the tag
-    private static int ScanTag(string line, int i, SyntaxStyle[] styles, ref int mode, ref int pending,
-        bool php = false)
+    private static int ScanTag(string line, int i, SyntaxStyle[] styles, ref int mode, ref int pending)
     {
         var c = line[i];
         if (char.IsWhiteSpace(c)) return i + 1;
-        if (php && PhpOpening(line, i) is var opening and > 0)
-        {
-            // A block of PHP among the attributes (<input <?php echo $c; ?> name="x">): its "?>" does not end the tag
-            return PhpBlock(line, i, opening, line.Length, styles);
-        }
 
         if (c == '>' || (c is '/' or '?' && i + 1 < line.Length && line[i + 1] == '>'))
         {
@@ -289,7 +191,7 @@ internal static class HtmlHighlighter
             int stop;
             if (line[value] is '"' or '\'')
             {
-                stop = ValueEnd(line, value, php);
+                stop = ValueEnd(line, value);
             }
             else
             {
@@ -298,7 +200,6 @@ internal static class HtmlHighlighter
             }
 
             JavaScriptHighlighter.Fill(styles, value, stop, SyntaxStyle.String);
-            if (php) ColorPhpBlocks(line, value, stop, styles);
             return stop;
         }
 

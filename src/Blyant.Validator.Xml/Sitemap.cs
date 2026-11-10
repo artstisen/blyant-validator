@@ -13,9 +13,9 @@ namespace Blyant.Validator.Xml;
 internal static partial class Sitemap
 {
     internal const string Namespace = "http://www.sitemaps.org/schemas/sitemap/0.9";
-    internal const int MaxEntries = 50_000;
-    internal const int MaxBytes = 50 * 1024 * 1024;
-    internal const int MaxLocLength = 2048;
+    private const int MaxEntries = 50_000;
+    private const int MaxBytes = 50 * 1024 * 1024;
+    private const int MaxLocLength = 2048;
 
     private static readonly HashSet<string> ChangeFrequencies =
         ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
@@ -121,7 +121,7 @@ internal static partial class Sitemap
     }
 
     // Why a URL cannot be the "loc" of a sitemap, or null
-    internal static string? CheckLoc(string url)
+    private static string? CheckLoc(string url)
     {
         if (url.Length == 0) return "The “loc” element must not be empty.";
         if (url.Length > MaxLocLength) return $"A URL in a sitemap must not be longer than {MaxLocLength} characters.";
@@ -134,7 +134,7 @@ internal static partial class Sitemap
 
     // W3C Datetime (https://www.w3.org/TR/NOTE-datetime): YYYY, YYYY-MM, YYYY-MM-DD, or a date with a time and a
     // time zone (hh:mm, hh:mm:ss or hh:mm:ss.s, then Z or +hh:mm / -hh:mm)
-    internal static bool IsW3cDate(string value)
+    private static bool IsW3cDate(string value)
     {
         var match = W3cDate().Match(value);
         if (!match.Success) return false;
@@ -147,7 +147,7 @@ internal static partial class Sitemap
                Part("tzh", 0) <= 14 && Part("tzm", 0) <= 59;
     }
 
-    internal static bool IsPriority(string value) => Priority().IsMatch(value);
+    private static bool IsPriority(string value) => Priority().IsMatch(value);
 
     private static string Shorten(string text) => text.Length > 60 ? text[..60] + "…" : text;
 

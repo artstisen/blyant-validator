@@ -12,12 +12,10 @@ internal static class Menu
     /// The label of the page at the top left ("FILES")
     /// </summary>
     /// <param name="attention">True to show the label in the attention colors</param>
-    public static void WriteModeLabel(string title, bool attention = false)
+    public static void WriteModeLabel(string title)
     {
         Tools.SetCursor(0, 0);
-        ConsoleColors.SetColors(attention
-            ? ConsoleColors.ColorPreset.AttentionInverted
-            : ConsoleColors.ColorPreset.HighlightInverted);
+        ConsoleColors.SetColors(ConsoleColors.ColorPreset.HighlightInverted);
         Console.Write(" " + Tools.TruncateString(title.ToUpperInvariant(), CaptionRoom, true) + " ");
         ConsoleColors.SetColors(ConsoleColors.ColorPreset.Normal);
     }

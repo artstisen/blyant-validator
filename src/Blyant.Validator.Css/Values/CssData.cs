@@ -1,5 +1,4 @@
 ﻿using System.Collections.Frozen;
-using System.Reflection;
 
 namespace Blyant.Validator.Css.Values;
 
@@ -131,7 +130,6 @@ public static class CssData
             }.ToFrozenSet(Ci),
             ["counter-function"] = new[] { "counter", "counters" }.ToFrozenSet(Ci),
             ["symbols-function"] = new[] { "symbols" }.ToFrozenSet(Ci),
-            ["grid-function"] = new[] { "repeat", "minmax", "fit-content" }.ToFrozenSet(Ci),
             // Generated content: target-counter(), leader() … (and content() of paged media)
             ["target-function"] = new[]
             {

@@ -80,6 +80,12 @@
   (`::-webkit-scrollbar-thumb:horizontal`), `font: -apple-system-body`, the old names `color-adjust` and
   `inset-area`, `@function` and calls of custom functions (`--double(4px)`)
 
+### Changed
+- Code that the validator does not use is removed: the C#, C++, Rust and PHP highlighting and the JSON highlighting
+  copied from Blyant (only JavaScript, in HTML's script elements, is used), and members nothing called (in the
+  boxes, the command line, the clipboard, the CSS tokens and parser). The colors of the peek are the same
+- The target framework and the language options are set once, in `Directory.Build.props`
+
 ### Added
 - XML: an entity declared to be in another file is a warning, `xml.external-entity` (it is never read)
 - TUI: `:number` and `:nonumber` number the rows of the panes, kept in `settings.ini` (`filenumbers`), and a count in

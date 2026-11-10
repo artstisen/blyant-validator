@@ -22,20 +22,16 @@ internal static class ChoiceBox
     /// <summary>
     /// Ask yes or no. Y and N answer at once, j/k select and Enter picks, Esc is no
     /// </summary>
-    /// <param name="warning">True for something that cannot be undone: the question is shown as a warning, and No is
-    /// selected from the start</param>
     /// <returns>True for yes</returns>
-    internal static bool Confirm(string caption, string question, string note, bool warning)
-    {
-        return Pick(caption, question, note, ["Yes", "No"], ["Y", "N"], warning ? 1 : 0, warning) == 0;
-    }
+    internal static bool Confirm(string caption, string question, string note) =>
+        Pick(caption, question, note, ["Yes", "No"], ["Y", "N"], 0) == 0;
 
     /// <summary>
     /// Pick one of a few choices. The key of each choice is shown in front of it and picks it at once
     /// </summary>
     /// <returns>The number of the choice, or -1 if the box was closed with Esc</returns>
-    internal static int Pick(string caption, string question, string note, IReadOnlyList<string> choices,
-        IReadOnlyList<string> keys, int selected, bool warning)
+    private static int Pick(string caption, string question, string note, IReadOnlyList<string> choices,
+        IReadOnlyList<string> keys, int selected)
     {
         var keyWidth = keys.Max(TextMetrics.WidthOf);
         var widest = Math.Max(TextMetrics.WidthOf(caption) + 4,
@@ -46,7 +42,7 @@ internal static class ChoiceBox
         // A blank row, the question, the note, a blank row, the choices and a blank row
         var choiceTop = 2 + questionLines.Count + noteLines.Count;
         var (top, left, width, _) = DrawFrame(caption, inner, choiceTop + choices.Count + 1);
-        WriteText(top, left, questionLines, noteLines, warning, width);
+        WriteText(top, left, questionLines, noteLines, width);
         for (var number = 0; number < choices.Count; number++)
         {
             Tools.SetCursor(top + 1 + choiceTop + number, left + 1);
@@ -88,27 +84,6 @@ internal static class ChoiceBox
                 if (keys[i] == typed) return i;
             }
         }
-    }
-
-    /// <summary>
-    /// Show a message (highlighted) and a note in a box until a key is pressed
-    /// </summary>
-    internal static void Message(string caption, string message, string note)
-    {
-        var inner = Math.Clamp(Math.Max(Math.Max(TextMetrics.WidthOf(caption), TextMetrics.WidthOf(message)) + 4, MinInner),
-            10, Screen.LineWidth - 6);
-        var messageLines = Wrap(message, inner - 4);
-        var noteLines = note.Length == 0 ? [] : Wrap(note, inner - 4);
-        // A blank row, the message, the note, a blank row, the keys and a blank row
-        var keyRow = 2 + messageLines.Count + noteLines.Count;
-        var (top, left, _, _) = DrawFrame(caption, inner, keyRow + 2);
-        WriteText(top, left, messageLines, noteLines, false, inner);
-        Tools.SetCursor(top + 1 + keyRow, left + 3);
-        ConsoleColors.SetColors(ConsoleColors.ColorPreset.Divider);
-        Console.Write(AnyKey);
-        ConsoleColors.SetColors(ConsoleColors.ColorPreset.Normal);
-        Tools.WriteBottomLine(string.Empty, ConsoleColors.ColorPreset.Normal, false);
-        Console.ReadKey(true);
     }
 
     /// <summary>
@@ -219,17 +194,14 @@ internal static class ChoiceBox
         return (top, left, inner, height);
     }
 
-    // The highlighted lines (a question or a message) and the lines below them, from the second row of a box
-    private static void WriteText(int top, int left, List<string> highlighted, List<string> plain, bool warning,
-        int inner)
+    // The highlighted lines (a question) and the lines below them, from the second row of a box
+    private static void WriteText(int top, int left, List<string> highlighted, List<string> plain, int inner)
     {
         var row = top + 2;
         foreach (var line in highlighted)
         {
             Tools.SetCursor(row++, left + 2);
-            ConsoleColors.SetColors(warning
-                ? ConsoleColors.ColorPreset.WarningInverted
-                : ConsoleColors.ColorPreset.AttentionInverted);
+            ConsoleColors.SetColors(ConsoleColors.ColorPreset.AttentionInverted);
             Console.Write(" " + Tools.TruncateString(line, inner - 3, true) + " ");
         }
 

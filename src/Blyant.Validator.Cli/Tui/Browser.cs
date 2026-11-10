@@ -138,7 +138,7 @@ internal static partial class Browser
     // Keep where the panes are, for the next time (settings.ini). Returns why the file could not be written, or null
     private static string? Remember(Settings settings)
     {
-        string SelectedName(Pane pane) =>
+        static string SelectedName(Pane pane) =>
             pane.Items.Count > 0 && pane.Index < pane.Items.Count && pane.Items[pane.Index].Name != ParentName
                 ? pane.Items[pane.Index].Name : string.Empty;
 
@@ -374,7 +374,7 @@ internal static partial class Browser
     // Esc, q and ":quit" ask before the program is closed, as Blyant does (Ctrl+C closes it at once). No closes the
     // box, and the page is drawn again
     private static bool ConfirmExit() =>
-        ChoiceBox.Confirm("Exit", "Exit " + Menu.ApplicationName + "?", string.Empty, false);
+        ChoiceBox.Confirm("Exit", "Exit " + Menu.ApplicationName + "?", string.Empty);
 
     private static Item? SelectedItem() =>
         ActivePane.Items.Count > 0 && ActivePane.Index < ActivePane.Items.Count ? ActivePane.Items[ActivePane.Index] : null;

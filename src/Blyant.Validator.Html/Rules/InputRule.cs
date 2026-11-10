@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Blyant.Validator.Core;
-using Blyant.Validator.Html.Parsing;
 
 namespace Blyant.Validator.Html.Rules;
 

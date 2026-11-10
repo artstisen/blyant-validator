@@ -24,7 +24,7 @@ internal static class Clipboard
     /// <summary>
     /// Copy a text, and tell what was done: the message for the bottom line
     /// </summary>
-    internal static string Copy(string text, string what)
+    internal static string Copy(string text)
     {
         // Most terminals drop a sequence of more than about 100 KB, and writing it could hold the terminal
         if (Encoding.UTF8.GetByteCount(text) > MaxOsc52Bytes)
@@ -36,7 +36,7 @@ internal static class Clipboard
         // (a terminal that is known to drop it is not told as "copied")
         return TerminalWithoutClipboard
             ? "This terminal may not take the clipboard (OSC 52)"
-            : $"Copied to the clipboard: {what}";
+            : $"Copied to the clipboard: {text}";
     }
 
     /// <summary>
