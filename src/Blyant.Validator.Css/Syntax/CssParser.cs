@@ -229,11 +229,34 @@ public sealed class CssParser
         }
     }
 
+    /// <summary>
+    /// Parses the value of an HTML <c>style</c> attribute: declarations, as inside a <c>{ … }</c> block, without the
+    /// braces. The items are in <see cref="CssStylesheet.Items"/>
+    /// </summary>
+    public static CssStylesheet ParseDeclarationList(string source)
+    {
+        var tokens = CssTokenizer.Tokenize(source, out var tokenErrors);
+        var sheet = new CssStylesheet { Source = source, Tokens = tokens };
+        sheet.Errors.AddRange(tokenErrors);
+        new CssParser(sheet).ParseBlockItems(sheet.Items, null);
+        return sheet;
+    }
+
     /// <summary>Parses a <c>{ … }</c> block holding declarations, nested rules and at-rules.</summary>
     private CssBlock ParseBlock()
     {
         var block = new CssBlock(Current);
         _i++;
+        block.Close = ParseBlockItems(block.Items, block.Open);
+        return block;
+    }
+
+    /// <summary>
+    /// The declarations, nested rules and at-rules of a block, to its <c>}</c> (returned), or to the end of the text
+    /// when there is no opening brace (a style attribute)
+    /// </summary>
+    private CssToken? ParseBlockItems(List<CssItem> items, CssToken? open)
+    {
         while (true)
         {
             var space = SkipWhitespace();
@@ -241,24 +264,28 @@ public sealed class CssParser
             switch (token.Type)
             {
                 case CssTokenType.EndOfFile:
-                    Error(block.Open, "css.parse.unclosed-block", "Block is never closed (missing “}”).", structural: true);
-                    return block;
-                case CssTokenType.RightCurly:
-                    block.Close = token;
+                    if (open != null)
+                        Error(open, "css.parse.unclosed-block", "Block is never closed (missing “}”).", structural: true);
+                    return null;
+                case CssTokenType.RightCurly when open == null:
+                    Error(token, "css.parse.unexpected-close", "Unexpected “}”: there is no block to close.", structural: true);
                     _i++;
-                    return block;
+                    break;
+                case CssTokenType.RightCurly:
+                    _i++;
+                    return token;
                 case CssTokenType.Semicolon:
                     _i++;
                     break;
                 case CssTokenType.Comment:
                     _i++;
-                    Add(block.Items, new CssComment(token) { Start = token.Start }, space);
+                    Add(items, new CssComment(token) { Start = token.Start }, space);
                     break;
                 case CssTokenType.AtKeyword:
-                    Add(block.Items, ParseAtRule(), space);
+                    Add(items, ParseAtRule(), space);
                     break;
                 default:
-                    Add(block.Items, IsNestedRule() ? ParseQualifiedRule() : ParseDeclaration(), space);
+                    Add(items, IsNestedRule() ? ParseQualifiedRule() : ParseDeclaration(), space);
                     break;
             }
         }

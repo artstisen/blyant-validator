@@ -27,6 +27,17 @@ public sealed class CssValidator : IValidator
         return [.. run.Diagnostics.OrderBy(d => d.Start.Line).ThenBy(d => d.Start.Column)];
     }
 
+    /// <summary>
+    /// Validates the value of an HTML <c>style</c> attribute: declarations without a selector or braces
+    /// (CSS Style Attributes, https://www.w3.org/TR/css-style-attr/)
+    /// </summary>
+    public static IReadOnlyList<Diagnostic> ValidateDeclarations(string path, string css)
+    {
+        var run = new Run(path, css);
+        run.ExecuteDeclarations();
+        return [.. run.Diagnostics.OrderBy(d => d.Start.Line).ThenBy(d => d.Start.Column)];
+    }
+
     private enum Context
     {
         TopLevel,
@@ -100,6 +111,16 @@ public sealed class CssValidator : IValidator
 
             CheckTopLevelOrder(sheet.Items);
             Walk(sheet.Items, Context.TopLevel, insideStyleRule: false);
+        }
+
+        public void ExecuteDeclarations()
+        {
+            var sheet = CssParser.ParseDeclarationList(source);
+            foreach (var error in sheet.Errors)
+                Report(error.Offset, error.Offset, Severity.Error, error.Code, error.Message);
+
+            // Only declarations: a rule or an at-rule in a style attribute is told about
+            Walk(sheet.Items, Context.Declarations, insideStyleRule: false);
         }
 
         private void CheckTopLevelOrder(List<CssItem> items)
@@ -360,22 +381,23 @@ public sealed class CssValidator : IValidator
             return best;
         }
 
-        private static int Distance(string a, string b)
+        // The number of edits between two names, with two letters swapped as one edit ("widht" is 1 from "width")
+        internal static int Distance(string a, string b)
         {
-            var previous = new int[b.Length + 1];
-            var current = new int[b.Length + 1];
-            for (var j = 0; j <= b.Length; j++) previous[j] = j;
+            var d = new int[a.Length + 1, b.Length + 1];
+            for (var i = 0; i <= a.Length; i++) d[i, 0] = i;
+            for (var j = 0; j <= b.Length; j++) d[0, j] = j;
             for (var i = 1; i <= a.Length; i++)
             {
-                current[0] = i;
                 for (var j = 1; j <= b.Length; j++)
                 {
                     var cost = a[i - 1] == b[j - 1] ? 0 : 1;
-                    current[j] = Math.Min(Math.Min(current[j - 1] + 1, previous[j] + 1), previous[j - 1] + cost);
+                    d[i, j] = Math.Min(Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1), d[i - 1, j - 1] + cost);
+                    if (i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1])
+                        d[i, j] = Math.Min(d[i, j], d[i - 2, j - 2] + 1);
                 }
-                (previous, current) = (current, previous);
             }
-            return previous[b.Length];
+            return d[a.Length, b.Length];
         }
 
         private static string Collapse(string text)

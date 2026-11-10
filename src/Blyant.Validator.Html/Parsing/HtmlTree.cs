@@ -33,8 +33,12 @@ public sealed class HStrayEndTag(string raw) : HNode
 /// <param name="Name">The name as written.</param>
 /// <param name="RawValue">The value as written, with its quotes; null for an attribute without a value.</param>
 /// <param name="Start">Offset of the name in the source.</param>
-public sealed record HAttribute(string Name, string? RawValue, int Start)
+/// <param name="ValueStart">Offset of the value as written (at its quote, if it has one); -1 without a value.</param>
+public sealed record HAttribute(string Name, string? RawValue, int Start, int ValueStart = -1)
 {
+    /// <summary>Offset of the first character of <see cref="Value"/> (after the quote); -1 without a value.</summary>
+    public int ValueContentStart => ValueStart < 0 ? -1 : RawValue is ['"' or '\'', ..] ? ValueStart + 1 : ValueStart;
+
     /// <summary>The value without quotes ("" for an attribute without a value). Character references are not decoded.</summary>
     public string Value => RawValue switch
     {

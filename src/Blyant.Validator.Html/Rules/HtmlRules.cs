@@ -17,6 +17,7 @@ public static class HtmlRuleSet
         new RequireLangRule(),
         new ImgAltRule(),
         new DuplicateIdRule(),
+        new EmbeddedCssRule(),
     ];
 }
 

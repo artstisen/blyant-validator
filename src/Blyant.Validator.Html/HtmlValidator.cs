@@ -59,9 +59,19 @@ public sealed class HtmlRuleContext(SourceDocument document, HElement root, Line
     public IEnumerable<HElement> FindAll(string name) =>
         Root.Descendants().Where(e => e.Lower == name && !e.IsForeign);
 
-    public void Report(HNode? node, Severity severity, string code, string message)
+    public void Report(HNode? node, Severity severity, string code, string message) =>
+        Report(node?.Start ?? 0, severity, code, message);
+
+    /// <summary>Report a problem at an offset of the file (an attribute, a value).</summary>
+    public void Report(int offset, Severity severity, string code, string message)
     {
-        var pos = lines[node?.Start ?? 0];
+        var pos = lines[offset];
         sink.Add(new Diagnostic(Document.Path, severity, code, message, pos, pos));
     }
+
+    /// <summary>The line and column of an offset of the file.</summary>
+    public SourcePosition PositionOf(int offset) => lines[offset];
+
+    /// <summary>Add a problem found by another validator (the CSS of the file).</summary>
+    public void Add(Diagnostic diagnostic) => sink.Add(diagnostic);
 }

@@ -329,13 +329,14 @@ public sealed class HtmlReader
                 Error(attrStart, "bad-attribute-name", $"Quote or “<” in attribute name “{attrName}”. Probable cause: Missing “=” or a missing space.");
 
             string? value = null;
+            var valueStart = -1;
             var save = _pos;
             SkipWhitespace();
             if (_pos < _s.Length && _s[_pos] == '=')
             {
                 _pos++;
                 SkipWhitespace();
-                var valueStart = _pos;
+                valueStart = _pos;
                 value = ReadAttributeValue(valueStart);
                 CheckCharacterReferences(value, valueStart, attribute: true);
             }
@@ -346,7 +347,7 @@ public sealed class HtmlReader
 
             if (!names.Add(attrName))
                 Error(attrStart, "duplicate-attribute", $"Duplicate attribute “{attrName}”.");
-            element.Attributes.Add(new HAttribute(attrName, value, attrStart));
+            element.Attributes.Add(new HAttribute(attrName, value, attrStart, valueStart));
         }
 
         if (!closed) Error(start, "eof-in-tag", $"End of file seen inside the start tag “{name}”.");
