@@ -11,8 +11,14 @@ namespace Blyant.Validator.Html;
 public sealed class HtmlValidator : IValidator
 {
     private readonly IReadOnlyList<IHtmlRule> _rules;
+    private readonly bool _fragment;
 
     public HtmlValidator() : this(HtmlRuleSet.Default) { }
+
+    /// <param name="fragment">Check the file as a fragment: the content of a &lt;body&gt; that is inserted in a page
+    /// made elsewhere (an article for a CMS). The checks of the page around it (the doctype, the title, the language)
+    /// are left out, and the parts of a page that a fragment should not have are warned about.</param>
+    public HtmlValidator(bool fragment) : this(fragment ? HtmlRuleSet.Fragment : HtmlRuleSet.Default) => _fragment = fragment;
 
     public HtmlValidator(IReadOnlyList<IHtmlRule> rules) => _rules = rules;
 
@@ -28,6 +34,7 @@ public sealed class HtmlValidator : IValidator
 
         foreach (var error in result.Errors)
         {
+            if (_fragment && error.Code == "html.parse.missing-doctype") continue;
             var pos = lines[error.Offset];
             diagnostics.Add(new Diagnostic(document.Path, Severity.Error, error.Code, error.Message, pos, pos, Engine));
         }

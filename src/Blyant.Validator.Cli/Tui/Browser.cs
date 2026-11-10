@@ -64,9 +64,9 @@ internal static partial class Browser
             // A terminal that cannot be set up keeps what it has
         }
 
-        _results = new ResultStore(engine, vnu);
-        Keyboard.Idle = Idle;
         var settings = Settings.Load();
+        _results = new ResultStore(engine, vnu, settings.Checks);
+        Keyboard.Idle = Idle;
         try
         {
             Restore(settings, directory);
@@ -186,6 +186,15 @@ internal static partial class Browser
 
         while (true)
         {
+            // A command typed in the peek runs here, in the list (the problem selected in the peek stays selected)
+            if (_peekCommand is { } pending)
+            {
+                _peekCommand = null;
+                if (RunCommand(pending) == CommandResult.Quit && ConfirmExit()) break;
+                Draw(true);
+                continue;
+            }
+
             var key = Keyboard.ReadKey();
             if (Keyboard.IsRedraw(key))
             {

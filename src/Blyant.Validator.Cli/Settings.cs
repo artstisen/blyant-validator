@@ -28,6 +28,9 @@ internal sealed class Settings
     /// <summary>Two panes side by side (false: one).</summary>
     public bool BrowseDual { get; set; } = true;
 
+    /// <summary>The folders whose files are not fully checked (:fragment, :ignore).</summary>
+    public FolderRules Checks { get; set; } = new();
+
     /// <summary>The data directory, for tests (so nothing is written next to the program).</summary>
     internal static string? DirectoryOverride { get; set; }
 
@@ -96,6 +99,7 @@ internal sealed class Settings
         settings.BrowseSelected2 = Get("browsesel2");
         settings.BrowsePane = Get("browsepane") == "2" ? 1 : 0;
         settings.BrowseDual = !Get("browsedual").Equals("false", StringComparison.OrdinalIgnoreCase);
+        settings.Checks = FolderRules.Read(values);
         return settings;
     }
 
@@ -135,6 +139,10 @@ internal sealed class Settings
         text.Append("browsepane=").Append(BrowsePane + 1).Append('\n');
         // Two panes side by side (false: one pane)
         text.Append("browsedual=").Append(BrowseDual ? "true" : "false").Append('\n');
+        text.Append('\n');
+        text.Append("; CHECKS\n");
+        // Folders (and their subfolders) whose HTML files are fragments, and the problem codes ignored in them
+        foreach (var line in Checks.Lines()) text.Append(line).Append('\n');
         return text.ToString();
     }
 

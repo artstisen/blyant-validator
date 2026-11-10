@@ -91,6 +91,10 @@ purpose: a fix in one is carried to the other by hand, when it matters.
 - What HTML allows (elements, attributes, values, obsolete features) is kept in `Html/Rules/HtmlSpec.cs`, and
   read by the rules. A new rule gets tests of real-world markup that must pass, and of mistakes it must find
   (`HtmlRuleTests.RealWorldPage_HasNoProblems` is the page that must stay without problems)
+- Fragment mode (`--fragment`, `:fragment`) checks HTML as the content of a `<body>`: the rules about the page
+  around it (doctype, title, language) are left out of `HtmlRuleSet.Fragment`. A new rule about the page as a whole
+  is left out there too
+- Ignored codes (`--ignore`, `:ignore`) are matched by `IgnoreList`, and rely on the codes being stable
 - A false error is worse than a missed one. When a value cannot be checked (it uses `var()`, or the
   property has no grammar yet), it is accepted
 

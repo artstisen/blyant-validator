@@ -168,10 +168,21 @@ internal static partial class Browser
         var focused = peek ? _peekFocused : HasFocus(number) && !_peekFocused;
         var room = width - 2;
         var title = peek ? PeekTitle() : pane.Directory.Length == 0 ? "Drives" : pane.Directory;
+        // The badges of a folder that is not fully checked, at the end of the line (left out if the title would
+        // get too short)
+        var badge = peek || pane.Directory.Length == 0 ? string.Empty : Badge(_results.Rules.ForDirectory(pane.Directory));
+        if (badge.Length > 0 && room - badge.Length - 1 < 12) badge = string.Empty;
+        if (badge.Length > 0) room -= badge.Length + 1;
         title = TextMetrics.KeepEnd(title, room);
         Tools.SetCursor(1, left);
         ConsoleColors.SetColors(focused ? ConsoleColors.ColorPreset.HeaderColor : ConsoleColors.ColorPreset.Divider);
         Console.Write(" " + title + new string(' ', Math.Max(0, room - TextMetrics.WidthOf(title))));
+        if (badge.Length > 0)
+        {
+            Console.Write(' ');
+            ConsoleColors.SetColors(ConsoleColors.ColorPreset.AttentionInverted);
+            Console.Write(badge);
+        }
         Tools.SetCursor(2, left);
         ConsoleColors.SetColors(ConsoleColors.ColorPreset.Divider);
         Console.Write(new string('-', IsDual && number == 0 ? width : Math.Min(width, Screen.LineWidth - left)));
@@ -191,6 +202,10 @@ internal static partial class Browser
 
         ConsoleColors.SetColors(ConsoleColors.ColorPreset.Normal);
     }
+
+    // The badges of rules that make a check not a full one: " FRAGMENT ", " IGNORE 2 " (two codes are ignored)
+    internal static string Badge(CheckRules rules) =>
+        (rules.Fragment ? " FRAGMENT " : string.Empty) + (rules.Ignore.Count > 0 ? $" IGNORE {rules.Ignore.Count} " : string.Empty);
 
     // A row of the list of a pane: the name, the result of the validation, and the size (if the pane is wide enough)
     private static void DrawItem(int number, Pane pane, int index)

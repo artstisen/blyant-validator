@@ -14,7 +14,10 @@ namespace Blyant.Validator.Cli.Tui;
 /// <param name="Length">The size of the file.</param>
 /// <param name="Diagnostics">The problems found (empty: none).</param>
 /// <param name="Failure">Why the file could not be validated (it could not be read, vnu is not available …).</param>
-internal sealed record FileResult(DateTime Written, long Length, IReadOnlyList<Diagnostic> Diagnostics, string? Failure)
+/// <param name="Fragment">The file was checked as an HTML fragment.</param>
+/// <param name="Ignored">How many problems were found that are ignored (not in Diagnostics).</param>
+internal sealed record FileResult(DateTime Written, long Length, IReadOnlyList<Diagnostic> Diagnostics, string? Failure,
+    bool Fragment = false, int Ignored = 0)
 {
     public int Errors => Diagnostics.Count(d => d.Severity == Severity.Error);
     public int Warnings => Diagnostics.Count(d => d.Severity == Severity.Warning);
@@ -36,10 +39,11 @@ internal sealed class ResultStore : IDisposable
     private volatile string _engine;
     private readonly VnuOptions _vnu;
 
-    public ResultStore(string engine, VnuOptions vnu)
+    public ResultStore(string engine, VnuOptions vnu, FolderRules? rules = null)
     {
         _engine = engine;
         _vnu = vnu;
+        Rules = rules ?? new FolderRules();
         _worker = Task.Run(WorkAsync);
     }
 
@@ -53,6 +57,16 @@ internal sealed class ResultStore : IDisposable
             _engine = value;
             _results.Clear();
         }
+    }
+
+    /// <summary>How the files of each folder are checked (:fragment, :ignore).</summary>
+    public FolderRules Rules { get; }
+
+    /// <summary>Set the rules of a folder; the files are checked again.</summary>
+    public void SetRules(string directory, CheckRules rules)
+    {
+        Rules.Set(directory, rules);
+        _results.Clear();
     }
 
     /// <summary>True for the files that are validated (HTML, CSS, XML and Markdown).</summary>
@@ -143,6 +157,9 @@ internal sealed class ResultStore : IDisposable
         try
         {
             var document = await DocumentIo.LoadAsync(path, ct).ConfigureAwait(false);
+            var rules = Rules.ForFile(path);
+            // (Fragments are checked by the native engine only)
+            var fragment = rules.Fragment && document.Kind == DocumentKind.Html && _engine != "vnu";
             // (vnu checks HTML and CSS; XML is always checked here)
             IValidator validator = document.Kind switch
             {
@@ -150,10 +167,11 @@ internal sealed class ResultStore : IDisposable
                 DocumentKind.Markdown => new MarkdownValidator(p => File.Exists(p) || Directory.Exists(p)),
                 _ when _engine == "vnu" => new VnuValidator(_vnu),
                 DocumentKind.Css => new CssValidator(),
-                _ => new HtmlValidator(),
+                _ => new HtmlValidator(fragment),
             };
-            var diagnostics = await validator.ValidateAsync(document, ct).ConfigureAwait(false);
-            return new FileResult(stamp.Written, stamp.Length, diagnostics, null);
+            var found = await validator.ValidateAsync(document, ct).ConfigureAwait(false);
+            var diagnostics = IgnoreList.Apply(found, rules.Ignore);
+            return new FileResult(stamp.Written, stamp.Length, diagnostics, null, fragment, found.Count - diagnostics.Count);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or VnuNotAvailableException
                                       or NotImplementedException or System.Text.Json.JsonException)

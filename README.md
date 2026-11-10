@@ -58,11 +58,15 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
   terminal's clipboard sequence (OSC 52), so it works over SSH too, and no other program is started. Most terminals
   take it (Windows Terminal, kitty, WezTerm, Alacritty, iTerm2 …); the Terminal of macOS, GNOME Terminal and the
   Linux console do not, and are told about.
+- `:fragment` and `:ignore` change how the files of the folder shown (and its subfolders) are checked; see
+  [Fragments and ignored problems](#fragments-and-ignored-problems). A folder that is not fully checked has the
+  badges `FRAGMENT` and `IGNORE 2` (two codes ignored) after its path, and the peek says it with the result of a
+  file: "no problems (fragment, 3 ignored)".
 
 The TUI needs a window of at least 80×24, like Blyant.
 
 It remembers where it was: the folder and the selected file of both panes, the pane with the focus, and whether one
-or two panes were shown. `blyant-validator` (or `browse` without a folder) starts there again; `browse <folder>`
+or two panes were shown, and the rules of the folders (`:fragment`, `:ignore`). `blyant-validator` (or `browse` without a folder) starts there again; `browse <folder>`
 shows that folder in the pane with the focus. The first time, it starts in the current directory. This is kept in
 `settings.ini`, in Blyant's format, in the folder `data` next to the program (or, if that folder cannot be written
 to, in `Blyant Validator/data` in your application data folder). As in Blyant, a folder `data` with a
@@ -96,6 +100,12 @@ add `--recursive` to include subdirectories.
 | `-r, --recursive` | Search directories recursively. |
 | `--vnu-jar <path>` | Path to `vnu.jar` (or set `BLYANT_VNU_JAR`). |
 | `--java <path>` | Path to `java` (default: `JAVA_HOME`, then `PATH`). |
+| `--fragment` | Check HTML files as fragments: the content of a `<body>`, for a page made elsewhere (a CMS). See below. |
+| `-i, --ignore <codes>` | Ignore problems with these codes, comma-separated (`css.*` ignores all codes starting with `css.`). Can be given more than once. |
+
+When `--fragment` or `--ignore` is used, the summary says that it was not a full check, and how many problems were
+ignored: `2 file(s) checked: 0 error(s), 1 warning(s). Not a full check: HTML checked as fragments; 3 problem(s)
+ignored (css.*).`
 
 ### format
 
@@ -117,6 +127,38 @@ replaces them safely (a temporary file is written first), keeping their encoding
 | 0 | No errors found (warnings are allowed). |
 | 1 | Errors found, or `format --check` found unformatted files. |
 | 2 | The tool itself failed: bad arguments, missing files, vnu not available, or a file could not be formatted. |
+
+## Fragments and ignored problems
+
+Documentation written for a CMS is often a fragment: headings, paragraphs, code examples, sometimes a `<style>` or
+a `<script>`, inserted in a page whose doctype, `<head>` and `<body>` the CMS makes. Checked as a page, such a file
+has errors that are not its own (no doctype, no title, no `lang`).
+
+- **Fragment mode** (`--fragment`, or `:fragment` in the TUI) checks an HTML file as the content of a `<body>`. The
+  doctype, the title and the language of the page are not checked; everything else is: the markup, attributes,
+  content models, `<img alt>`, duplicate IDs, `<input>` types, and the CSS of `<style>` elements and `style`
+  attributes. Parts of a page that a fragment should not have (a doctype, `<html>`, `<head>`, `<body>`, `<title>`,
+  `<meta>`, `<base>`) are warnings (`html.fragment-page-part`), as they were most likely pasted in by mistake.
+  Fragment mode works with the native engine; vnu checks HTML files as pages.
+- **Ignored problems** (`--ignore`, or `:ignore` in the TUI) are left out by their code, the code shown in brackets
+  after each problem (`[css.unknown-at-rule]`). A code ending in `.*` ignores all codes that start with it:
+  `css.*`, `html.parse.*`. Codes never change, so an ignored code stays ignored when a message is improved.
+
+In the TUI, these are rules of a folder, kept in `settings.ini`; they apply to its subfolders too, unless a subfolder
+is changed itself:
+
+| Command | Does |
+| --- | --- |
+| `:fragment` | The HTML files of the folder shown are fragments; again: full pages. |
+| `:ignore code ...` | Ignore problems with these codes in the folder. |
+| `:ignore` | In the list of problems (`P`, then `Tab` to select one): ignore the code of the selected problem. Elsewhere: show the codes ignored. |
+| `:unignore code ...` | Stop ignoring these codes; without a code: all of them. |
+
+The command line has no saved rules: `validate` checks fully unless `--fragment` or `--ignore` is given, so a script
+gives the same result wherever it runs.
+
+Fragment mode cannot know the page the fragment goes into: an `id` that is also used by the CMS's template, for
+example, is only found by checking the published page.
 
 ## What is checked
 
@@ -244,9 +286,15 @@ Formatting only changes layout; the formatted file means exactly the same as bef
       "line": 12, "column": 5, "endLine": 12, "endColumn": 5,
       "engine": "native"
     }
-  ]
+  ],
+  "fragment": false,
+  "ignore": [],
+  "ignored": 0
 }
 ```
+
+`fragment` tells whether HTML files were checked as fragments, `ignore` lists the codes given with `--ignore`, and
+`ignored` is the number of problems left out.
 
 ### Using the Nu Html Checker (`--engine vnu`)
 
@@ -310,5 +358,6 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] XML: well-formedness, and sitemaps
 - [x] XML: formatting, and RSS/Atom feeds
 - [x] Markdown checks, and the llms.txt format
+- [x] Fragments (HTML for a CMS) and ignored problem codes, per folder in the TUI
 - [ ] Comparison test suite against vnu output
 - [ ] Release builds for Windows, Linux and macOS

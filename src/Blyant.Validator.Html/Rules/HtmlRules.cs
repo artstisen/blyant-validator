@@ -23,6 +23,45 @@ public static class HtmlRuleSet
         new ContentModelRule(),
         new InputRule(),
     ];
+
+    /// <summary>
+    /// The rules for a fragment (the content of a &lt;body&gt;, inserted in a page made elsewhere): those of a page,
+    /// without the title and the language of the page, and with <see cref="FragmentRule"/>.
+    /// </summary>
+    public static IReadOnlyList<IHtmlRule> Fragment { get; } =
+        [new FragmentRule(), .. Default.Where(r => r is not (RequireTitleRule or RequireLangRule))];
+}
+
+/// <summary>
+/// In a fragment: the parts of a page that the page it is inserted in already has (a doctype, &lt;html&gt;,
+/// &lt;head&gt;, &lt;body&gt;, &lt;title&gt;, and the &lt;meta&gt; and &lt;base&gt; of a head). Warnings: a browser
+/// ignores most of them, but they are most likely pasted in by mistake.
+/// </summary>
+public sealed class FragmentRule : IHtmlRule
+{
+    public void Check(HtmlRuleContext context)
+    {
+        foreach (var node in context.Root.Children)
+        {
+            if (node is Parsing.HVerbatim { IsDoctype: true })
+                context.Report(node, Severity.Warning, "html.fragment-page-part",
+                    "A doctype belongs to the page, not to a fragment: the page the fragment is inserted in has one.");
+        }
+
+        foreach (var element in context.Root.Descendants().Where(e => !e.IsForeign))
+        {
+            var pagePart = element.Lower switch
+            {
+                "html" or "head" or "body" or "title" or "base" => true,
+                // (A <meta itemprop> is microdata, and is allowed in the body)
+                "meta" => !element.HasAttribute("itemprop"),
+                _ => false,
+            };
+            if (pagePart)
+                context.Report(element, Severity.Warning, "html.fragment-page-part",
+                    $"Element “{element.Lower}” belongs to the page, not to a fragment: the page the fragment is inserted in has its own.");
+        }
+    }
 }
 
 /// <summary>A document must have a non-empty &lt;title&gt; in &lt;head&gt;.</summary>

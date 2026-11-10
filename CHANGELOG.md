@@ -3,6 +3,15 @@
 ## Unreleased
 
 ### Added
+- Fragment mode, for HTML written to be inserted in a page made elsewhere (a CMS article): `validate --fragment`,
+  and `:fragment` in the TUI. The doctype, title and language of the page are not checked; a doctype, `<html>`,
+  `<head>`, `<body>`, `<title>`, `<meta>` or `<base>` in a fragment is a warning (`html.fragment-page-part`)
+- Ignored problems: `validate --ignore <codes>` (`-i`, comma-separated or repeated; `css.*` ignores all CSS codes),
+  and `:ignore` and `:unignore` in the TUI (`:ignore` alone ignores the problem selected in the peek)
+- In the TUI, fragments and ignored codes are rules of a folder and its subfolders, kept in `settings.ini`. A folder
+  that is not fully checked has the badges `FRAGMENT` and `IGNORE n`, and the peek says it with the result of a file
+- A summary that says when a check was not a full one, and the JSON fields `fragment`, `ignore` and `ignored`
+- Commands can be typed in the peek (`:`); they run in the list
 - CSS: grammars for the last 27 properties: anchor positioning (`position-area`, `position-try`,
   `position-try-fallbacks`), motion paths (`offset-*`), `mask-border-*`, `animation-range`, `corner-shape` and more.
   All properties but the non-standard `font-smooth` have their values checked

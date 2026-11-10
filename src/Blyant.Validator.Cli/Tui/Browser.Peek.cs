@@ -37,6 +37,7 @@ internal static partial class Browser
     private static int _problemSelected;
     private static int _problemTop;
     private static string _peekSearch = string.Empty;
+    private static string? _peekCommand; // A ":" command typed in the peek, run when the focus is back in the list
 
     // n and N go to the next search match (after "/") or the next problem (when the peek is entered, and after ] or [)
     private static bool _nextFindsSearch;
@@ -96,6 +97,15 @@ internal static partial class Browser
                 (0, _) => Plural(result.Warnings, "warning"),
                 _ => Plural(result.Errors, "error") + ", " + Plural(result.Warnings, "warning"),
             };
+        // Not a full check: said with the result
+        if (result is { Failure: null } && (result.Fragment || result.Ignored > 0))
+        {
+            var notes = new List<string>();
+            if (result.Fragment) notes.Add("fragment");
+            if (result.Ignored > 0) notes.Add(result.Ignored + " ignored");
+            summary += " (" + string.Join(", ", notes) + ")";
+        }
+
         return item.Name + " - " + summary;
     }
 
@@ -495,6 +505,15 @@ internal static partial class Browser
             if (key.Key == ConsoleKey.P)
             {
                 SwitchPeekMode(document);
+                continue;
+            }
+
+            if (key.KeyChar == ':')
+            {
+                // A command (as :ignore for the selected problem): run from the list
+                _peekCommand = CommandPrompt.Read(':', CommandTable);
+                if (_peekCommand != null) return;
+                RedrawInPeek();
                 continue;
             }
 

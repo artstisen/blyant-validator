@@ -15,6 +15,10 @@ var validate = new CommandSpec("validate", "Check HTML, CSS, XML (sitemaps, SVG)
         OptionKind.Text, ValueName: "<path>"),
     new("--java", null, "Path to the java executable (default: JAVA_HOME, then PATH).",
         OptionKind.Text, ValueName: "<path>"),
+    new("--fragment", null, "Check HTML files as fragments: the content of a <body>, for a page made elsewhere (a CMS). " +
+        "The doctype, title and language of the page are not checked."),
+    new("--ignore", "-i", "Ignore problems with these codes (comma-separated; 'css.*' ignores all codes starting with 'css.'). " +
+        "Can be given more than once.", OptionKind.Text, ValueName: "<codes>", Repeatable: true),
 ], "<paths>", "HTML/CSS files or directories to process.");
 
 var format = new CommandSpec("format", "Re-indent and tidy HTML, CSS and XML files.",
@@ -88,6 +92,20 @@ if (parsed.Help)
     return 0;
 }
 
+// The codes to ignore (validate)
+List<string> ignore = [];
+foreach (var entry in command.Name == "validate" ? parsed.Texts("--ignore").SelectMany(Blyant.Validator.Core.IgnoreList.Split) : [])
+{
+    if (!Blyant.Validator.Core.IgnoreList.IsValid(entry))
+    {
+        Console.Error.WriteLine($"{CommandLine.Program}: '{entry}' is not a diagnostic code to ignore (as 'html.missing-lang' or 'css.*').");
+        Console.Error.WriteLine($"Run '{CommandLine.Program} {command.Name} --help' to see its options.");
+        return 2;
+    }
+
+    if (!ignore.Contains(entry)) ignore.Add(entry);
+}
+
 using var cancel = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) =>
 {
@@ -105,7 +123,9 @@ try
             parsed.Text("--engine")!,
             parsed.Text("--output")!,
             parsed.Text("--vnu-jar"),
-            parsed.Text("--java")), cancel.Token),
+            parsed.Text("--java"),
+            parsed.Flag("--fragment"),
+            ignore), cancel.Token),
         "format" => await FormatCommand.RunAsync(new FormatCommand.Settings(
             [.. parsed.Arguments],
             parsed.Flag("--recursive"),

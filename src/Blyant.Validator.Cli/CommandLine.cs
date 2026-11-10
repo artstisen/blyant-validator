@@ -21,7 +21,8 @@ internal sealed record OptionSpec(
     string[]? Choices = null,
     string? Default = null,
     int Min = 0,
-    int Max = int.MaxValue);
+    int Max = int.MaxValue,
+    bool Repeatable = false);
 
 /// <summary>A command with its options and its (one or more) path arguments.</summary>
 internal sealed record CommandSpec(
@@ -39,12 +40,24 @@ internal sealed class UsageException(string message) : Exception(message);
 internal sealed class ParsedArguments(CommandSpec command)
 {
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, List<string>> _repeated = new(StringComparer.Ordinal);
 
     public List<string> Arguments { get; } = [];
 
     public bool Help { get; set; }
 
-    public void Set(OptionSpec option, string value) => _values[option.Name] = value;
+    public void Set(OptionSpec option, string value)
+    {
+        _values[option.Name] = value;
+        if (option.Repeatable)
+        {
+            if (!_repeated.TryGetValue(option.Name, out var list)) _repeated[option.Name] = list = [];
+            list.Add(value);
+        }
+    }
+
+    /// <summary>All the values of an option that can be given more than once.</summary>
+    public IReadOnlyList<string> Texts(string name) => _repeated.TryGetValue(name, out var list) ? list : [];
 
     private OptionSpec Spec(string name) => command.Options.Single(o => o.Name == name);
 

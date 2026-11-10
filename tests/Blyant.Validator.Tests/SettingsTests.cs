@@ -58,4 +58,22 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal(" 2", values["browsepane"]);
         Assert.Equal(2, values.Count);
     }
+
+    [Fact]
+    public void FolderRules_AreSavedInTheSettings()
+    {
+        var docs = Path.Combine(_dir, "docs");
+        var settings = new Settings();
+        settings.Checks.Set(docs, new CheckRules(true, ["html.missing-lang", "css.*"]));
+        settings.Checks.Set(Path.Combine(_dir, "site"), new CheckRules(false, ["xml.*"]));
+        Assert.Null(settings.Save());
+
+        var text = File.ReadAllText(Settings.FilePath);
+        Assert.Contains("; CHECKS\n", text);
+        Assert.Contains("checkignore1=html.missing-lang,css.*\n", text);
+
+        var read = Settings.Load().Checks;
+        Assert.Equal(new CheckRules(true, ["html.missing-lang", "css.*"]), read.ForDirectory(docs));
+        Assert.Equal(new CheckRules(false, ["xml.*"]), read.ForDirectory(Path.Combine(_dir, "site", "feeds")));
+    }
 }

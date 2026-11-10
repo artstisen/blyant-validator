@@ -20,7 +20,8 @@ internal static partial class Browser
     /// When a command is added, renamed or removed, change this table, RunCommand and HelpRows together
     /// </summary>
     internal static readonly CommandTable CommandTable = new(
-        ["all", "cd", "engine", "format", "help", "home", "name", "panes", "path", "peek", "problems", "quit", "refresh"],
+        ["all", "cd", "engine", "format", "fragment", "help", "home", "ignore", "name", "panes", "path", "peek", "problems",
+            "quit", "refresh", "unignore"],
         ["q", "h", "exit", "close"],
         new Dictionary<string, string[]> { ["engine"] = ["native", "vnu"] });
 
@@ -94,6 +95,15 @@ internal static partial class Browser
                     _message = "Use :engine native or :engine vnu";
                 }
                 break;
+            case "fragment":
+                ToggleFragment();
+                break;
+            case "ignore":
+                Ignore(argument);
+                break;
+            case "unignore":
+                Unignore(argument);
+                break;
             default:
                 CommandPrompt.ShowUnknown(command);
                 break;
@@ -101,6 +111,90 @@ internal static partial class Browser
 
         return CommandResult.Done;
     }
+
+    // The folder whose rules :fragment, :ignore and :unignore change: the one shown in the pane with the focus
+    private static string? RulesFolder()
+    {
+        if (ActivePane.Directory.Length > 0) return ActivePane.Directory;
+        _message = "Go to a folder first";
+        return null;
+    }
+
+    // ":fragment": the HTML files of the folder (and its subfolders) are checked as fragments, or as pages again
+    private static void ToggleFragment()
+    {
+        if (RulesFolder() is not { } folder) return;
+        var rules = _results.Rules.ForDirectory(folder);
+        _results.SetRules(folder, rules with { Fragment = !rules.Fragment });
+        _message = !rules.Fragment
+            ? "HTML here is checked as fragments (the content of a <body>)" +
+              (_results.Engine == "vnu" ? ", with the native engine only" : "")
+            : "HTML here is checked as full pages";
+        _peekSource = null;
+    }
+
+    // ":ignore code ...": ignore problems with these codes in the folder (and its subfolders). Without a code: the code
+    // of the problem selected in the problems of the peek, or else the codes ignored here
+    private static void Ignore(string argument)
+    {
+        if (RulesFolder() is not { } folder) return;
+        var rules = _results.Rules.ForDirectory(folder);
+        IReadOnlyList<string> codes = IgnoreList.Split(argument);
+        if (codes.Count == 0)
+        {
+            if (SelectedProblem() is not { } problem)
+            {
+                _message = rules.Ignore.Count == 0
+                    ? "Nothing is ignored here (:ignore code, or select a problem with P)"
+                    : "Ignored here: " + string.Join(", ", rules.Ignore) + " (:unignore code)";
+                return;
+            }
+
+            codes = [problem.Code];
+        }
+
+        if (codes.FirstOrDefault(c => !IgnoreList.IsValid(c)) is { } wrong)
+        {
+            _message = $"Not a problem code: {wrong} (as html.missing-lang or css.*)";
+            return;
+        }
+
+        var added = codes.Where(c => !rules.Ignore.Contains(c)).ToList();
+        if (added.Count == 0)
+        {
+            _message = "Already ignored here: " + string.Join(", ", codes);
+            return;
+        }
+
+        _results.SetRules(folder, rules with { Ignore = [.. rules.Ignore, .. added] });
+        _message = "Ignored here: " + string.Join(", ", added) + " (:unignore to undo)";
+        _peekSource = null;
+    }
+
+    // ":unignore code ...": stop ignoring codes in the folder; without a code: all of them
+    private static void Unignore(string argument)
+    {
+        if (RulesFolder() is not { } folder) return;
+        var rules = _results.Rules.ForDirectory(folder);
+        var codes = IgnoreList.Split(argument);
+        var removed = codes.Count == 0 ? rules.Ignore.ToList() : rules.Ignore.Where(codes.Contains).ToList();
+        if (removed.Count == 0)
+        {
+            _message = rules.Ignore.Count == 0 ? "Nothing is ignored here"
+                : "Not ignored here; ignored are: " + string.Join(", ", rules.Ignore);
+            return;
+        }
+
+        _results.SetRules(folder, rules with { Ignore = [.. rules.Ignore.Except(removed)] });
+        _message = "No longer ignored here: " + string.Join(", ", removed);
+        _peekSource = null;
+    }
+
+    // The problem selected in the problems of the peek (P), if they are shown
+    private static Diagnostic? SelectedProblem() =>
+        _peeking && _peekMode == PeekMode.Problems && _peekDocument is { Diagnostics.Count: > 0 } document
+            ? document.Diagnostics[Math.Clamp(_problemSelected, 0, document.Diagnostics.Count - 1)]
+            : null;
 
     // F or ":format": format the marked files of the pane, or the selected file, after asking. Only whitespace changes,
     // and a file is replaced safely (DocumentIo.SafeWriteAllText)
@@ -228,6 +322,7 @@ internal static partial class Browser
         new("P", "The problems of the file, or its text again"),
         new("Enter", "In the problems: show the problem in the file"),
         new("Tab Esc", "Back to the list"),
+        new(":command", "Runs in the list (:ignore ignores the selected problem)"),
         HelpRow.Heading("Commands"),
         new(":cd path", "Go to a directory (relative to the one shown)"),
         new(":home", "The home directory"),
@@ -238,6 +333,11 @@ internal static partial class Browser
         new(":path", "The full path of the selected file or directory to the clipboard (OSC 52)"),
         new(":name", "The name of the selected file or directory to the clipboard"),
         new(":all", "List all files, or only HTML, CSS, XML and Markdown"),
+        HelpRow.Heading("Not a full check (for the folder shown and its subfolders)"),
+        new(":fragment", "HTML files are fragments (the content of a <body>, for a CMS), or full pages again"),
+        new(":ignore code", "Ignore problems with a code (css.* ignores all CSS codes); no code: the selected problem"),
+        new(":unignore code", "Stop ignoring a code; no code: all of them"),
+        new("FRAGMENT IGNORE", "The badges above a folder that is not fully checked"),
         new(":refresh", "As r"),
         new(":help :quit", "This help; quit (:q)"),
     ];
