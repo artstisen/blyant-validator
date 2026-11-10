@@ -91,6 +91,10 @@
 - The target framework and the language options are set once, in `Directory.Build.props`
 
 ### Added
+- Release builds: `publish.ps1` builds a self-contained single file for Windows (x64, ARM64), Linux (x64, ARM64,
+  ARM) and macOS (Intel, Apple silicon), and a portable version, packed as zip and tar.gz for the releases page, as
+  Blyant's. README has a section "Installation"
+- A licence: MIT (`LICENSE`), as Blyant's
 - README: a section "Standards", telling what HTML, CSS, XML, sitemaps, feeds, Markdown and llms.txt are checked
   against, and when the rules were last brought up to date
 - XML: an entity declared to be in another file is a warning, `xml.external-entity` (it is never read)

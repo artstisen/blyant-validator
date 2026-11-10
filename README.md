@@ -25,6 +25,37 @@ Blyant Validator is modelled on two excellent open-source projects:
 
 See [CREDITS.md](CREDITS.md) for details, and run `blyant-validator credits`.
 
+## Installation
+
+Download the archive for your system from the [releases page](../../releases), and unpack it in a folder of your
+choosing: it holds a folder _BlyantValidator_ with the program, `blyant-validator` (`blyant-validator.exe` on
+Windows), and this read-me, the changelog, the credits and the licences. The program is a single file with the .NET
+runtime in it: nothing else has to be installed.
+
+| System | Archive |
+| --- | --- |
+| Windows (most PCs) | `BlyantValidator-0.4.0-win-x64.zip` |
+| Windows on ARM | `BlyantValidator-0.4.0-win-arm64.zip` |
+| Linux (most PCs) | `BlyantValidator-0.4.0-linux-x64.tar.gz` |
+| Linux on 64-bit ARM (Raspberry Pi with a 64-bit system) | `BlyantValidator-0.4.0-linux-arm64.tar.gz` |
+| Linux on 32-bit ARM (Raspberry Pi with a 32-bit system) | `BlyantValidator-0.4.0-linux-arm.tar.gz` |
+| macOS on Apple silicon (M1 and later) | `BlyantValidator-0.4.0-osx-arm64.tar.gz` |
+| macOS on Intel | `BlyantValidator-0.4.0-osx-x64.tar.gz` |
+| Any system with the .NET 10 runtime | `BlyantValidator-0.4.0-portable.zip` |
+
+- **Windows**: unzip it, and run `blyant-validator` in a terminal (Windows Terminal) in that folder, or add the folder
+  to your `PATH` to run it anywhere.
+- **Linux and macOS**: unpack it with `tar -xzf BlyantValidator-0.4.0-linux-x64.tar.gz` (with the name of the file
+  you downloaded), and run `./blyant-validator` (names are case-sensitive). If it was not unpacked with `tar` (some
+  programs leave out that it can be run), make it executable once with `chmod +x blyant-validator`. On macOS the
+  program is not signed: if macOS refuses to open it, allow it once with `xattr -d com.apple.quarantine
+  blyant-validator`.
+- **Portable**: with the [.NET 10 runtime](https://dotnet.microsoft.com/download) installed, run
+  `dotnet blyant-validator.dll` in the unzipped folder.
+
+The settings of the TUI are kept in a folder `data` next to the program, or, if that folder cannot be written to, in
+`Blyant Validator/data` in your application data (see [The TUI](#the-tui)).
+
 ## Usage
 
 ```
@@ -361,8 +392,19 @@ On Windows the program has an icon in the style of Blyant's, with a checkmark:
 `src/Blyant.Validator.Cli/BlyantValidator.ico` (and `.svg`), drawn by `python tools/icon.py` (needs Pillow; only to
 draw the icon, not to build).
 
-To publish a single self-contained executable (no .NET install needed on the target machine), pick a
-runtime identifier such as `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64` or `osx-arm64`:
+The release versions are built by `publish.ps1` (PowerShell 7.3 or later), as Blyant's are: it runs the tests
+first, checks that the version is the same in `Directory.Build.props` and in the status line of this read-me, and
+builds a self-contained single file for Windows, Linux and macOS (x64 and ARM), and the portable version, in
+_publish_. Each is also packed for the [releases page](../../releases) in _publish/release_: a zip for Windows and the
+portable version, and a tar.gz for Linux and macOS (where the program is marked as one that can be run).
+
+```
+./publish.ps1                     (all versions)
+./publish.ps1 win-x64,linux-x64   (the ones named)
+./publish.ps1 -SkipTests          (without running the tests first)
+```
+
+One version by hand, with a runtime identifier such as `win-x64`, `linux-arm64` or `osx-arm64`:
 
 ```
 dotnet publish src/Blyant.Validator.Cli -c Release -r win-x64 --self-contained
@@ -402,4 +444,4 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] Markdown checks, and the llms.txt format
 - [x] Fragments (HTML for a CMS) and ignored problem codes, per folder in the TUI
 - [ ] Comparison test suite against vnu output
-- [ ] Release builds for Windows, Linux and macOS
+- [x] Release builds for Windows, Linux and macOS (`publish.ps1`)

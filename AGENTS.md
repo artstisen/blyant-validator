@@ -158,6 +158,11 @@ GitHub workflow `Build and test` builds and tests it on all three systems.
 - `README.md` and `CHANGELOG.md` describe the change
 
 ## Releases
-- The version is set in `Directory.Build.props` (`Version`)
+- The version is set in `Directory.Build.props` (`Version`), and told in the status line of `README.md` and in the
+  names of the archives in its section "Installation": change them together. `publish.ps1` stops when the first two
+  differ
+- `publish.ps1` builds the release versions in `publish` (not in Git), as Blyant's: it runs the tests first, and packs
+  each version for the releases page in `publish/release`, with `README.md`, `CHANGELOG.md`, `CREDITS.md`,
+  `THIRD-PARTY-NOTICES.md` and `LICENSE` next to the program (the licences must go with every copy)
 - A release is made in this order: push `main`, wait until `Build and test` has passed on Windows, Linux
   and macOS, and only then tag it and publish the release
