@@ -75,7 +75,7 @@ public sealed partial class XmlValidator : IValidator
     [GeneratedRegex(@"undeclared entity '([^']+)'")]
     private static partial Regex UndeclaredEntity();
 
-    [GeneratedRegex(@"\s*Line \d+, position \d+\.?")]
+    [GeneratedRegex(@"\s*Line [0-9]+, position [0-9]+\.?")]
     private static partial Regex LinePosition();
 
     /// <summary>The place of an element or attribute (1:1 when it is not known).</summary>

@@ -20,7 +20,14 @@ public sealed class HtmlFormatter : IFormatter
     public string Format(SourceDocument document, FormatOptions options)
     {
         var newline = options.NewLine ?? document.DetectNewLine();
-        var root = HtmlReader.Read(document.Content).Root;
+        var result = HtmlReader.Read(document.Content);
+        // A file that ends inside a tag: what the tag is cannot be known, and writing it would add a ">"
+        if (result.Errors.FirstOrDefault(e => e.Code is "html.parse.eof-in-tag" or "html.parse.eof-in-attribute") is { } eof)
+            throw new Core.FormatException($"{eof.Message} (line {new LineMap(document.Content)[eof.Offset].Line})");
+        if (result.TooDeepAt >= 0)
+            throw new Core.FormatException(
+                $"Elements are nested more than {HtmlReader.MaxDepth} deep (line {new LineMap(document.Content)[result.TooDeepAt].Line}): are end tags missing?");
+        var root = result.Root;
         var writer = new Writer(document.Content, options, newline);
         writer.FormatChildren(root.Children, 0, container: false, foreign: false);
         var text = writer.ToString();
@@ -99,8 +106,9 @@ public sealed class HtmlFormatter : IFormatter
                 run.Clear();
             }
 
-            foreach (var child in children)
+            for (var index = 0; index < children.Count; index++)
             {
+                var child = children[index];
                 if (container && child is HText t && IsWhitespace(t.Raw))
                 {
                     newlinesSinceLast += CountNewlines(t.Raw);
@@ -110,7 +118,7 @@ public sealed class HtmlFormatter : IFormatter
                 var ownLine = child switch
                 {
                     HVerbatim v => v.IsDoctype,
-                    HElement e => container || IsBlock(e, foreign),
+                    HElement e => container || IsBlock(e, foreign) && !(HtmlNames.Hidden.Contains(e.Lower) && TouchesText(children, index, foreign)),
                     _ => false,
                 };
 
@@ -129,6 +137,24 @@ public sealed class HtmlFormatter : IFormatter
             }
 
             FlushRun();
+        }
+
+        /// <summary>
+        /// True when something on a side of a child is not separated from it by whitespace or a block: text, an inline
+        /// element, a comment. A line of its own would then put whitespace there, which can show (a script in the
+        /// middle of a sentence)
+        /// </summary>
+        private static bool TouchesText(List<HNode> children, int index, bool foreign)
+        {
+            bool Separated(int at, bool before) => at < 0 || at >= children.Count || children[at] switch
+            {
+                HText text => text.Raw.Length == 0 || IsHtmlSpace(before ? text.Raw[^1] : text.Raw[0]),
+                HElement e => IsBlock(e, foreign),
+                HVerbatim v => v.IsDoctype,
+                _ => false,
+            };
+
+            return !Separated(index - 1, before: true) || !Separated(index + 1, before: false);
         }
 
         /// <summary>Line breaks in the whitespace at the start (or end) of a run of inline content.</summary>
@@ -175,7 +201,7 @@ public sealed class HtmlFormatter : IFormatter
         private void FormatElement(HElement e, int depth, bool foreign)
         {
             var open = OpenTag(e);
-            var childForeign = foreign || e.Lower is "svg" or "math";
+            var childForeign = (foreign || e.Lower is "svg" or "math") && !HtmlNames.IsIntegrationPoint(e);
 
             if (e.SelfClosing || e.IsVoid)
             {
@@ -346,7 +372,7 @@ public sealed class HtmlFormatter : IFormatter
                 return;
             }
 
-            var childForeign = foreign || e.Lower is "svg" or "math";
+            var childForeign = (foreign || e.Lower is "svg" or "math") && !HtmlNames.IsIntegrationPoint(e);
             var container = HtmlNames.Container.Contains(e.Lower) ||
                             (childForeign && !HtmlNames.ForeignText.Contains(e.Lower));
 

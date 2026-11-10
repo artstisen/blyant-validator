@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+### Fixed
+- A crash (an unhandled exception) on digits of other scripts in sitemap and feed dates and in `<input>` values
+  (`٢٠٢٦-11-10`): they are now errors of the file. Regular expressions match ASCII digits only
+- A stack overflow on files nested thousands deep: HTML deeper than 512 elements (`html.too-deep`) and CSS deeper
+  than 256 blocks or parentheses (`css.parse.too-deep`) are reported and not formatted
+- Files that are not UTF-8 were read with their other characters replaced, and formatting wrote that back: they are
+  now not read, and reported as `file.not-utf8` (with the line). UTF-16 and UTF-32 files too
+- An error the program did not expect ended it with a stack trace and an undefined exit code: now exit code 2, and
+  a file that cannot be read or written is told about while the other files are still done. In the TUI, such an
+  error is shown for that file, and the other files are still checked
+- A path that does not exist, given with others, now gives exit code 2, as README says
+- Folders are searched without regard to case on every system (`INDEX.HTML` on Linux), folders that cannot be read
+  are passed over, and a file given twice (by itself and in its folder) is done once
+- TUI: a problem message quoting the file could send control characters to the terminal (the bottom line of the
+  peek)
+- CSS formatting: comments inside a declaration were dropped, escaped names were written unescaped
+  (`--my\:var` became `--my:var`, another property), `!IMPORTANT` was lowercased, and a string with a line break
+  in it took in what followed. Now only whitespace changes, and such a string stops formatting
+- HTML formatting: a `<script>`, `<noscript>`, `<link>` or `<meta>` right next to text got a line of its own, adding
+  a visible space; HTML in an SVG `<foreignObject>` was split up word by word; a no-break space in an unquoted value
+  split it in two; a file ending inside a tag got a `>` added (it is now not formatted)
+- HTML in an SVG `<foreignObject>` (and `desc`, `title`) is checked as HTML, and `xmlns` with the XHTML namespace is
+  allowed on HTML elements
+- XML formatting: SVG text (`<text>`, `<tspan>`), XHTML and elements with only whitespace in them are kept as written
+- Line endings: a file with CR line endings (old Mac) was written with LF; the line ending a file mostly uses is kept
+- A 4-digit year below 100 in an RSS date was read as a 2-digit year
+
 ### Added
 - TUI: `:number` and `:nonumber` number the rows of the panes, kept in `settings.ini` (`filenumbers`), and a count in
   front of a key moves that many rows or goes to that row (`5j`, `5k`, `12gg`, `12G`), as in Blyant's file browser

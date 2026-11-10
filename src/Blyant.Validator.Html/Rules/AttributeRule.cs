@@ -62,6 +62,10 @@ public sealed partial class AttributeRule : IHtmlRule
             name.StartsWith("aria-", StringComparison.Ordinal) || EventHandler().IsMatch(name))
             return;
 
+        // xmlns with the XHTML namespace is allowed on any HTML element (it is there in XHTML copied in, and in HTML
+        // inside an svg foreignObject)
+        if (name == "xmlns" && attribute.Value == "http://www.w3.org/1999/xhtml") return;
+
         var known = HtmlSpec.GlobalAttributes.Contains(name) ||
                     HtmlSpec.Elements.TryGetValue(el, out var own) && own.Contains(name) ||
                     HtmlSpec.ObsoleteAttributes.ContainsKey("* " + name);

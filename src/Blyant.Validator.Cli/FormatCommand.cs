@@ -12,7 +12,7 @@ internal static class FormatCommand
 
     public static async Task<int> RunAsync(Settings settings, CancellationToken ct)
     {
-        var files = FileCollector.Collect(settings.Paths, settings.Recursive, Console.Error);
+        var files = FileCollector.Collect(settings.Paths, settings.Recursive, Console.Error, out var missing);
         if (files.Count == 0)
         {
             Console.Error.WriteLine("blyant-validator: no files to format.");
@@ -27,11 +27,22 @@ internal static class FormatCommand
         };
         IFormatter[] formatters = [new HtmlFormatter(), new CssFormatter(), new XmlFormatter()];
         var unformatted = 0;
-        var failed = 0;
+        var failed = missing;
 
         foreach (var file in files)
         {
-            var document = await DocumentIo.LoadAsync(file, ct);
+            SourceDocument document;
+            try
+            {
+                document = await DocumentIo.LoadAsync(file, ct);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // (a file that is not UTF-8 is not formatted: its bytes would be lost)
+                Console.Error.WriteLine($"blyant-validator: '{file}' was not formatted: {e.Message}");
+                failed++;
+                continue;
+            }
             var formatter = formatters.FirstOrDefault(f => f.CanFormat(document.Kind));
             if (formatter is null)
             {
@@ -64,8 +75,16 @@ internal static class FormatCommand
             {
                 if (changed)
                 {
-                    DocumentIo.SafeWriteAllText(file, formatted, document.HasUtf8Bom);
-                    Console.Out.WriteLine($"{file}: formatted");
+                    try
+                    {
+                        DocumentIo.SafeWriteAllText(file, formatted, document.HasUtf8Bom);
+                        Console.Out.WriteLine($"{file}: formatted");
+                    }
+                    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                    {
+                        Console.Error.WriteLine($"blyant-validator: '{file}' could not be written: {e.Message}");
+                        failed++;
+                    }
                 }
             }
             else

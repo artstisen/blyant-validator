@@ -714,8 +714,9 @@ internal static partial class Browser
         // A message that does not fit tells that I shows all of it
         const string hint = "... (I: all) ";
         var room = Screen.LineWidth - 2;
+        // (messages can quote the file: never written without TextMetrics.Printable)
         Console.Write(TextMetrics.WidthOf(text) <= room
-            ? text
+            ? TextMetrics.Printable(text)
             : Tools.TruncateString(text, room - hint.Length, false) + hint);
         ConsoleColors.SetColors(ConsoleColors.ColorPreset.Normal);
     }

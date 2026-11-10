@@ -147,3 +147,14 @@ catch (OperationCanceledException)
     Console.Error.WriteLine($"{CommandLine.Program}: stopped.");
     return 2;
 }
+catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+{
+    Console.Error.WriteLine($"{CommandLine.Program}: {e.Message}");
+    return 2;
+}
+catch (Exception e)
+{
+    // A mistake of the program itself: it still ends with exit code 2 (the tool failed), with what is needed to find it
+    Console.Error.WriteLine($"{CommandLine.Program}: internal error: {e}");
+    return 2;
+}

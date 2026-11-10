@@ -154,9 +154,9 @@ internal static partial class Sitemap
     [GeneratedRegex(@"^﻿?\s*<\?xml[^>]*?\sencoding\s*=\s*[""']([^""']+)[""']")]
     private static partial Regex Declaration();
 
-    [GeneratedRegex(@"^(?<y>\d{4})(-(?<m>\d{2})(-(?<d>\d{2})(T(?<hh>\d{2}):(?<mm>\d{2})(:(?<ss>\d{2})(\.\d+)?)?(Z|[+-](?<tzh>\d{2}):(?<tzm>\d{2})))?)?)?$")]
+    [GeneratedRegex(@"^(?<y>[0-9]{4})(-(?<m>[0-9]{2})(-(?<d>[0-9]{2})(T(?<hh>[0-9]{2}):(?<mm>[0-9]{2})(:(?<ss>[0-9]{2})(\.[0-9]+)?)?(Z|[+-](?<tzh>[0-9]{2}):(?<tzm>[0-9]{2})))?)?)?$")]
     private static partial Regex W3cDate();
 
-    [GeneratedRegex(@"^(0(\.\d+)?|1(\.0+)?|\.\d+)$")]
+    [GeneratedRegex(@"^(0(\.[0-9]+)?|1(\.0+)?|\.[0-9]+)$")]
     private static partial Regex Priority();
 }

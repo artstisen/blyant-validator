@@ -28,10 +28,18 @@ public sealed class CssFormatter : IFormatter
     public static string FormatStylesheet(string css, FormatOptions options, string newline, string baseIndent = "")
     {
         var sheet = CssParser.Parse(css);
+        if (sheet.Tokens.FirstOrDefault(t => t.Type == CssTokenType.BadString) is { } badString)
+        {
+            // The line break that ends it would become a space, and the string would then take in what follows
+            throw new Core.FormatException(
+                $"A string is not closed before the end of its line (line {new LineMap(css)[badString.Start].Line}).");
+        }
+
         if (sheet.HasStructuralErrors)
         {
             var lines = new LineMap(css);
-            var error = sheet.Errors.First(e => e.Code is "css.parse.unclosed-block" or "css.parse.unexpected-close" or "css.parse.unclosed-parenthesis");
+            var error = sheet.Errors.First(e => e.Code is "css.parse.unclosed-block" or "css.parse.unexpected-close" or "css.parse.unclosed-parenthesis"
+                or "css.parse.too-deep");
             throw new Core.FormatException($"{error.Message} (line {lines[error.Offset].Line})");
         }
 
@@ -89,24 +97,31 @@ public sealed class CssFormatter : IFormatter
             }
         }
 
+        // The tokens of a declaration as written (the name with its escapes, comments, "!important" in its case), with
+        // only the whitespace changed: none before the ":" and one space after it
         private void WriteDeclaration(CssDeclaration declaration, int depth)
         {
+            var tokens = declaration.Tokens;
+            var colon = declaration.ColonIndex;
+            var rest = tokens.Skip(colon + 1).SkipWhile(t => t.Type == CssTokenType.Whitespace).ToList();
             string value;
             if (declaration.IsCustomProperty)
             {
                 // The value of a custom property is kept exactly as written.
-                value = declaration.Value.Count == 0
-                    ? ""
-                    : NormalizeNewlines(source[declaration.Value[0].Start..declaration.Value[^1].End]);
+                value = rest.Count == 0 ? "" : NormalizeNewlines(source[rest[0].Start..rest[^1].End]);
+            }
+            else if (declaration.Important && rest.FindLastIndex(t => t.IsDelim('!')) is var bang and > 0)
+            {
+                // One space before "!important" (only whitespace is added)
+                value = (Join(rest.Take(bang)) + " " + Join(rest.Skip(bang))).Trim(' ');
             }
             else
             {
-                value = Join(declaration.Value);
+                value = Join(rest);
             }
 
-            var text = new StringBuilder(declaration.Name).Append(':');
+            var text = new StringBuilder(Join(tokens.Take(colon))).Append(':');
             if (value.Length > 0) text.Append(' ').Append(value);
-            if (declaration.Important) text.Append(" !important");
             text.Append(';');
             Line(depth, text.ToString());
         }
@@ -124,7 +139,8 @@ public sealed class CssFormatter : IFormatter
         private void WriteAtRule(CssAtRule at, int depth)
         {
             var prelude = Join(at.Prelude);
-            var head = "@" + at.NameToken.Value + (prelude.Length > 0 ? " " + prelude : "");
+            // (the name as written, with its escapes)
+            var head = at.NameToken.Text(source) + (prelude.Length > 0 ? " " + prelude : "");
             if (at.Block is null)
             {
                 Line(depth, head + ";");

@@ -183,7 +183,8 @@ internal static partial class Feeds
         var month = Array.IndexOf(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
             match.Groups["mon"].Value) + 1;
         var year = int.Parse(match.Groups["y"].Value, CultureInfo.InvariantCulture);
-        if (year < 100) year += year < 50 ? 2000 : 1900;
+        if (match.Groups["y"].Length == 2) year += year < 50 ? 2000 : 1900;
+        if (year < 1) return DateCheck.Invalid;
         var day = int.Parse(match.Groups["d"].Value, CultureInfo.InvariantCulture);
         if (day < 1 || day > DateTime.DaysInMonth(year, month)) return DateCheck.Invalid;
         if (int.Parse(match.Groups["hh"].Value, CultureInfo.InvariantCulture) > 23 ||
@@ -297,10 +298,10 @@ internal static partial class Feeds
 
     private static string Shorten(string text) => text.Length > 60 ? text[..60] + "…" : text;
 
-    [GeneratedRegex(@"^((?<wd>Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*)?(?<d>\d{1,2})\s+(?<mon>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(?<y>\d{2}|\d{4})\s+(?<hh>\d{2}):(?<mm>\d{2})(:(?<ss>\d{2}))?\s+(UT|GMT|EST|EDT|CST|CDT|MST|MDT|PST|PDT|Z|[A-IK-Y]|[+-]\d{4})$")]
+    [GeneratedRegex(@"^((?<wd>Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*)?(?<d>[0-9]{1,2})\s+(?<mon>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(?<y>[0-9]{2}|[0-9]{4})\s+(?<hh>[0-9]{2}):(?<mm>[0-9]{2})(:(?<ss>[0-9]{2}))?\s+(UT|GMT|EST|EDT|CST|CDT|MST|MDT|PST|PDT|Z|[A-IK-Y]|[+-][0-9]{4})$")]
     private static partial Regex Rfc822Date();
 
-    [GeneratedRegex(@"^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})$")]
+    [GeneratedRegex(@"^[0-9]{4}-[0-9]{2}-[0-9]{2}[Tt][0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?([Zz]|[+-][0-9]{2}:[0-9]{2})$")]
     private static partial Regex Rfc3339();
 
     [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9+.-]*:\S+$")]

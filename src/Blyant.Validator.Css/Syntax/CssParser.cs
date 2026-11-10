@@ -49,6 +49,15 @@ public sealed class CssDeclaration(CssToken nameToken, List<CssToken> value, boo
 
     public bool Important { get; } = important;
 
+    /// <summary>
+    /// All the tokens of the declaration as written, from the name to the end of the value (comments and
+    /// <c>!important</c> included, the <c>;</c> not), without whitespace around them: the formatter writes these
+    /// </summary>
+    public List<CssToken> Tokens { get; init; } = [];
+
+    /// <summary>The place of the <c>:</c> in <see cref="Tokens"/>.</summary>
+    public int ColonIndex { get; init; }
+
     public bool IsCustomProperty => Name.StartsWith("--", StringComparison.Ordinal);
 }
 
@@ -95,13 +104,41 @@ public sealed class CssParser
         _t = sheet.Tokens;
     }
 
+    /// <summary>
+    /// How deep blocks, parentheses, brackets and functions may be nested. The parser and the checks recurse, so a
+    /// file nested deeper (made by a mistake or on purpose) is not read further, instead of overflowing the stack
+    /// </summary>
+    public const int MaxDepth = 256;
+
     public static CssStylesheet Parse(string source)
     {
         var tokens = CssTokenizer.Tokenize(source, out var tokenErrors);
         var sheet = new CssStylesheet { Source = source, Tokens = tokens };
         sheet.Errors.AddRange(tokenErrors);
-        new CssParser(sheet).ParseRuleList(sheet.Items, topLevel: true);
+        if (!TooDeep(sheet)) new CssParser(sheet).ParseRuleList(sheet.Items, topLevel: true);
         return sheet;
+    }
+
+    // True (with an error that the formatter refuses) when the tokens are nested deeper than MaxDepth
+    private static bool TooDeep(CssStylesheet sheet)
+    {
+        var depth = 0;
+        foreach (var token in sheet.Tokens)
+        {
+            if (token.Type is CssTokenType.LeftCurly or CssTokenType.LeftParen or CssTokenType.LeftSquare or CssTokenType.Function)
+            {
+                if (++depth <= MaxDepth) continue;
+                sheet.Errors.Add(new CssSyntaxError(token.Start, "css.parse.too-deep",
+                    $"Blocks, parentheses or functions are nested more than {MaxDepth} deep: the rest of the file is not checked."));
+                sheet.HasStructuralErrors = true;
+                return true;
+            }
+
+            if (token.Type is CssTokenType.RightCurly or CssTokenType.RightParen or CssTokenType.RightSquare && depth > 0)
+                depth--;
+        }
+
+        return false;
     }
 
     private CssToken Current => _t[_i];
@@ -238,7 +275,7 @@ public sealed class CssParser
         var tokens = CssTokenizer.Tokenize(source, out var tokenErrors);
         var sheet = new CssStylesheet { Source = source, Tokens = tokens };
         sheet.Errors.AddRange(tokenErrors);
-        new CssParser(sheet).ParseBlockItems(sheet.Items, null);
+        if (!TooDeep(sheet)) new CssParser(sheet).ParseBlockItems(sheet.Items, null);
         return sheet;
     }
 
@@ -365,7 +402,7 @@ public sealed class CssParser
             }
         }
 
-        return new CssDeclaration(start, value, important) { Start = start.Start };
+        return new CssDeclaration(start, value, important) { Start = start.Start, Tokens = tokens, ColonIndex = k };
     }
 
     /// <summary>

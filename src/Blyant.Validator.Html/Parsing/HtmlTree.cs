@@ -146,6 +146,22 @@ public static class HtmlNames
         "svg", "math", "select", "datalist", "picture", "video", "audio", "object", "map",
     }.ToFrozenSet(Ci);
 
+    /// <summary>
+    /// An HTML integration point: an element of SVG or MathML whose content is HTML again (svg foreignObject, desc and
+    /// title; MathML annotation-xml)
+    /// </summary>
+    public static bool IsIntegrationPoint(HElement e) =>
+        e.IsForeign && e.Lower is "foreignobject" or "desc" or "title" or "annotation-xml";
+
+    /// <summary>
+    /// Elements that show nothing themselves (script, link …). They get lines of their own only where that adds no
+    /// whitespace between text: in the middle of a sentence they stay in the line
+    /// </summary>
+    public static readonly FrozenSet<string> Hidden = new[]
+    {
+        "script", "noscript", "template", "link", "meta", "style", "base",
+    }.ToFrozenSet(Ci);
+
     /// <summary>Elements inside SVG or MathML whose content is text.</summary>
     public static readonly FrozenSet<string> ForeignText = new[]
     {

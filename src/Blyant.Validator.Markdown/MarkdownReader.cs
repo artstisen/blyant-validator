@@ -390,7 +390,7 @@ public sealed partial class MarkdownReader
     [GeneratedRegex(@"^ {0,3}\[([^\]]+)\]:[ \t]*(<[^>]*>|\S+)")]
     private static partial Regex ReferenceDefinition();
 
-    [GeneratedRegex(@"^[ \t]*([-*+]|\d{1,9}[.)])([ \t]|$)")]
+    [GeneratedRegex(@"^[ \t]*([-*+]|[0-9]{1,9}[.)])([ \t]|$)")]
     private static partial Regex ListMarker();
 
     [GeneratedRegex(@"^ {0,3}</?[A-Za-z][A-Za-z0-9-]*(\s|/?>|$)|^ {0,3}<!--")]

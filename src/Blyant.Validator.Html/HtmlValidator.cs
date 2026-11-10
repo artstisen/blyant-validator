@@ -39,6 +39,16 @@ public sealed class HtmlValidator : IValidator
             diagnostics.Add(new Diagnostic(document.Path, Severity.Error, error.Code, error.Message, pos, pos, Engine));
         }
 
+        if (result.TooDeepAt >= 0)
+        {
+            // The rules walk the tree recursively: a tree this deep is not checked (it would overflow the stack)
+            var at = lines[result.TooDeepAt];
+            diagnostics.Add(new Diagnostic(document.Path, Severity.Error, "html.too-deep",
+                $"Elements are nested more than {HtmlReader.MaxDepth} deep (are end tags missing?): the rest of the checks are left out.",
+                at, at, Engine));
+            return Task.FromResult<IReadOnlyList<Diagnostic>>([.. diagnostics.OrderBy(d => d.Start.Line).ThenBy(d => d.Start.Column)]);
+        }
+
         var context = new HtmlRuleContext(document, result.Root, lines, diagnostics);
         foreach (var rule in _rules)
         {

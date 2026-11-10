@@ -95,6 +95,10 @@ purpose: a fix in one is carried to the other by hand, when it matters.
   around it (doctype, title, language) are left out of `HtmlRuleSet.Fragment`. A new rule about the page as a whole
   is left out there too
 - Ignored codes (`--ignore`, `:ignore`) are matched by `IgnoreList`, and rely on the codes being stable
+- Regular expressions use `[0-9]`, not `\d`: in .NET `\d` matches the digits of every script, which `int.Parse`
+  then refuses
+- The checks and formatters walk trees recursively: input nested deeper than `HtmlReader.MaxDepth`,
+  `CssParser.MaxDepth` or `XmlFormatter.MaxDepth` is reported and not walked, so the stack never overflows
 - A false error is worse than a missed one. When a value cannot be checked (it uses `var()`, or the
   property has no grammar yet), it is accepted
 
@@ -108,6 +112,8 @@ The files of the user must never be left empty or half written, whenever the pro
 - A file is written back with the encoding it had: a UTF-8 file with a BOM keeps its BOM, and the line
   endings of the file (CRLF or LF) are kept
 - A file that the formatting does not change is not written
+- A file that is not UTF-8 is not read (`DocumentIo` throws `NotUtf8Exception`): decoded as UTF-8 its other
+  characters would be replaced, and formatting would write that back
 
 ## Linux and macOS
 Blyant Validator is written and tested on Windows, but it must work the same on Linux and macOS. The

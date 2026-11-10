@@ -173,10 +173,25 @@ internal sealed class ResultStore : IDisposable
             var diagnostics = IgnoreList.Apply(found, rules.Ignore);
             return new FileResult(stamp.Written, stamp.Length, diagnostics, null, fragment, found.Count - diagnostics.Count);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or VnuNotAvailableException
-                                      or NotImplementedException or System.Text.Json.JsonException)
+        catch (NotUtf8Exception e)
         {
-            return new FileResult(stamp.Written, stamp.Length, [], e.Message);
+            // A problem of the file, shown as the command line reports it
+            var rules = Rules.ForFile(path);
+            var diagnostics = IgnoreList.Apply([e.ToDiagnostic(path)], rules.Ignore);
+            return new FileResult(stamp.Written, stamp.Length, diagnostics, null, false, 1 - diagnostics.Count);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            // Anything else (a mistake in a check, a file too large for memory) is told about for this file, and
+            // the other files are still checked: the worker must not stop
+            var why = e is IOException or UnauthorizedAccessException or VnuNotAvailableException or System.Text.Json.JsonException
+                ? e.Message
+                : $"Internal error ({e.GetType().Name}): {e.Message}";
+            return new FileResult(stamp.Written, stamp.Length, [], why);
         }
     }
 

@@ -35,8 +35,36 @@ public sealed record SourceDocument(string Path, string Content, DocumentKind Ki
             _ => DocumentKind.Unknown,
         };
 
-    /// <summary>The line ending the document mostly uses: CRLF if any line ends with it, otherwise LF.</summary>
-    public string DetectNewLine() => Content.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+    /// <summary>
+    /// The line ending the document mostly uses: CRLF, LF or CR (old Mac files). A tie goes to CRLF, then LF; a
+    /// document without line breaks gets LF
+    /// </summary>
+    public string DetectNewLine()
+    {
+        int crlf = 0, lf = 0, cr = 0;
+        for (var i = 0; i < Content.Length; i++)
+        {
+            if (Content[i] == '\n')
+            {
+                lf++;
+            }
+            else if (Content[i] == '\r')
+            {
+                if (i + 1 < Content.Length && Content[i + 1] == '\n')
+                {
+                    crlf++;
+                    i++;
+                }
+                else
+                {
+                    cr++;
+                }
+            }
+        }
+
+        if (crlf > 0 && crlf >= lf && crlf >= cr) return "\r\n";
+        return cr > lf ? "\r" : "\n";
+    }
 }
 
 /// <summary>Checks a document and reports diagnostics.</summary>

@@ -6,14 +6,19 @@ namespace Blyant.Validator.Xml;
 
 /// <summary>
 /// XML formatter. Elements whose content is only elements (and comments and processing instructions) get their
-/// children on lines of their own, indented; the whitespace between them is all that changes. An element with text in
-/// it (a "loc", a "title", SVG "text", mixed content), and everything under xml:space="preserve", is kept exactly as
-/// written. Tags are kept as written, apart from runs of whitespace between attributes made one space. Comments, CDATA
-/// sections, the XML declaration and the doctype are kept. A file that is not well-formed is not formatted.
+/// children on lines of their own, indented: only whitespace between elements changes. Kept exactly as written: an
+/// element with text in it (a "loc", a "title", mixed content) or with only whitespace in it, everything under
+/// xml:space="preserve", SVG text ("text", "tspan", "textPath"), and XHTML (an element that declares the XHTML
+/// namespace, as Atom's xhtml content), where whitespace between elements shows. Tags are kept as written, apart from
+/// runs of whitespace between attributes made one space. Comments, CDATA sections, the XML declaration and the
+/// doctype are kept. A file that is not well-formed, or nested deeper than <see cref="MaxDepth"/>, is not formatted.
 /// </summary>
 public sealed class XmlFormatter : IFormatter
 {
     public bool CanFormat(DocumentKind kind) => kind == DocumentKind.Xml;
+
+    /// <summary>How deep elements may be nested to be formatted (the writing recurses).</summary>
+    public const int MaxDepth = 512;
 
     public string Format(SourceDocument document, FormatOptions options)
     {
@@ -23,7 +28,9 @@ public sealed class XmlFormatter : IFormatter
             throw new Core.FormatException($"{errors.Message} (line {errors.Start.Line})");
 
         var newline = options.NewLine ?? document.DetectNewLine();
-        var root = XmlSourceReader.Read(document.Content);
+        var root = XmlSourceReader.Read(document.Content, out var depth);
+        if (depth > MaxDepth)
+            throw new Core.FormatException($"Elements are nested more than {MaxDepth} deep.");
         var lines = new List<string>();
         WriteChildren(document.Content, root.Children, 0, options.IndentUnit, lines, preserveBlankLines: true);
         return lines.Count == 0 ? string.Empty : string.Join(newline, lines.Select(l => Newlines(l, newline))) + newline;
@@ -73,18 +80,13 @@ public sealed class XmlFormatter : IFormatter
             return;
         }
 
-        var elementOnly = !element.PreservesSpace &&
+        var elementOnly = !element.KeptAsWritten &&
+                          element.Children.Any(c => c is SourceElement) &&
                           element.Children.All(c => c is SourceElement or SourceComment or SourceInstruction || c is SourceText { IsWhitespace: true });
         if (!elementOnly)
         {
-            // Text in it: kept exactly as written
+            // Text in it (or only whitespace, or text where whitespace between elements shows): kept as written
             lines.Add(indent + start + source[element.ContentStart..element.ContentEnd] + element.EndTag);
-            return;
-        }
-
-        if (element.Children.All(c => c is SourceText))
-        {
-            lines.Add(indent + start + element.EndTag);
             return;
         }
 
@@ -152,7 +154,8 @@ internal sealed class SourceElement : SourceNode
     public string StartTag { get; init; } = string.Empty;
     public string EndTag { get; set; } = string.Empty;
     public bool SelfClosing { get; init; }
-    public bool PreservesSpace { get; set; }
+    /// <summary>The content is kept exactly as written: xml:space="preserve", SVG text, XHTML (and inside them).</summary>
+    public bool KeptAsWritten { get; set; }
     public List<SourceNode> Children { get; } = [];
     public int ContentStart { get; init; }
     public int ContentEnd { get; set; }
@@ -161,8 +164,10 @@ internal sealed class SourceElement : SourceNode
 /// <summary>Reads well-formed XML into an <see cref="SourceElement"/> tree with the source text of every part.</summary>
 internal static class XmlSourceReader
 {
-    public static SourceElement Read(string s)
+    /// <param name="depth">How deep elements are nested at most.</param>
+    public static SourceElement Read(string s, out int depth)
     {
+        depth = 0;
         var root = new SourceElement();
         var stack = new Stack<SourceElement>();
         stack.Push(root);
@@ -216,17 +221,33 @@ internal static class XmlSourceReader
                 var tag = s[i..close];
                 var selfClosing = tag.EndsWith("/>", StringComparison.Ordinal);
                 var element = new SourceElement { StartTag = tag, SelfClosing = selfClosing, ContentStart = close };
-                element.PreservesSpace = current.PreservesSpace;
-                if (tag.Contains("xml:space", StringComparison.Ordinal))
-                    element.PreservesSpace = tag.Contains("\"preserve\"", StringComparison.Ordinal) || tag.Contains("'preserve'", StringComparison.Ordinal);
+                // (xml:space="default" ends a preserve of an element around it)
+                var spaceDefault = tag.Contains("xml:space", StringComparison.Ordinal) && !tag.Contains("preserve", StringComparison.Ordinal);
+                element.KeptAsWritten = IsKeptAsWritten(tag) || current.KeptAsWritten && !spaceDefault;
                 current.Children.Add(element);
                 if (!selfClosing) stack.Push(element);
+                depth = Math.Max(depth, stack.Count - 1);
             }
 
             i = close;
         }
 
         return root;
+    }
+
+    private static readonly string[] SvgText = ["text", "tspan", "textPath"];
+
+    // An element whose content is kept exactly as written: xml:space="preserve", SVG text, or one that declares the
+    // XHTML namespace (whitespace between elements is shown there)
+    private static bool IsKeptAsWritten(string tag)
+    {
+        if (tag.Contains("xml:space", StringComparison.Ordinal) && tag.Contains("preserve", StringComparison.Ordinal)) return true;
+        if (tag.Contains("http://www.w3.org/1999/xhtml", StringComparison.Ordinal)) return true;
+        var end = 1;
+        while (end < tag.Length && tag[end] is not (' ' or '\t' or '\n' or '\r' or '/' or '>')) end++;
+        var name = tag[1..end];
+        var colon = name.IndexOf(':');
+        return SvgText.Contains(colon < 0 ? name : name[(colon + 1)..], StringComparer.Ordinal);
     }
 
     private static bool At(string s, int i, string text) => string.CompareOrdinal(s, i, text, 0, text.Length) == 0;

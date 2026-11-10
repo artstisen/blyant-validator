@@ -129,7 +129,11 @@ replaces them safely (a temporary file is written first), keeping their encoding
 | --- | --- |
 | 0 | No errors found (warnings are allowed). |
 | 1 | Errors found, or `format --check` found unformatted files. |
-| 2 | The tool itself failed: bad arguments, missing files, vnu not available, or a file could not be formatted. |
+| 2 | The tool itself failed: bad arguments, a path that does not exist, a file that cannot be read or written, vnu not available, a file that could not be formatted, or an error of the program itself. The other files are still done. |
+
+A file that is not UTF-8 (Windows-1252, Latin-1, UTF-16 …) is not read: decoded as UTF-8 its other characters would
+be lost. `validate` reports it as an error of the file (`file.not-utf8`, with the line of the first byte that is not
+UTF-8), and `format` leaves it as it is.
 
 ## Fragments and ignored problems
 
@@ -258,23 +262,30 @@ number of level 1 headings.
 
 ## Formatting
 
-Formatting only changes layout; the formatted file means exactly the same as before.
+Formatting only changes layout; the formatted file means exactly the same as before. Files are read and written
+as UTF-8 (with or without a BOM, as they had), with the line endings they mostly use (CRLF, LF or CR). A file that
+is not UTF-8 is not formatted, nor one nested deeper than the program follows (512 elements, 256 CSS blocks or
+parentheses).
 
 - **CSS**: one selector and one declaration per line, blocks indented, `: ` after property names,
-  whitespace inside values made single spaces, and a missing last `;` added. Comments are kept, and so is
-  one empty line where the file had empty lines. Custom properties (`--name`) keep their value exactly as
-  written. A file with a block that is never closed is not formatted.
-- **XML**: elements that hold only elements get their children on lines of their own, indented. An element with
-  text in it (a `<loc>`, a `<title>`, SVG `<text>`, mixed content) is kept exactly as written, and so is everything
-  under `xml:space="preserve"`. Comments, CDATA, the declaration and the doctype are kept, and one empty line where the
+  whitespace inside values made single spaces, one space before `!important`, and a missing last `;` added. Every
+  token is kept as written: comments (also inside a declaration), escapes in names (`--my\:var`) and the case of
+  `!IMPORTANT`. Comments are kept, and so is one empty line where the file had empty lines. Custom properties
+  (`--name`) keep their value exactly as written. A file with a block that is never closed, or a string with a
+  line break in it, is not formatted.
+- **XML**: elements that hold only elements get their children on lines of their own, indented. Kept exactly as
+  written: an element with text in it (a `<loc>`, a `<title>`, mixed content) or only whitespace, everything under
+  `xml:space="preserve"`, SVG text (`<text>`, `<tspan>`, `<textPath>`), and XHTML (an element that declares the XHTML
+  namespace, as in Atom's `type="xhtml"` content), where whitespace between elements shows. Comments, CDATA, the declaration and the doctype are kept, and one empty line where the
   file had empty lines. Runs of spaces between attributes become one space. A file that is not well-formed is not
   formatted.
 - **HTML**: block-level elements (`div`, `p`, `li`, `table` …) get lines of their own and are indented.
   Text and inline elements stay together, keeping the line breaks of the source; elements whose content
   fits within `--line-width` stay on one line. Whitespace is only added or removed where the browser
-  ignores it. The contents of `<pre>`, `<textarea>` and `<script>` are kept exactly as written; `<style>`
-  elements are formatted as CSS. End tags that the source leaves out (`</li>`, `</td>`, `</p>` …) are
-  not added.
+  ignores it: a `<script>`, `<link>` or `<noscript>` right next to text stays in the line. The contents of `<pre>`,
+  `<textarea>` and `<script>` are kept exactly as written; `<style>` elements are formatted as CSS. HTML inside an
+  SVG `<foreignObject>` is formatted as HTML. End tags that the source leaves out (`</li>`, `</td>`, `</p>` …) are
+  not added. A file that ends inside a tag is not formatted.
 
 ### JSON output
 

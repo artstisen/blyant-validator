@@ -6,12 +6,18 @@ namespace Blyant.Validator.Html.Parsing;
 /// <summary>A parse error, with the offset in the source where it was found.</summary>
 public sealed record HtmlParseError(int Offset, string Code, string Message);
 
-public sealed class HtmlParseResult(HElement root, List<HtmlParseError> errors)
+public sealed class HtmlParseResult(HElement root, List<HtmlParseError> errors, int tooDeepAt = -1)
 {
     /// <summary>The document; its children are the top-level nodes.</summary>
     public HElement Root { get; } = root;
 
     public List<HtmlParseError> Errors { get; } = errors;
+
+    /// <summary>
+    /// The offset of the first element nested deeper than <see cref="HtmlReader.MaxDepth"/>, or -1. The rules and the
+    /// formatter walk the tree recursively, so such a tree is not checked or formatted (it would overflow the stack)
+    /// </summary>
+    public int TooDeepAt { get; } = tooDeepAt;
 }
 
 /// <summary>
@@ -50,6 +56,10 @@ public sealed class HtmlReader
     private bool _seenDoctype;
     private bool _seenContent;
     private int _pos;
+    private int _tooDeepAt = -1;
+
+    /// <summary>How deep elements may be nested to be checked and formatted (as deep as browsers build them).</summary>
+    public const int MaxDepth = 512;
 
     private HtmlReader(string source)
     {
@@ -61,12 +71,18 @@ public sealed class HtmlReader
     {
         var reader = new HtmlReader(source);
         reader.Run();
-        return new HtmlParseResult(reader._stack[0], reader._errors);
+        return new HtmlParseResult(reader._stack[0], reader._errors, reader._tooDeepAt);
     }
 
     private HElement Current => _stack[^1];
 
-    private bool InForeignContent => Current.IsForeign;
+    // In SVG or MathML, but not in an HTML integration point (svg foreignObject, desc, title; MathML annotation-xml),
+    // whose content is HTML again
+    private bool InForeignContent => Current.IsForeign && !HtmlNames.IsIntegrationPoint(Current);
+
+    // HTML's whitespace: space, tab, line feed, form feed, carriage return. Not a no-break space or other Unicode space,
+    // which are characters of a name or an unquoted value
+    private static bool IsHtmlSpace(char c) => c is ' ' or '\t' or '\n' or '\f' or '\r';
 
     private void Error(int offset, string code, string message) =>
         _errors.Add(new HtmlParseError(offset, "html.parse." + code, message));
@@ -221,7 +237,7 @@ public sealed class HtmlReader
         var start = _pos;
         _pos += 2;
         var nameStart = _pos;
-        while (_pos < _s.Length && !char.IsWhiteSpace(_s[_pos]) && _s[_pos] is not ('>' or '/')) _pos++;
+        while (_pos < _s.Length && !IsHtmlSpace(_s[_pos]) && _s[_pos] is not ('>' or '/')) _pos++;
         var name = _s[nameStart.._pos];
         var end = _s.IndexOf('>', _pos);
         if (end < 0) Error(start, "eof-in-tag", "End of file seen inside an end tag.");
@@ -281,7 +297,7 @@ public sealed class HtmlReader
         var start = _pos;
         _pos++;
         var nameStart = _pos;
-        while (_pos < _s.Length && !char.IsWhiteSpace(_s[_pos]) && _s[_pos] is not ('>' or '/')) _pos++;
+        while (_pos < _s.Length && !IsHtmlSpace(_s[_pos]) && _s[_pos] is not ('>' or '/')) _pos++;
         var name = _s[nameStart.._pos];
         var lower = name.ToLowerInvariant();
         var foreign = InForeignContent || lower is "svg" or "math";
@@ -323,7 +339,7 @@ public sealed class HtmlReader
 
             var attrStart = _pos;
             _pos++;
-            while (_pos < _s.Length && !char.IsWhiteSpace(_s[_pos]) && _s[_pos] is not ('>' or '/' or '=')) _pos++;
+            while (_pos < _s.Length && !IsHtmlSpace(_s[_pos]) && _s[_pos] is not ('>' or '/' or '=')) _pos++;
             var attrName = _s[attrStart.._pos];
             if (attrName.IndexOfAny(['"', '\'', '<']) >= 0)
                 Error(attrStart, "bad-attribute-name", $"Quote or “<” in attribute name “{attrName}”. Probable cause: Missing “=” or a missing space.");
@@ -381,6 +397,7 @@ public sealed class HtmlReader
         }
 
         _stack.Add(element);
+        if (_stack.Count - 1 > MaxDepth && _tooDeepAt < 0) _tooDeepAt = element.Start;
     }
 
     private string ReadAttributeValue(int start)
@@ -394,7 +411,7 @@ public sealed class HtmlReader
             _pos = end < 0 ? _s.Length : end + 1;
             return _s[start.._pos];
         }
-        while (_pos < _s.Length && !char.IsWhiteSpace(_s[_pos]) && _s[_pos] != '>') _pos++;
+        while (_pos < _s.Length && !IsHtmlSpace(_s[_pos]) && _s[_pos] != '>') _pos++;
         var value = _s[start.._pos];
         var bad = value.IndexOfAny(['"', '\'', '<', '=', '`']);
         if (bad >= 0)
@@ -405,7 +422,7 @@ public sealed class HtmlReader
     private bool SkipWhitespace()
     {
         var start = _pos;
-        while (_pos < _s.Length && char.IsWhiteSpace(_s[_pos])) _pos++;
+        while (_pos < _s.Length && IsHtmlSpace(_s[_pos])) _pos++;
         return _pos > start;
     }
 
@@ -441,7 +458,7 @@ public sealed class HtmlReader
             var after = i + 2 + name.Length;
             if (after <= _s.Length &&
                 string.Compare(_s, i + 2, name, 0, name.Length, StringComparison.OrdinalIgnoreCase) == 0 &&
-                (after == _s.Length || char.IsWhiteSpace(_s[after]) || _s[after] is '>' or '/'))
+                (after == _s.Length || IsHtmlSpace(_s[after]) || _s[after] is '>' or '/'))
                 return i;
             p = i + 2;
         }

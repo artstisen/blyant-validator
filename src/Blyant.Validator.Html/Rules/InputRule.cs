@@ -101,7 +101,7 @@ public sealed partial class InputRule : IHtmlRule
         {
             "number" or "range" => FloatNumber().IsMatch(value) ? null : "Expected a number (as “3” or “2.5”).",
             "date" => IsDate(value) ? null : "Expected a date (as “2026-11-10”).",
-            "month" => MonthValue().IsMatch(value) && int.Parse(value[5..], CultureInfo.InvariantCulture) is >= 1 and <= 12
+            "month" => MonthValue().Match(value) is { Success: true } m && int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) is >= 1 and <= 12
                 ? null : "Expected a month (as “2026-11”).",
             "week" => WeekValue().Match(value) is { Success: true } w && int.Parse(w.Groups[1].Value, CultureInfo.InvariantCulture) is >= 1 and <= 53
                 ? null : "Expected a week (as “2026-W46”).",
@@ -127,22 +127,22 @@ public sealed partial class InputRule : IHtmlRule
     private static string Shorten(string value) => value.Length > 40 ? value[..40] + "…" : value;
 
     // A valid floating-point number of HTML: -1, 2.5, .5, 1e3 (not "1." nor "+1")
-    [GeneratedRegex(@"^-?(\d+(\.\d+)?|\.\d+)([eE][+-]?\d+)?$")]
+    [GeneratedRegex(@"^-?([0-9]+(\.[0-9]+)?|\.[0-9]+)([eE][+-]?[0-9]+)?$")]
     private static partial Regex FloatNumber();
 
-    [GeneratedRegex(@"^\d{4,}-\d{2}-\d{2}$")]
+    [GeneratedRegex(@"^[0-9]{4,}-[0-9]{2}-[0-9]{2}$")]
     private static partial Regex DateValue();
 
-    [GeneratedRegex(@"^\d{4,}-\d{2}$")]
+    [GeneratedRegex(@"^[0-9]{4,}-([0-9]{2})$")]
     private static partial Regex MonthValue();
 
-    [GeneratedRegex(@"^\d{4,}-W(\d{2})$")]
+    [GeneratedRegex(@"^[0-9]{4,}-W([0-9]{2})$")]
     private static partial Regex WeekValue();
 
-    [GeneratedRegex(@"^(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,3})?)?$")]
+    [GeneratedRegex(@"^([0-9]{2}):([0-9]{2})(?::([0-9]{2})(?:\.[0-9]{1,3})?)?$")]
     private static partial Regex TimeValue();
 
-    [GeneratedRegex(@"^(\d{4,}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?)$")]
+    [GeneratedRegex(@"^([0-9]{4,}-[0-9]{2}-[0-9]{2})[T ]([0-9]{2}:[0-9]{2}(?::[0-9]{2}(?:\.[0-9]{1,3})?)?)$")]
     private static partial Regex DateTimeLocal();
 
     [GeneratedRegex(@"^#[0-9a-fA-F]{6}$")]

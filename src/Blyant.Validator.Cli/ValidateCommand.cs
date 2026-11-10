@@ -16,7 +16,7 @@ internal static class ValidateCommand
 
     public static async Task<int> RunAsync(Settings settings, CancellationToken ct)
     {
-        var files = FileCollector.Collect(settings.Paths, settings.Recursive, Console.Error);
+        var files = FileCollector.Collect(settings.Paths, settings.Recursive, Console.Error, out var missing);
         if (files.Count == 0)
         {
             Console.Error.WriteLine("blyant-validator: no files to validate.");
@@ -33,9 +33,30 @@ internal static class ValidateCommand
         var all = new List<Diagnostic>();
         var checkedCount = 0;
         var ignoredCount = 0;
+        var failed = missing > 0;
         foreach (var file in files)
         {
-            var document = await DocumentIo.LoadAsync(file, ct);
+            SourceDocument document;
+            try
+            {
+                document = await DocumentIo.LoadAsync(file, ct);
+            }
+            catch (NotUtf8Exception e)
+            {
+                // A problem of the file: reported with the others (and can be ignored by its code)
+                var shown = IgnoreList.Apply([e.ToDiagnostic(file)], ignore);
+                ignoredCount += 1 - shown.Count;
+                all.AddRange(shown);
+                checkedCount++;
+                continue;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine($"blyant-validator: '{file}' cannot be read: {e.Message}");
+                failed = true;
+                continue;
+            }
+
             var validator = validators.FirstOrDefault(v => v.CanValidate(document.Kind));
             if (validator is null)
             {
@@ -51,10 +72,6 @@ internal static class ValidateCommand
                 all.AddRange(shown);
                 checkedCount++;
             }
-            catch (NotImplementedException ex)
-            {
-                Console.Error.WriteLine($"blyant-validator: skipping '{file}': {ex.Message}");
-            }
             catch (VnuNotAvailableException ex)
             {
                 Console.Error.WriteLine($"blyant-validator: {ex.Message}");
@@ -66,6 +83,8 @@ internal static class ValidateCommand
         if (settings.Output == "json") WriteJson(all, mode, Console.Out);
         else WriteText(all, checkedCount, mode, Console.Out);
 
+        // (a file that could not be read, or a path that does not exist: the tool did not do all it was asked)
+        if (failed) return 2;
         return all.Any(d => d.Severity == Severity.Error) ? 1 : 0;
     }
 
