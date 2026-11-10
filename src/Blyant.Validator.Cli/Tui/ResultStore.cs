@@ -175,7 +175,7 @@ internal sealed class ResultStore : IDisposable
             IValidator validator = document.Kind switch
             {
                 DocumentKind.Xml => new XmlValidator(),
-                DocumentKind.Markdown => new MarkdownValidator(p => File.Exists(p) || Directory.Exists(p)),
+                DocumentKind.Markdown => new MarkdownValidator(DocumentIo.IsFileOrFolder),
                 _ when _engine == "vnu" => new VnuValidator(_vnu),
                 DocumentKind.Css => new CssValidator(),
                 _ => new HtmlValidator(fragment),

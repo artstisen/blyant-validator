@@ -104,7 +104,8 @@ public sealed partial class MarkdownValidator(Func<string, bool>? exists = null)
 
             // Only relative paths are checked: not web addresses (https:, mailto: …), not paths from the site root
             if (exists == null || Scheme().IsMatch(target) || target.StartsWith('/') || target.StartsWith('\\')) continue;
-            var file = target.Split('#', '?')[0];
+            // (a "\" is read as "/", as browsers do: on Linux and macOS it would be a part of the name)
+            var file = target.Split('#', '?')[0].Replace('\\', '/');
             if (file.Length == 0) continue;
             var full = Path.GetFullPath(Path.Combine(directory, Unescape(file)));
             if (!exists(full))

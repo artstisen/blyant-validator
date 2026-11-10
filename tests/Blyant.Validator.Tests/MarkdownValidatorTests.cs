@@ -91,12 +91,14 @@ public class MarkdownValidatorTests
             return path.EndsWith("there.md", StringComparison.Ordinal);
         }
 
-        var result = Validate("[a](docs/there.md#x) [b](docs/gone.md) [c](https://x.org/gone.md) [d](/root.md) ![e](img%20name.png)",
+        var result = Validate("[a](docs/there.md#x) [b](docs/gone.md) [c](https://x.org/gone.md) [d](/root.md) ![e](img%20name.png) [f](docs\\back.md)",
             Path.Combine(root, "README.md"), Exists);
 
-        Assert.Equal(2, result.Count(d => d.Code == "md.broken-link"));
+        Assert.Equal(3, result.Count(d => d.Code == "md.broken-link"));
         Assert.Contains(Path.Combine(root, "docs", "gone.md"), asked);
         Assert.Contains(Path.Combine(root, "img name.png"), asked);
+        // (a link written with "\" is the same path on every system)
+        Assert.Contains(Path.Combine(root, "docs", "back.md"), asked);
         Assert.DoesNotContain(asked, p => p.Contains("x.org") || p.EndsWith("root.md"));
     }
 

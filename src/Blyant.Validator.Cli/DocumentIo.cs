@@ -26,6 +26,38 @@ internal static class DocumentIo
     // Throws on bytes that are not UTF-8, instead of replacing them
     private static readonly UTF8Encoding Utf8Strict = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
+    /// <summary>
+    /// True for a file that is there, also through a link. On Linux and macOS File.Exists is true for a link to a file
+    /// that is gone (on Windows it is false): such a link is not a file here, on every system
+    /// </summary>
+    public static bool IsFile(string path)
+    {
+        if (!File.Exists(path)) return false;
+        try
+        {
+            return new FileInfo(path).LinkTarget is null || File.ResolveLinkTarget(path, returnFinalTarget: true) is { Exists: true };
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>A file or a folder that is there, also through a link (as <see cref="IsFile"/>).</summary>
+    public static bool IsFileOrFolder(string path)
+    {
+        if (IsFile(path)) return true;
+        if (!Directory.Exists(path)) return false;
+        try
+        {
+            return new DirectoryInfo(path).LinkTarget is null || Directory.ResolveLinkTarget(path, returnFinalTarget: true) is { Exists: true };
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
     public static async Task<SourceDocument> LoadAsync(string path, CancellationToken ct) =>
         FromBytes(path, await File.ReadAllBytesAsync(path, ct).ConfigureAwait(false));
 

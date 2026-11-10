@@ -163,47 +163,74 @@ public sealed class RobustnessTests : IDisposable
         Assert.Equal(["a.css", "index.html"], files.Select(Path.GetFileName).Order(StringComparer.Ordinal));
     }
 
-    [Fact]
-    public void SafeWrite_KeepsThePermissionsOrAttributes()
+    [WindowsFact]
+    public void SafeWrite_KeepsTheAttributes()
     {
         var path = Path.Combine(_dir, "run.html");
         File.WriteAllText(path, "old");
-        if (OperatingSystem.IsWindows())
-        {
-            File.SetAttributes(path, File.GetAttributes(path) | FileAttributes.Hidden);
-            DocumentIo.SafeWriteAllText(path, "new", withBom: false);
-            Assert.True(File.GetAttributes(path).HasFlag(FileAttributes.Hidden));
-        }
-        else
-        {
-            const UnixFileMode mode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead;
-            File.SetUnixFileMode(path, mode);
-            DocumentIo.SafeWriteAllText(path, "new", withBom: false);
-            Assert.Equal(mode, File.GetUnixFileMode(path));
-        }
-
+        File.SetAttributes(path, File.GetAttributes(path) | FileAttributes.Hidden);
+        DocumentIo.SafeWriteAllText(path, "new", withBom: false);
+        Assert.True(File.GetAttributes(path).HasFlag(FileAttributes.Hidden));
         Assert.Equal("new", File.ReadAllText(path));
         Assert.Single(Directory.GetFiles(_dir)); // (no temporary file left)
     }
 
-    [Fact]
+    [UnixFact]
+    public void SafeWrite_KeepsThePermissions()
+    {
+        if (OperatingSystem.IsWindows()) return; // (for the analyzer: UnixFact runs on Linux and macOS only)
+        var path = Path.Combine(_dir, "run.html");
+        File.WriteAllText(path, "old");
+        const UnixFileMode mode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead;
+        File.SetUnixFileMode(path, mode);
+        DocumentIo.SafeWriteAllText(path, "new", withBom: false);
+        Assert.Equal(mode, File.GetUnixFileMode(path));
+        Assert.Equal("new", File.ReadAllText(path));
+        Assert.Single(Directory.GetFiles(_dir)); // (no temporary file left)
+    }
+
+    [LinksFact]
     public void SafeWrite_WritesTheFileALinkLeadsTo()
     {
         var target = Path.Combine(_dir, "real.css");
         var link = Path.Combine(_dir, "link.css");
         File.WriteAllText(target, "old");
-        try
-        {
-            File.CreateSymbolicLink(link, target);
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            return; // (Windows without the right to make links)
-        }
+        File.CreateSymbolicLink(link, target);
 
         DocumentIo.SafeWriteAllText(link, "new", withBom: false);
         Assert.Equal("new", File.ReadAllText(target));
         Assert.NotNull(new FileInfo(link).LinkTarget);
+    }
+
+    [LinksFact]
+    public void ALinkToAFileThatIsGone_IsNotAFile_OnAnySystem()
+    {
+        // (File.Exists is true for it on Linux and macOS, false on Windows)
+        var link = Path.Combine(_dir, "gone.html");
+        File.CreateSymbolicLink(link, Path.Combine(_dir, "missing.html"));
+        File.WriteAllText(Path.Combine(_dir, "page.html"), "x");
+
+        Assert.False(DocumentIo.IsFile(link));
+        Assert.False(DocumentIo.IsFileOrFolder(link));
+        var errors = new StringWriter();
+        Assert.Empty(FileCollector.Collect([link], false, errors, out var missing));
+        Assert.Equal(1, missing);
+        Assert.Equal(["page.html"], FileCollector.Collect([_dir], false, TextWriter.Null, out _).Select(Path.GetFileName));
+    }
+
+    [Fact]
+    public void NamesThatDifferOnlyInCase_AreOneFileOrTwo_AsTheFileSystemHasThem()
+    {
+        var upper = Path.Combine(_dir, "Page.html");
+        var lower = Path.Combine(_dir, "page.html");
+        File.WriteAllText(upper, "x");
+        // (the file system tells case apart: Linux, and a case-sensitive volume of macOS)
+        var caseSensitive = !File.Exists(lower);
+        if (caseSensitive) File.WriteAllText(lower, "y");
+
+        var both = FileCollector.Collect([upper, lower, _dir], false, TextWriter.Null, out _);
+        Assert.Equal(caseSensitive ? 2 : 1, both.Count);
+        Assert.Equal(!caseSensitive, FileCollector.SamePlace(upper, lower));
     }
 
     // ---- vnu's output

@@ -81,6 +81,10 @@
   `inset-area`, `@function` and calls of custom functions (`--double(4px)`)
 
 ### Changed
+- Linux and macOS: a link to a file that is gone is not a file on any system (File.Exists said it was there), a
+  Markdown link written with a backslash is the same path on every system, and two names that differ only in case
+  are one file or two as the folder has them (also on a case-sensitive volume of macOS). Tests that can only run on
+  some systems are shown as skipped elsewhere
 - Code that the validator does not use is removed: the C#, C++, Rust and PHP highlighting and the JSON highlighting
   copied from Blyant (only JavaScript, in HTML's script elements, is used), and members nothing called (in the
   boxes, the command line, the clipboard, the CSS tokens and parser). The colors of the peek are the same

@@ -20,7 +20,8 @@ internal static class FileCollector
 
         foreach (var path in paths)
         {
-            if (File.Exists(path))
+            // (a link to a file that is gone is not a file: File.Exists says it is on Linux and macOS)
+            if (DocumentIo.IsFile(path))
             {
                 files.Add(path);
             }
@@ -30,6 +31,7 @@ internal static class FileCollector
                 {
                     files.AddRange(Patterns
                         .SelectMany(p => Directory.EnumerateFiles(directory, p, options))
+                        .Where(DocumentIo.IsFile)
                         .Order(StringComparer.OrdinalIgnoreCase));
                 }
             }
@@ -40,9 +42,46 @@ internal static class FileCollector
             }
         }
 
-        // A file given twice (by itself and in its folder) is done once
-        var seen = new HashSet<string>(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
-        return [.. files.Where(f => seen.Add(Path.GetFullPath(f)))];
+        // A file given twice (by itself and in its folder) is done once. Two paths that differ only in case are the
+        // same file on Windows and (usually) macOS, two files on Linux and on a case-sensitive volume of macOS: the
+        // folder tells
+        var result = new List<string>();
+        var seen = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var file in files)
+        {
+            var full = Path.GetFullPath(file);
+            if (!seen.TryGetValue(full, out var same)) seen[full] = same = [];
+            if (same.Any(other => SamePlace(other, full))) continue;
+            same.Add(full);
+            result.Add(file);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// True when two full paths that are equal but for the case of letters are the same place on the disk: unless a
+    /// folder holds both spellings (a file system that tells case apart), they are
+    /// </summary>
+    internal static bool SamePlace(string a, string b)
+    {
+        if (string.Equals(a, b, StringComparison.Ordinal)) return true;
+        var folderA = Path.GetDirectoryName(a);
+        var folderB = Path.GetDirectoryName(b);
+        if (folderA is null || folderB is null) return true; // Roots: "C:\" and "c:\"
+        if (!SamePlace(folderA, folderB)) return false;
+        var nameA = Path.GetFileName(a);
+        var nameB = Path.GetFileName(b);
+        if (string.Equals(nameA, nameB, StringComparison.Ordinal)) return true;
+        try
+        {
+            var names = Directory.EnumerateFileSystemEntries(folderA).Select(Path.GetFileName).ToHashSet(StringComparer.Ordinal);
+            return !(names.Contains(nameA) && names.Contains(nameB));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return !OperatingSystem.IsLinux();
+        }
     }
 
     /// <summary>

@@ -89,7 +89,7 @@ internal static class ValidateCommand
     }
 
     // Markdown, with relative links checked against the files on disk
-    private static MarkdownValidator Markdown() => new(path => File.Exists(path) || Directory.Exists(path));
+    private static MarkdownValidator Markdown() => new(DocumentIo.IsFileOrFolder);
 
     /// <summary>How the files were checked, when it was not a full check: shown with the results.</summary>
     private sealed record Mode(bool Fragment, IReadOnlyList<string> Ignore, int IgnoredCount)

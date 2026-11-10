@@ -130,6 +130,20 @@ GitHub workflow `Build and test` builds and tests it on all three systems.
 
 - Do not take the behaviour of the file system from Windows: names of files are case-sensitive on Linux,
   the separator is `/` (use `Path.Combine`, never a written `\`), and a name starting with `.` is hidden
+- On macOS names are usually not case-sensitive (its file systems take `Page.html` and `page.html` as the same
+  name, as Windows does), but a volume can be: code must work both ways, and a test of names that differ only in
+  case first checks that the file system tells them apart (as `FileCollector.SamePlace` asks the folder, not the
+  system)
+- `File.Exists` is true on Linux and macOS for a link to a file that is gone (on Windows it is false): ask
+  `DocumentIo.IsFile` or `IsFileOrFolder`, which follow the link on every system
+- On Windows a path that starts with `/` or `\` without a drive (`/docs/plan.md`) is taken from the drive the
+  program was started on, which can be another than the drive of the file it is about (on the GitHub workflow they
+  differ: `C:` and `D:`). Take the drive from a path you know (`Path.GetFullPath(path, basePath)`, or
+  `Path.GetPathRoot` of the file), never from `Path.GetFullPath` alone. A link in a file is written with `/`: a `\`
+  in it is read as `/`, as browsers do
+- A change to files, paths, links or the terminal gets tests of what differs between the systems. A test that can
+  only run on Linux and macOS is a `[UnixFact]`, one only for Windows a `[WindowsFact]`, and one that makes links a
+  `[LinksFact]` (`SkipWhen.cs`): they are shown as skipped where they cannot run, never as passed
 - Passing tests on Windows say nothing about the rest: look at the workflow
 
 ## Code

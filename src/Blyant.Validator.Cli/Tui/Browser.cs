@@ -522,7 +522,7 @@ internal static partial class Browser
         pane.Items = items;
         // The marks are kept while the same directory is shown (also with a filter). The ones gone are dropped
         if (pane.MarksDirectory != pane.Directory) pane.Marks.Clear();
-        pane.Marks.RemoveWhere(path => !File.Exists(path));
+        pane.Marks.RemoveWhere(path => !DocumentIo.IsFile(path));
         pane.MarksDirectory = pane.Directory;
         pane.Index = Math.Max(0, select == null ? 0 : items.FindIndex(i => i.Name == select || i.Path == select));
         pane.Top = 0;

@@ -207,7 +207,7 @@ internal static partial class Browser
     {
         // (all the marked files, also those a filter hides)
         var paths = ActivePane.Marks.Count > 0
-            ? ActivePane.Marks.Where(File.Exists).Order(StringComparer.OrdinalIgnoreCase).ToList()
+            ? ActivePane.Marks.Where(DocumentIo.IsFile).Order(StringComparer.OrdinalIgnoreCase).ToList()
             : SelectedItem() is { IsDirectory: false } item ? [item.Path] : [];
         // (Markdown is validated, but not formatted)
         paths = paths.Where(p => SourceDocument.DetectKind(p) is DocumentKind.Html or DocumentKind.Css or DocumentKind.Xml).ToList();
