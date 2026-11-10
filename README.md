@@ -390,7 +390,9 @@ dotnet run --project src/Blyant.Validator.Cli -- validate index.html
 
 On Windows the program has an icon in the style of Blyant's, with a checkmark:
 `src/Blyant.Validator.Cli/BlyantValidator.ico` (and `.svg`), drawn by `python tools/icon.py` (needs Pillow; only to
-draw the icon, not to build).
+draw the icon, not to build). The social preview of the repository on GitHub, `tools/github-social-preview.png`
+(1280 x 640, in the style of Blyant's), is drawn by `python tools/social.py`, and uploaded by hand in the settings of
+the repository.
 
 The release versions are built by `publish.ps1` (PowerShell 7.3 or later), as Blyant's are: it runs the tests
 first, checks that the version is the same in `Directory.Build.props` and in the status line of this read-me, and

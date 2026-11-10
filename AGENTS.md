@@ -65,6 +65,9 @@ purpose: a fix in one is carried to the other by hand, when it matters.
 - The settings file is `settings.ini` in the data directory, in Blyant's format (`[SETTINGS]` and `name=value` read
   by name). A new setting is read and written by name in `Settings.cs`, and tested in `SettingsTests`
 - The icon (`BlyantValidator.ico` and `.svg`) is drawn by `tools/icon.py`: change the script, not the files
+- The social preview of the repository (`tools/github-social-preview.png`) is drawn by `tools/social.py`, from the
+  icon: change the script, run it again when the icon or the words change, and upload the image again (Settings,
+  General, Social preview)
 - The screenshots in `docs/screenshots` are made by `tools/screenshots.py` (Windows, with the Python packages
   `pyte` and `pywinpty`), from the release build and a made-up site in `C:\Sites`. When a screen changes, run it
   again in the same change. Like Blyant's, it never changes a `C:\Sites` that it did not make
