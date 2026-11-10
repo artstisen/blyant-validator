@@ -132,6 +132,15 @@ public static class CssData
             ["counter-function"] = new[] { "counter", "counters" }.ToFrozenSet(Ci),
             ["symbols-function"] = new[] { "symbols" }.ToFrozenSet(Ci),
             ["grid-function"] = new[] { "repeat", "minmax", "fit-content" }.ToFrozenSet(Ci),
+            // Generated content: target-counter(), leader() … (and content() of paged media)
+            ["target-function"] = new[]
+            {
+                "target-counter", "target-counters", "target-text", "leader", "content", "string",
+            }.ToFrozenSet(Ci),
+            // Scroll-driven animations: scroll() and view()
+            ["timeline-function"] = new[] { "scroll", "view" }.ToFrozenSet(Ci),
+            ["palette-mix-function"] = new[] { "palette-mix" }.ToFrozenSet(Ci),
+            ["path-function"] = new[] { "path", "shape" }.ToFrozenSet(Ci),
         }.ToFrozenDictionary(Ci);
 
     public static readonly FrozenSet<string> NamedColors = new[]
@@ -182,6 +191,6 @@ public static class CssData
     {
         "length", "percentage", "length-percentage", "number", "integer", "angle", "angle-percentage",
         "time", "time-percentage", "frequency", "resolution", "flex", "string", "url", "custom-ident",
-        "dashed-ident", "ident", "hex-color", "color", "named-color", "image", "any-value",
+        "dashed-ident", "ident", "hex-color", "color", "named-color", "image", "any-value", "line-names",
     }.ToFrozenSet(Ci);
 }

@@ -233,6 +233,11 @@ public sealed class GrammarMatcher
             case "image":
                 return IsUrl(c) ||
                        (t.Type == CssTokenType.Function && (CssData.ImageFunctions.Contains(t.Value) || CssData.IsVendorPrefixed(t.Value)));
+            case "line-names":
+                // Grid line names: [ name name ... ] (a [ ] block of identifiers)
+                return t.Type == CssTokenType.LeftSquare && c.Children is { } names &&
+                       names.All(n => n.Type == CssTokenType.Ident && !CssData.CssWideKeywords.Contains(n.Token.Value) &&
+                                      !n.Token.IsIdent("span") && !n.Token.IsIdent("auto"));
             case "any-value":
                 return true;
             default:

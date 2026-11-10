@@ -101,3 +101,54 @@
     | break-spaces
 <text-wrap-mode-value> = wrap | nowrap
 <text-wrap-style-value> = auto | balance | stable | pretty | avoid-orphans
+
+// Grid tracks (CSS Grid Layout, https://www.w3.org/TR/css-grid-2/#track-sizing)
+<track-breadth> = <length-percentage [0,∞]> | <flex [0,∞]> | min-content | max-content | auto
+<inflexible-breadth> = <length-percentage [0,∞]> | min-content | max-content | auto
+<fixed-breadth> = <length-percentage [0,∞]>
+<track-size> = <track-breadth> | minmax( <inflexible-breadth> , <track-breadth> )
+    | fit-content( <length-percentage [0,∞]> )
+<fixed-size> = <fixed-breadth> | minmax( <fixed-breadth> , <track-breadth> )
+    | minmax( <inflexible-breadth> , <fixed-breadth> )
+<track-repeat> = repeat( <integer [1,∞]> , [ <line-names>? <track-size> ]+ <line-names>? )
+<auto-repeat> = repeat( [ auto-fill | auto-fit ] , [ <line-names>? <fixed-size> ]+ <line-names>? )
+<fixed-repeat> = repeat( <integer [1,∞]> , [ <line-names>? <fixed-size> ]+ <line-names>? )
+<track-list> = [ <line-names>? [ <track-size> | <track-repeat> ] ]+ <line-names>?
+<auto-track-list> = [ <line-names>? [ <fixed-size> | <fixed-repeat> ] ]* <line-names>? <auto-repeat>
+    [ <line-names>? [ <fixed-size> | <fixed-repeat> ] ]* <line-names>?
+<explicit-track-list> = [ <line-names>? <track-size> ]+ <line-names>?
+<name-repeat> = repeat( [ <integer [1,∞]> | auto-fill ] , <line-names>+ )
+<line-name-list> = [ <line-names> | <name-repeat> ]+
+<grid-template-value> = none | <track-list> | <auto-track-list> | subgrid <line-name-list>? | masonry
+
+// Boxes and shapes
+<shape-box> = <visual-box> | margin-box
+<geometry-box> = <shape-box> | fill-box | stroke-box | view-box
+<coord-box> = <visual-box> | fill-box | stroke-box | view-box
+
+// Generated content
+<quote> = open-quote | close-quote | no-open-quote | no-close-quote
+<content-item> = <string> | <image> | <counter-function> | <quote> | contents | <target-function>
+
+// Fonts
+<common-lig-values> = common-ligatures | no-common-ligatures
+<discretionary-lig-values> = discretionary-ligatures | no-discretionary-ligatures
+<historical-lig-values> = historical-ligatures | no-historical-ligatures
+<contextual-alt-values> = contextual | no-contextual
+<east-asian-variant-values> = jis78 | jis83 | jis90 | jis04 | simplified | traditional
+<east-asian-width-values> = full-width | proportional-width
+<caps-values> = small-caps | all-small-caps | petite-caps | all-petite-caps | unicase | titling-caps
+
+// Masks
+<mask-reference> = none | <image>
+<masking-mode> = alpha | luminance | match-source
+<compositing-operator> = add | subtract | intersect | exclude
+<mask-layer> = <mask-reference> || <position> [ / <bg-size> ]? || <repeat-style> || <coord-box>
+    || [ <coord-box> | no-clip ] || <compositing-operator> || <masking-mode>
+
+// SVG paint
+<paint> = none | <color> | <url> [ none | <color> ]? | context-fill | context-stroke
+<dash-value> = <length-percentage [0,∞]> | <number [0,∞]>
+
+// Timelines (scroll-driven animations)
+<timeline-axis> = block | inline | x | y
