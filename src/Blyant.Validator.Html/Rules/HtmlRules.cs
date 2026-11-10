@@ -18,6 +18,9 @@ public static class HtmlRuleSet
         new ImgAltRule(),
         new DuplicateIdRule(),
         new EmbeddedCssRule(),
+        new ObsoleteRule(),
+        new AttributeRule(),
+        new ContentModelRule(),
     ];
 }
 

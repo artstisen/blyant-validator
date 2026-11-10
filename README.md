@@ -126,8 +126,10 @@ replaces them safely (a temporary file is written first), keeping their encoding
   “background-color”?"). Vendor-prefixed names (`-webkit-…`) are reported as info.
 - **Property values**, checked against grammars written in the notation of the CSS specifications
   (`src/Blyant.Validator.Css/Data/properties.txt`), with ranges such as “no negative padding”. Values
-  that use `var()`, `env()` or `attr()` are not checked, and neither are properties without a grammar yet
-  (for example `grid-template-columns` and `content`): a false error is worse than a missed one.
+  that use `var()`, `env()` or `attr()` are not checked: a false error is worse than a missed one. 469 of the
+  497 known properties have a grammar, grid templates (`repeat()`, `minmax()`, line names, `subgrid`),
+  `content`, masks, SVG strokes and scroll-driven animations included; the rest are new or rare features
+  whose values are not checked yet (anchor positioning areas, `offset-*`, `mask-border-*` …).
 - **Units**: unknown units (`10pz`) are errors everywhere.
 - **Selectors**: unknown pseudo-classes and pseudo-elements, IDs starting with a digit, misplaced
   combinators, empty selectors. Nested rules (CSS Nesting) are supported.
@@ -143,7 +145,23 @@ replaces them safely (a temporary file is written first), keeping their encoding
   CDATA and `<?…?>` in HTML, bad character references (`&#xZZ;`, `&#0;`, `&copy` without `;`), and
   the end of the file inside a tag, comment or element. End tags that HTML lets you leave out (`</li>`,
   `</p>`, `</td>` …) are not reported.
+- **Elements and attributes**: unknown elements (custom elements with a `-` are allowed) and unknown
+  attributes (`data-*`, `aria-*` and event handlers are allowed); wrong values of boolean attributes
+  (`disabled="false"`), of attributes with a set of values (`type`, `method`, `loading`, `dir` …), of numbers
+  (`width="100px"`), IDs and URLs (spaces, backslashes); required attributes (`src` on `<img>`, `rel` and
+  `href` on `<link>`, `content` on `<meta name>` …); `<label for>` pointing at no element.
+- **Obsolete elements and attributes**: `<center>`, `<font>`, `<marquee>`, `align`, `bgcolor`, `cellpadding`,
+  `<a name>` … with what to use instead; `border="0"` on images, `border="1"` on tables and an unneeded `type`
+  on `<script>` and `<style>` are warnings.
+- **Content models**: what lists, definition lists, tables, `<select>`, `<head>` and `<picture>` may hold; where
+  `<li>`, `<dt>`/`<dd>`, table parts, `<option>`, `<figcaption>`, `<legend>`, `<summary>` and `<source>` may be;
+  blocks inside inline elements (`<div>` in `<span>`, also through `<a>`); links and buttons inside links and
+  buttons; text where only elements may be; more than one visible `<main>`.
+- **CSS in the page**: `<style>` elements and `style` attributes are checked with the CSS validator, with the
+  places of the problems in the HTML file.
 - Missing `<title>` and `lang`, `<img>` without `alt`, duplicate IDs.
+
+SVG and MathML inside a page are only checked for parse errors.
 
 ## Formatting
 
@@ -229,8 +247,11 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] CSS: property, value, unit, selector and at-rule checks
 - [x] HTML and CSS formatters
 - [x] TUI: file browser with results, peek with problems marked, formatting
-- [ ] CSS: grammars for the remaining properties (grid templates, masks, …)
-- [ ] HTML: content-model rules, attribute checks, obsolete elements
-- [ ] HTML: check `<style>` elements and `style` attributes with the CSS validator
+- [x] CSS: grammars for grid templates, generated content, masks, SVG and more (469 of 497 properties)
+- [x] HTML: content-model rules, attribute checks, obsolete elements
+- [x] HTML: check `<style>` elements and `style` attributes with the CSS validator
+- [ ] CSS: grammars for the last new features (anchor positioning areas, `offset-*`, `mask-border-*`)
+- [ ] HTML: more content models (forms, headings, sectioning), and the attributes of `<input>` per type
+- [ ] XML: well-formedness, and sitemaps
 - [ ] Comparison test suite against vnu output
 - [ ] Release builds for Windows, Linux and macOS

@@ -3,6 +3,18 @@
 ## Unreleased
 
 ### Added
+- HTML: the CSS of a page is validated: `<style>` elements as style sheets and `style` attributes as declarations,
+  with the places of the problems in the HTML file
+- HTML: obsolete elements and attributes (`<center>`, `<font>`, `align`, `bgcolor`, `<a name>` …), with what to use
+  instead; warnings for `border="0"`/`border="1"` and an unneeded `type` on `<script>` and `<style>`
+- HTML: unknown elements and attributes, bad values of boolean, enumerated, numeric, ID and URL attributes,
+  missing required attributes, and `<label for>` pointing at nothing
+- HTML: content models: what lists, tables, `<select>`, `<head>` and `<picture>` may hold, where list items and
+  table parts may be, blocks inside inline elements, interactive elements inside links and buttons, text where
+  only elements go, and more than one visible `<main>`
+- CSS: grammars for 111 more properties (469 of 497): grid templates, `content`, `quotes`, `font-variant`,
+  `border-image`, masks, `container`, view transitions, SVG paint and strokes, scroll-driven timelines and more
+- CSS: suggestions for misspelled properties count two swapped letters as one mistake ("widht" → "width")
 - The TUI remembers where it was (the folders and selected files of both panes, the pane with the focus, one or two
   panes) in `settings.ini` in the data directory, as Blyant does, and starts there again. `browse <folder>` shows that
   folder in the pane with the focus

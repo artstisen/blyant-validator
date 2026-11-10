@@ -83,6 +83,9 @@ purpose: a fix in one is carried to the other by hand, when it matters.
   and custom properties (`--name`) in CSS
 - A file with errors that make its structure unclear (a block that is never closed) is not formatted:
   the formatter says why and leaves the file as it is
+- What HTML allows (elements, attributes, values, obsolete features) is kept in `Html/Rules/HtmlSpec.cs`, and
+  read by the rules. A new rule gets tests of real-world markup that must pass, and of mistakes it must find
+  (`HtmlRuleTests.RealWorldPage_HasNoProblems` is the page that must stay without problems)
 - A false error is worse than a missed one. When a value cannot be checked (it uses `var()`, or the
   property has no grammar yet), it is accepted
 
