@@ -4,8 +4,13 @@ A cross-platform command-line tool that validates and formats HTML and CSS files
 C#/.NET 10 and designed as an optional companion to the [Blyant editor](https://blyant-editor.com/),
 but it works on its own too.
 
-> **Status: early development (0.4.0).** CSS validation and both formatters work. HTML validation
-> reports parse errors and has a small starter rule set; more rules will follow.
+**Run it side by side with your favorite editor, for real-time validation of all your files.** The TUI watches the
+folders it shows and checks a file again the moment it is saved, so the errors and warnings of your HTML, CSS, XML
+and Markdown are always up to date while you work, in any editor. Peek at a file to see each problem in place, and
+format it when you are done.
+
+> **Status: early development (0.4.0).** HTML, CSS, XML and Markdown validation and the HTML, CSS and XML
+> formatters work, and are tried on real sites; more rules will follow.
 >
 > Blyant Validator has no dependencies besides .NET.
 
