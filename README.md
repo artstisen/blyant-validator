@@ -44,7 +44,8 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
   problems and the place of each error highlighted. `P` shows the list of its problems instead.
 - `Tab` goes into the peek: `j`/`k` move, `n`/`N` go to the next and previous problem (its message is shown on
   the bottom line), `/` searches, `h`/`l` scroll sideways, and in the list of problems `Enter` shows a problem in
-  the file. `Tab` or `Esc` goes back to the list.
+  the file. `Tab`, `Esc` or `q` goes back to the list, and a `:` command typed in the peek runs in the list
+  (`:ignore` there ignores the problem selected, or the first one on the line of the cursor).
 - `I` shows the full text of the problems on the line (in the list of problems: of the selected one) in a box, for
   messages longer than the window is wide. A message that is cut on the bottom line ends with "(I: all)".
 - As in Vim, `n`/`N` follow what you looked for last: after a `/` search they go to the matches, and `]`/`[` (which
@@ -92,7 +93,9 @@ site with mistakes on purpose, as Blyant's are.
 | A sitemap, checked by the rules of sitemaps.org | `llms.txt`, checked against the llms.txt format |
 
 Paths can be files or directories. Directories are searched for `.html`, `.htm`, `.xhtml`, `.css`, `.xml`, `.svg`, `.md` and `.markdown` files, and `llms.txt` and `llms-full.txt`;
-add `--recursive` to include subdirectories.
+add `--recursive` to include subdirectories (folders whose names start with `.`, such as `.git`, and `node_modules`
+are passed over, and so are links to folders). Names are matched without regard to case, and a file given twice is
+done once.
 
 ### validate
 
@@ -100,7 +103,7 @@ add `--recursive` to include subdirectories.
 | --- | --- |
 | `-e, --engine native\|vnu` | `native` (default) uses the built-in checker. `vnu` runs the Nu Html Checker; see below. |
 | `-o, --output text\|json` | `text` (default) prints `file:line:column: severity: message [code]`. `json` is for editors and scripts. |
-| `-r, --recursive` | Search directories recursively. |
+| `-r, --recursive` | Search directories recursively (not `.git`, `.vs` …, `node_modules`). |
 | `--vnu-jar <path>` | Path to `vnu.jar` (or set `BLYANT_VNU_JAR`). |
 | `--java <path>` | Path to `java` (default: `JAVA_HOME`, then `PATH`). |
 | `--fragment` | Check HTML files as fragments: the content of a `<body>`, for a page made elsewhere (a CMS). See below. |
@@ -115,13 +118,15 @@ ignored (css.*).`
 | Option | Description |
 | --- | --- |
 | `-w, --write` | Overwrite the files instead of printing the result. |
-| `--check` | Change nothing; exit with code 1 if a file isn't formatted. |
+| `--check` | Change nothing; exit with code 1 if a file isn't formatted. Not with `--write`. |
 | `--indent-size <n>` | Spaces per indentation level (default 2). |
 | `--use-tabs` | Indent with tabs. |
 | `--line-width <n>` | HTML elements whose content fits within this width stay on one line (default 100). |
 
 Without `--write` or `--check`, the formatted text is printed. `--write` only touches files that change, and
-replaces them safely (a temporary file is written first), keeping their encoding and line endings.
+replaces them safely (a temporary file is written first), keeping their encoding and line endings. A link is
+followed (the file it leads to is written, and the link stays), and a file keeps its permissions (Linux, macOS) or
+attributes (Windows). Output is written as UTF-8, also to a file or a pipe.
 
 ### Exit codes
 
@@ -158,7 +163,7 @@ is changed itself:
 | --- | --- |
 | `:fragment` | The HTML files of the folder shown are fragments; again: full pages. |
 | `:ignore code ...` | Ignore problems with these codes in the folder. |
-| `:ignore` | In the list of problems (`P`, then `Tab` to select one): ignore the code of the selected problem. Elsewhere: show the codes ignored. |
+| `:ignore` | In the peek (`Tab`): ignore the code of the selected problem (`P`), or of the first problem on the line of the cursor. Elsewhere: show the codes ignored. |
 | `:unignore code ...` | Stop ignoring these codes; without a code: all of them. |
 
 The command line has no saved rules: `validate` checks fully unless `--fragment` or `--ignore` is given, so a script

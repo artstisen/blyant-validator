@@ -14,7 +14,6 @@ internal static class FileCollector
         // cannot be read are passed over
         var options = new EnumerationOptions
         {
-            RecurseSubdirectories = recursive,
             MatchCasing = MatchCasing.CaseInsensitive,
             IgnoreInaccessible = true,
         };
@@ -27,9 +26,12 @@ internal static class FileCollector
             }
             else if (Directory.Exists(path))
             {
-                files.AddRange(Patterns
-                    .SelectMany(p => Directory.EnumerateFiles(path, p, options))
-                    .Order(StringComparer.OrdinalIgnoreCase));
+                foreach (var directory in Folders(path, recursive))
+                {
+                    files.AddRange(Patterns
+                        .SelectMany(p => Directory.EnumerateFiles(directory, p, options))
+                        .Order(StringComparer.OrdinalIgnoreCase));
+                }
             }
             else
             {
@@ -41,5 +43,38 @@ internal static class FileCollector
         // A file given twice (by itself and in its folder) is done once
         var seen = new HashSet<string>(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
         return [.. files.Where(f => seen.Add(Path.GetFullPath(f)))];
+    }
+
+    /// <summary>
+    /// A folder and (when recursive) the folders in it: those starting with "." (.git, .vs) and node_modules are passed
+    /// over, and so are links to folders (a link can lead round in a circle), and folders that cannot be read
+    /// </summary>
+    private static IEnumerable<string> Folders(string root, bool recursive)
+    {
+        yield return root;
+        if (!recursive) yield break;
+        var options = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        var pending = new Stack<string>([root]);
+        while (pending.Count > 0)
+        {
+            var folder = pending.Pop();
+            List<string> subfolders;
+            try
+            {
+                subfolders = [.. Directory.EnumerateDirectories(folder, "*", options)
+                    .Where(d => Path.GetFileName(d) is var name && !name.StartsWith('.') && name != "node_modules")
+                    .Order(StringComparer.OrdinalIgnoreCase)];
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (var subfolder in subfolders)
+            {
+                yield return subfolder;
+                pending.Push(subfolder);
+            }
+        }
     }
 }

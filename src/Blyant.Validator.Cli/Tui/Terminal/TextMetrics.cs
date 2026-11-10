@@ -145,6 +145,7 @@ internal static class TextMetrics
     private static int RuneWidth(Rune rune)
     {
         var value = rune.Value;
+        if (value <= 0xFFFF && IsUnsafe((char)value)) return 1; // Shown as a blank space (Printable)
         if (Rune.GetUnicodeCategory(rune) == UnicodeCategory.Format) return 0; // Zero width space, joiners etc.
         if (value < 0x1100) return 1;
         if (value <= 0x115F || // Hangul Jamo
@@ -178,21 +179,29 @@ internal static class TextMetrics
 
     /// <summary>
     /// The text to write to the terminal (control characters are shown as blank spaces): a text that comes from
-    /// outside (a file name, a line of a file) must never send its own escape codes to the terminal
+    /// outside (a file name, a line of a file) must never send its own escape codes to the terminal, nor turn the
+    /// direction of the text around (the bidi controls of "Trojan Source": a name "report\u202Egnp.html" would show
+    /// as "reportlmth.png", and a terminal that orders bidi text would turn the rest of the row around too)
     /// </summary>
     internal static string Printable(string s)
     {
         var needsReplacing = false;
         foreach (var c in s)
         {
-            if (!char.IsControl(c)) continue;
+            if (!IsUnsafe(c)) continue;
             needsReplacing = true;
             break;
         }
 
         if (!needsReplacing) return s;
         var builder = new StringBuilder(s.Length);
-        foreach (var c in s) builder.Append(char.IsControl(c) ? ' ' : c);
+        foreach (var c in s) builder.Append(IsUnsafe(c) ? ' ' : c);
         return builder.ToString();
     }
+
+    // Control characters (C0, DEL, C1), the bidi controls (embeddings, overrides, isolates, marks) and the line and
+    // paragraph separators
+    private static bool IsUnsafe(char c) =>
+        char.IsControl(c) || c is >= '\u202A' and <= '\u202E' or >= '\u2066' and <= '\u2069' or '\u200E' or '\u200F' or '\u061C'
+            or '\u2028' or '\u2029';
 }

@@ -31,6 +31,31 @@ internal static class DocumentIo
 
     public static SourceDocument Load(string path) => FromBytes(path, File.ReadAllBytes(path));
 
+    /// <summary>
+    /// The start of a file, at most <paramref name="maxBytes"/> of it (the peek shows a part of a large file, and must
+    /// not read all of a file of gigabytes). A character cut in two at the end is left out
+    /// </summary>
+    /// <param name="cut">True when the file is longer than what was read.</param>
+    public static SourceDocument LoadStart(string path, int maxBytes, out bool cut)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        var buffer = new byte[(int)Math.Min(maxBytes, Math.Max(0, stream.Length))];
+        var read = stream.ReadAtLeast(buffer, buffer.Length, throwOnEndOfStream: false);
+        cut = stream.Length > read;
+        var end = read;
+        if (cut)
+        {
+            // Back to the start of the last character, if its bytes are not all there
+            var start = end - 1;
+            while (start > 0 && end - start < 4 && (buffer[start] & 0xC0) == 0x80) start--;
+            var lead = buffer[start];
+            var length = lead < 0x80 ? 1 : lead >= 0xF0 ? 4 : lead >= 0xE0 ? 3 : lead >= 0xC0 ? 2 : 1;
+            if (start + length > end) end = start;
+        }
+
+        return FromBytes(path, buffer[..end]);
+    }
+
     /// <exception cref="NotUtf8Exception">The file is UTF-16 or UTF-32, or has bytes that are not UTF-8.</exception>
     internal static SourceDocument FromBytes(string path, byte[] bytes)
     {
@@ -63,13 +88,18 @@ internal static class DocumentIo
 
     /// <summary>
     /// Replaces a file without ever leaving it empty or half written: the text goes to a temporary file
-    /// next to it, which is flushed to the disk and then moved into place in one step.
+    /// next to it, which is flushed to the disk and then moved into place in one step. A link is followed (the file it
+    /// leads to is written, and the link stays), and the permissions of the file (Linux, macOS) and its attributes
+    /// (hidden …, Windows) are kept.
     /// </summary>
     public static void SafeWriteAllText(string path, string content, bool withBom)
     {
         var full = Path.GetFullPath(path);
+        if (File.Exists(full) && File.ResolveLinkTarget(full, returnFinalTarget: true) is { } target)
+            full = Path.GetFullPath(target.FullName);
         var directory = Path.GetDirectoryName(full) ?? ".";
-        var temp = Path.Combine(directory, $".{Path.GetFileName(full)}.{Guid.NewGuid():N}.tmp");
+        // (short, so a long file name does not make the temporary name too long)
+        var temp = Path.Combine(directory, $".bv-{Guid.NewGuid():N}.tmp");
 
         try
         {
@@ -81,6 +111,14 @@ internal static class DocumentIo
             {
                 stream.Write(bytes);
                 stream.Flush(flushToDisk: true);
+            }
+
+            if (File.Exists(full))
+            {
+                if (OperatingSystem.IsWindows())
+                    File.SetAttributes(temp, File.GetAttributes(full) & ~FileAttributes.ReadOnly);
+                else
+                    File.SetUnixFileMode(temp, File.GetUnixFileMode(full));
             }
 
             File.Move(temp, full, overwrite: true);

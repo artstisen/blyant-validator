@@ -2,7 +2,8 @@
 
 // Exit codes: 0 = no errors, 1 = errors found (or files need formatting), 2 = the tool itself failed.
 
-var recursive = new OptionSpec("--recursive", "-r", "Search directories recursively for .html, .htm and .css files.");
+var recursive = new OptionSpec("--recursive", "-r",
+    "Search directories recursively (folders starting with '.' and node_modules are passed over).");
 
 var validate = new CommandSpec("validate", "Check HTML, CSS, XML (sitemaps, SVG) and Markdown (llms.txt) files.",
 [
@@ -19,7 +20,7 @@ var validate = new CommandSpec("validate", "Check HTML, CSS, XML (sitemaps, SVG)
         "The doctype, title and language of the page are not checked."),
     new("--ignore", "-i", "Ignore problems with these codes (comma-separated; 'css.*' ignores all codes starting with 'css.'). " +
         "Can be given more than once.", OptionKind.Text, ValueName: "<codes>", Repeatable: true),
-], "<paths>", "HTML/CSS files or directories to process.");
+], "<paths>", "Files or directories to check.");
 
 var format = new CommandSpec("format", "Re-indent and tidy HTML, CSS and XML files.",
 [
@@ -31,7 +32,7 @@ var format = new CommandSpec("format", "Re-indent and tidy HTML, CSS and XML fil
     new("--use-tabs", null, "Indent with tabs instead of spaces."),
     new("--line-width", null, "HTML elements whose content fits within this width are kept on one line.",
         OptionKind.Number, ValueName: "<n>", Default: "100", Min: 20),
-], "<paths>", "HTML/CSS files or directories to process.");
+], "<paths>", "HTML, CSS or XML files, or directories, to format.");
 
 var browse = new CommandSpec("browse", "Open the TUI: browse folders and see the problems of each file.",
 [
@@ -46,6 +47,20 @@ var browse = new CommandSpec("browse", "Open the TUI: browse folders and see the
 var credits = new CommandSpec("credits", "Show the open-source projects Blyant Validator builds on.", []);
 
 CommandSpec[] commands = [validate, format, browse, credits];
+
+// Results are written as UTF-8 (messages have “quotes”, and format prints the files), also when they go to a file or a
+// pipe: the code page of a Windows console would turn other characters into "?"
+if (args.Length > 0)
+{
+    try
+    {
+        Console.OutputEncoding = new System.Text.UTF8Encoding(false);
+    }
+    catch (Exception e) when (e is IOException or PlatformNotSupportedException)
+    {
+        // The console keeps its own
+    }
+}
 
 if (args.Length == 0)
 {
@@ -90,6 +105,13 @@ if (parsed.Help)
 {
     Console.Out.Write(CommandLine.CommandHelp(command));
     return 0;
+}
+
+if (command.Name == "format" && parsed.Flag("--check") && parsed.Flag("--write"))
+{
+    Console.Error.WriteLine($"{CommandLine.Program}: use --check or --write, not both.");
+    Console.Error.WriteLine($"Run '{CommandLine.Program} format --help' to see its options.");
+    return 2;
 }
 
 // The codes to ignore (validate)

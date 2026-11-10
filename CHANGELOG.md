@@ -45,6 +45,37 @@
   fences in list items or block quotes were not seen, `arr[0][1]` was a reference link, and a setext heading over
   several lines had the anchor of its last line only. llms.txt: links with brackets in their name or parentheses in
   their URL, and lists in lists
+- TUI:
+  - after `:engine` or `:ignore`, a file being checked at that moment kept its old result;
+  - the screen was cleared and drawn again on every key while peeking (flicker);
+  - the peek read all of a file, also one of gigabytes; it now reads the part it shows, shows the start of a very long
+    line (a minified file), and colors lines of up to 5,000 characters (longer ones took very long);
+  - a file of exactly 20,000 lines was told to be cut, and problems after the cut were marked on its last line;
+  - `F` wrote a file that was saved in another program while it asked (now left as it is), named the wrong file when
+    one failed, and left out marked files hidden by a filter;
+  - `:ignore` typed in the peek could ignore another problem when the file was checked again meanwhile; in the text
+    of the peek it now ignores the first problem on the line of the cursor;
+  - the rules of a folder (`:fragment`, `:ignore`) were copied into a subfolder changed after it, so a later change
+    of the folder no longer reached the subfolder: a subfolder now keeps only what it changes (`checkunignore` in
+    `settings.ini`);
+  - Ctrl+C in the peek only went back to the list; it now quits at once, as everywhere;
+  - bidi control characters in names and lines ("Trojan Source") could turn the text around; they are shown as
+    spaces;
+  - a place longer than 8 characters in the list of problems, a filter with wide characters and a long unknown
+    command could write past the edge;
+  - a file that is gone was asked for again and again; the files behind the peek were checked though not shown;
+    `settings.ini` that could not be written was not told about
+- vnu: Java went on running when the TUI closed during a check, and a check had no time limit (now 2 minutes); its
+  output was not read as UTF-8 (quotes garbled on Windows); output of another shape stopped the program
+- Command line:
+  - `--recursive` went into `.git`, `node_modules` and links to folders;
+  - text output was written in the console's code page (on Windows "?" for other characters, also in what `format`
+    prints): it is now UTF-8;
+  - `format --write` replaced a link by a file and reset the permissions of a file (Linux, macOS) or its attributes
+    (Windows); a long file name could make the temporary name too long;
+  - `-` (standard input, not supported), an option given twice, and `format --check --write` are now errors
+- HTML: `type=url` values such as `/path` were accepted on Linux and macOS only (.NET reads them as file paths there),
+  and a doctype at the very end of a file lost its last letter
 - False errors on valid CSS: relative selectors and declarations in `@scope`, WebKit's scrollbar pseudo-classes
   (`::-webkit-scrollbar-thumb:horizontal`), `font: -apple-system-body`, the old names `color-adjust` and
   `inset-area`, `@function` and calls of custom functions (`--double(4px)`)

@@ -242,7 +242,8 @@ public sealed class HtmlReader
         }
         _seenDoctype = true;
 
-        var words = raw[2..^1].Split((char[])[' ', '\t', '\n', '\r', '\f'], StringSplitOptions.RemoveEmptyEntries);
+        // (a doctype at the end of the file can be without its ">")
+        var words = raw[2..(raw.EndsWith('>') ? ^1 : ^0)].Split((char[])[' ', '\t', '\n', '\r', '\f'], StringSplitOptions.RemoveEmptyEntries);
         var ok = words.Length >= 2 && words[1].Equals("html", StringComparison.OrdinalIgnoreCase) &&
                  (words.Length == 2 ||
                   (words.Length == 4 && words[2].Equals("system", StringComparison.OrdinalIgnoreCase) &&

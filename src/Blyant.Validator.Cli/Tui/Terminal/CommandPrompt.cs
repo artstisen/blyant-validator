@@ -119,7 +119,8 @@ internal static class CommandPrompt
     /// </summary>
     internal static void ShowUnknown(string command)
     {
-        Tools.WriteBottomLine(" Not a command: " + Tools.TruncateString(command, 40, true) + " ",
+        // (" Not a command: ", the command, " " and " [Press any key to continue]" within the line)
+        Tools.WriteBottomLine(" Not a command: " + Tools.TruncateString(command, Math.Max(4, Screen.LineWidth - 46), true) + " ",
             ConsoleColors.ColorPreset.CommandErrorInverted, false);
         Console.Write(" [Press any key to continue]");
         Console.ReadKey(true);

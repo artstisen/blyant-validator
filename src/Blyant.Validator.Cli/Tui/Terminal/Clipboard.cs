@@ -29,6 +29,9 @@ internal static class Clipboard
         // Most terminals drop a sequence of more than about 100 KB, and writing it could hold the terminal
         if (Encoding.UTF8.GetByteCount(text) > MaxOsc52Bytes)
             return $"Too long for the clipboard of the terminal (more than {MaxOsc52Bytes / 1000} KB): not copied";
+        // The text console of Linux has no clipboard, and an older one shows the sequence as text
+        if (!OperatingSystem.IsWindows() && Environment.GetEnvironmentVariable("TERM") == "linux")
+            return "The text console of Linux has no clipboard: not copied";
         WriteOsc52(text);
         // (a terminal that is known to drop it is not told as "copied")
         return TerminalWithoutClipboard

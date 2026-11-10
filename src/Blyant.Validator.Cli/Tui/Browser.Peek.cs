@@ -38,6 +38,7 @@ internal static partial class Browser
     private static int _problemTop;
     private static string _peekSearch = string.Empty;
     private static string? _peekCommand; // A ":" command typed in the peek, run when the focus is back in the list
+    private static bool _quitAtOnce; // Ctrl+C in the peek: the program ends, without asking
 
     // n and N go to the next search match (after "/") or the next problem (when the peek is entered, and after ] or [)
     private static bool _nextFindsSearch;
@@ -160,7 +161,8 @@ internal static partial class Browser
         _peekNote = null;
         try
         {
-            var text = DocumentIo.Load(item.Path).Content;
+            // (only the start of a large file is read: the peek shows at most PeekDocument.MaxCharacters of it)
+            var text = DocumentIo.LoadStart(item.Path, PeekDocument.MaxBytes, out var cut).Content;
             if (text.Contains('\0'))
             {
                 _peekNote = "Not a text file";
@@ -168,7 +170,7 @@ internal static partial class Browser
                 return;
             }
 
-            _peekDocument = new PeekDocument(item.Path, text, result?.Diagnostics ?? []);
+            _peekDocument = new PeekDocument(item.Path, text, result?.Diagnostics ?? [], cut);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
@@ -425,7 +427,8 @@ internal static partial class Browser
             });
             Console.Write(d.Severity switch { Severity.Error => "E ", Severity.Warning => "W ", _ => "i " });
             ConsoleColors.SetColors(ConsoleColors.ColorPreset.Normal);
-            Console.Write(Tools.TruncateString(d.Message, Math.Max(1, width - 12), true));
+            // (a place longer than 8, as "123:123456" in a minified file, takes room from the message)
+            Console.Write(Tools.TruncateString(d.Message, Math.Max(1, width - 4 - Math.Max(8, place.Length)), true));
         }
 
         ConsoleColors.SetColors(ConsoleColors.ColorPreset.Normal);
@@ -494,12 +497,21 @@ internal static partial class Browser
                 // the list beside it too)
                 LoadPeek();
                 if (_peekDocument == null) return;
+                // (the list may have been read again: files gone)
+                KeepInView(ActivePane);
                 DrawRows(_active);
                 DrawStatus();
                 continue;
             }
 
-            if (key.Key is ConsoleKey.Tab or ConsoleKey.Escape or ConsoleKey.Q || Keyboard.IsControl(key, ConsoleKey.C))
+            if (Keyboard.IsControl(key, ConsoleKey.C))
+            {
+                // Quit at once, as in the list
+                _quitAtOnce = true;
+                return;
+            }
+
+            if (key.Key is ConsoleKey.Tab or ConsoleKey.Escape or ConsoleKey.Q)
                 return;
 
             if (key.Key == ConsoleKey.P)
@@ -512,6 +524,16 @@ internal static partial class Browser
             {
                 // A command (as :ignore for the selected problem): run from the list
                 _peekCommand = CommandPrompt.Read(':', CommandTable);
+                // ":ignore" without a code is for the problem selected here (the list of problems), or the first one
+                // on the line of the cursor: told now, as the problems may be checked again before it runs
+                if (_peekCommand != null && CommandPrompt.Name(_peekCommand) == "ignore" && CommandPrompt.Argument(_peekCommand).Length == 0)
+                {
+                    var problem = _peekMode == PeekMode.Problems
+                        ? document.Diagnostics.ElementAtOrDefault(_problemSelected)
+                        : document.On(_peekCursor).FirstOrDefault();
+                    if (problem != null) _peekCommand = "ignore " + problem.Code;
+                }
+
                 if (_peekCommand != null) return;
                 RedrawInPeek();
                 continue;
@@ -591,7 +613,8 @@ internal static partial class Browser
         _peekMode = PeekMode.Text;
         if (document.Diagnostics.Count == 0) return;
         var d = document.Diagnostics[Math.Clamp(_problemSelected, 0, document.Diagnostics.Count - 1)];
-        _peekCursor = Math.Max(0, d.Start.Line - 1);
+        // (a problem after the part of a large file shown: the last line shown)
+        _peekCursor = Math.Clamp(d.Start.Line - 1, 0, Math.Max(0, document.Lines.Count - 1));
         _peekTop = Math.Max(0, _peekCursor - PageSize / 3);
         var (_, width) = PaneArea(1 - _active);
         var room = width - 6;

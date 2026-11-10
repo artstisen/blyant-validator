@@ -63,6 +63,9 @@ internal sealed class ParsedArguments(CommandSpec command)
 
     public bool Flag(string name) => _values.ContainsKey(name);
 
+    /// <summary>True when the option was given.</summary>
+    public bool IsSet(OptionSpec option) => _values.ContainsKey(option.Name);
+
     public string? Text(string name) => _values.TryGetValue(name, out var v) ? v : Spec(name).Default;
 
     public int Number(string name) =>
@@ -98,7 +101,9 @@ internal static class CommandLine
         for (var i = 0; i < args.Count; i++)
         {
             var arg = args[i];
-            if (onlyArguments || arg == "-" || !arg.StartsWith('-'))
+            if (arg == "-" && !onlyArguments)
+                throw new UsageException("Reading from standard input ('-') is not supported: give the paths of files or directories.");
+            if (onlyArguments || !arg.StartsWith('-'))
             {
                 result.Arguments.Add(arg);
                 continue;
@@ -118,6 +123,8 @@ internal static class CommandLine
             var name = eq >= 0 ? arg[..eq] : arg;
             var option = command.Options.FirstOrDefault(o => o.Name == name || o.Alias == name)
                 ?? throw new UsageException($"Unknown option '{name}' for '{command.Name}'.");
+            if (!option.Repeatable && result.IsSet(option))
+                throw new UsageException($"Option '{option.Name}' is given more than once.");
 
             if (option.Kind == OptionKind.Flag)
             {

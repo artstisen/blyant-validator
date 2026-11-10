@@ -108,7 +108,8 @@ purpose: a fix in one is carried to the other by hand, when it matters.
 ## Files
 The files of the user must never be left empty or half written, whenever the program is stopped.
 
-- `format --write` replaces a file with `SafeFile.WriteAllText`: it writes a temporary file next to it,
+- `format --write` replaces a file with `DocumentIo.SafeWriteAllText`: it follows a link to the file it leads to,
+  keeps the permissions (Linux, macOS) or attributes (Windows) of the file, writes a temporary file next to it,
   flushes it to the disk, and then puts it in the place of the file in one step. Never `File.WriteAllText`,
   `File.WriteAllBytes`, `FileMode.Create` or `FileMode.Truncate`, which empty the file first.
   `ProjectRulesTests` fails on them

@@ -111,7 +111,9 @@ public sealed partial class InputRule : IHtmlRule
                 ? null : "Expected a date and time (as “2026-11-10T14:30”).",
             // (with alpha or colorspace, a color input takes any CSS color: not checked)
             "color" when name == "value" && !hasCssColor => ColorValue().IsMatch(value) ? null : "Expected a color as “#rrggbb” (as “#336699”).",
-            "url" when name == "value" => Uri.TryCreate(value.Trim(), UriKind.Absolute, out _) ? null : "Expected an absolute URL.",
+            // (with a scheme: on Linux and macOS .NET takes "/path" as an absolute file URI)
+            "url" when name == "value" => UrlScheme().IsMatch(value.Trim()) && Uri.TryCreate(value.Trim(), UriKind.Absolute, out _)
+                ? null : "Expected an absolute URL.",
             _ => null,
         };
     }
@@ -146,6 +148,9 @@ public sealed partial class InputRule : IHtmlRule
 
     [GeneratedRegex(@"^([0-9]{4,}-[0-9]{2}-[0-9]{2})[T ]([0-9]{2}:[0-9]{2}(?::[0-9]{2}(?:\.[0-9]{1,3})?)?)$")]
     private static partial Regex DateTimeLocal();
+
+    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9+.-]*:")]
+    private static partial Regex UrlScheme();
 
     [GeneratedRegex(@"^#[0-9a-fA-F]{6}$")]
     private static partial Regex ColorValue();

@@ -38,7 +38,8 @@ internal static partial class Browser
         foreach (var pane in shown) KeepInView(pane);
 
         Tools.HideCursor();
-        if (!all && _shownDual == IsDual && shown.All(pane => pane.Top == pane.ShownTop))
+        // (the pane of the peek has no rows of its own: it does not count)
+        if (!all && _shownDual == IsDual && shown.Where((_, number) => !IsPeekPane(number)).All(pane => pane.Top == pane.ShownTop))
         {
             if (IsDual && _shownActive != _active)
             {
@@ -106,6 +107,7 @@ internal static partial class Browser
         var count = IsDual ? Panes.Length : 1;
         for (var number = 0; number < count; number++)
         {
+            if (IsPeekPane(number)) continue;
             KeepInView(ShownPane(number));
             if (ShownPane(number).Top != ShownPane(number).ShownTop)
             {
@@ -337,7 +339,9 @@ internal static partial class Browser
             // A count being typed (5j), below the pane it moves in
             if (pane == ActivePane && _listCount.Shown.Length > 0) status = " " + _listCount.Shown + status;
             status = Tools.TruncateString(status, Math.Max(4, width - 6), true);
-            Tools.SetCursor(Screen.LineCount - 2, left + width - status.Length - 2);
+            // (in cells: a filter can hold wide characters)
+            var statusWidth = TextMetrics.WidthOf(status);
+            Tools.SetCursor(Screen.LineCount - 2, left + width - statusWidth - 2);
             Console.Write(status);
 
             // How many files of the pane have errors and warnings
@@ -349,7 +353,7 @@ internal static partial class Browser
                 (0, _) => $" {warnings} with warnings ",
                 _ => $" {errors} with errors, {warnings} with warnings ",
             };
-            if (totals.Length > 0 && totals.Length + status.Length + 6 < width)
+            if (totals.Length > 0 && totals.Length + statusWidth + 6 < width)
             {
                 Tools.SetCursor(Screen.LineCount - 2, left + 2);
                 ConsoleColors.SetColors(errors > 0 ? ConsoleColors.ColorPreset.Error : ConsoleColors.ColorPreset.Warning);

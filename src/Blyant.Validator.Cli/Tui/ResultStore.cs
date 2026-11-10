@@ -37,6 +37,9 @@ internal sealed class ResultStore : IDisposable
     private readonly Task _worker;
     private int _changed;
     private volatile string _engine;
+
+    // Counts the changes of engine and rules: a result made before one is not kept (it was made the old way)
+    private int _generation;
     private readonly VnuOptions _vnu;
 
     public ResultStore(string engine, VnuOptions vnu, FolderRules? rules = null)
@@ -55,6 +58,7 @@ internal sealed class ResultStore : IDisposable
         {
             if (_engine == value) return;
             _engine = value;
+            Interlocked.Increment(ref _generation);
             _results.Clear();
         }
     }
@@ -66,6 +70,7 @@ internal sealed class ResultStore : IDisposable
     public void SetRules(string directory, CheckRules rules)
     {
         Rules.Set(directory, rules);
+        Interlocked.Increment(ref _generation);
         _results.Clear();
     }
 
@@ -79,8 +84,9 @@ internal sealed class ResultStore : IDisposable
     public FileResult? Get(string path)
     {
         if (!IsValidated(path)) return null;
-        var stamp = Stamp(path);
-        if (_results.TryGetValue(path, out var result) && stamp is { } s && result.Written == s.Written && result.Length == s.Length)
+        // (a file that is gone, or cannot be looked at, is not asked for again and again)
+        if (Stamp(path) is not { } stamp) return null;
+        if (_results.TryGetValue(path, out var result) && result.Written == stamp.Written && result.Length == stamp.Length)
             return result;
         Request(path);
         return null;
@@ -133,14 +139,19 @@ internal sealed class ResultStore : IDisposable
         {
             await foreach (var path in _requests.Reader.ReadAllAsync(_stop.Token).ConfigureAwait(false))
             {
+                var stale = false;
                 try
                 {
+                    var generation = Volatile.Read(ref _generation);
                     var result = await ValidateAsync(path, _stop.Token).ConfigureAwait(false);
-                    if (result is not null) _results[path] = result;
+                    // The engine or the rules changed while the file was checked: it is checked again, the new way
+                    stale = generation != Volatile.Read(ref _generation);
+                    if (result is not null && !stale) _results[path] = result;
                 }
                 finally
                 {
                     _queued.TryRemove(path, out _);
+                    if (stale) Request(path);
                     Interlocked.Exchange(ref _changed, 1);
                 }
             }

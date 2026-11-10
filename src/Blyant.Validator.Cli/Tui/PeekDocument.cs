@@ -14,35 +14,51 @@ internal sealed class PeekDocument
     internal const int MaxCharacters = 1_000_000;
     internal const int MaxLines = 20_000;
 
+    /// <summary>The most of a file read for the peek: as many bytes as the characters shown can take.</summary>
+    internal const int MaxBytes = MaxCharacters * 4;
+
+    // Longer lines are shown without colors: the highlighters go through a line again for some marks ("[", "<"), which
+    // takes too long on a line of a minified file
+    internal const int MaxHighlightedLength = 5_000;
+
     private readonly Dictionary<int, List<Diagnostic>> _byLine = [];
     private readonly int[] _states;
     private readonly SyntaxHighlighter.Kind _kind;
 
-    public PeekDocument(string path, string text, IReadOnlyList<Diagnostic> diagnostics)
+    /// <param name="cut">Only the start of the file was read (it is longer).</param>
+    public PeekDocument(string path, string text, IReadOnlyList<Diagnostic> diagnostics, bool cut = false)
     {
         Path = path;
         Diagnostics = [.. diagnostics.OrderBy(d => d.Start.Line).ThenBy(d => d.Start.Column)];
         _kind = SyntaxHighlighter.KindOf(path);
 
         var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        // (the line break at the end of the last line does not start another line)
+        var count = lines.Length > 1 && lines[^1].Length == 0 ? lines.Length - 1 : lines.Length;
         var kept = new List<string>();
         var characters = 0;
-        foreach (var line in lines)
+        IsCut = cut;
+        for (var i = 0; i < count; i++)
         {
+            var line = lines[i];
             if (kept.Count == MaxLines || characters + line.Length > MaxCharacters)
             {
+                // A line longer than what is left (a minified file) is shown in part
+                if (kept.Count < MaxLines && characters < MaxCharacters)
+                    kept.Add(line[..(MaxCharacters - characters)].Replace('\t', ' '));
                 IsCut = true;
                 break;
             }
             kept.Add(line.Replace('\t', ' '));
             characters += line.Length + 1;
         }
-        if (kept.Count > 1 && kept[^1].Length == 0 && !IsCut) kept.RemoveAt(kept.Count - 1);
         Lines = kept;
 
         foreach (var d in Diagnostics)
         {
-            // A problem without a line (vnu's file-level messages) is shown on the first line
+            // A problem without a line (vnu's file-level messages) is shown on the first line; one after the part shown
+            // is only in the list of problems
+            if (d.Start.Line > Lines.Count && IsCut) continue;
             var index = Math.Clamp(d.Start.Line - 1, 0, Math.Max(0, Lines.Count - 1));
             if (!_byLine.TryGetValue(index, out var list)) _byLine[index] = list = [];
             list.Add(d);
@@ -52,6 +68,12 @@ internal sealed class PeekDocument
         _states = new int[Lines.Count + 1];
         for (var i = 0; i < Lines.Count; i++)
         {
+            if (Lines[i].Length > MaxHighlightedLength)
+            {
+                _states[i + 1] = _states[i];
+                continue;
+            }
+
             SyntaxHighlighter.Highlight(_kind, Lines[i], _states[i], out var next);
             _states[i + 1] = next;
         }
@@ -71,7 +93,8 @@ internal sealed class PeekDocument
     public Severity? WorstOn(int line) => _byLine.TryGetValue(line, out var list) ? list.Max(d => d.Severity) : null;
 
     /// <summary>The colors of a line, or null.</summary>
-    public SyntaxStyle[]? StylesOf(int line) => SyntaxHighlighter.Highlight(_kind, Lines[line], _states[line], out _);
+    public SyntaxStyle[]? StylesOf(int line) =>
+        Lines[line].Length > MaxHighlightedLength ? null : SyntaxHighlighter.Highlight(_kind, Lines[line], _states[line], out _);
 
     /// <summary>The next (or previous) line with a problem after (before) a line, going round; null if there is none.</summary>
     public int? NextProblemLine(int from, bool forward)

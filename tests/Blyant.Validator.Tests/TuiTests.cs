@@ -88,7 +88,7 @@ public sealed class TuiTests : IDisposable
     }
 
     [Fact]
-    public void ResultStore_OnlyValidatesHtmlAndCss()
+    public void ResultStore_OnlyValidatesTheKindsItKnows()
     {
         Assert.True(ResultStore.IsValidated("a.HTML"));
         Assert.True(ResultStore.IsValidated("a.css"));

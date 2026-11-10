@@ -5,7 +5,7 @@ using Blyant.Validator.Vnu;
 namespace Blyant.Validator.Cli.Tui;
 
 /// <summary>
-/// The TUI of Blyant Validator: a file browser with one or two panes that shows the result of each HTML, CSS and XML file,
+/// The TUI of Blyant Validator: a file browser with one or two panes that shows the result of each HTML, CSS, XML and Markdown file,
 /// and a peek of the selected file in the other pane with its problems marked. Adapted from Blyant's file browser
 /// (FileExplorer.cs, MIT License, same author): the panes, keys and drawing follow it.
 /// Drawing is in Browser.Draw.cs, the peek in Browser.Peek.cs, and the commands and formatting in Browser.Commands.cs.
@@ -40,7 +40,7 @@ internal static partial class Browser
     private static Pane OtherPane => Panes[1 - _active];
 
     private static string _message = string.Empty;
-    private static bool _showAll; // All files are listed, not only HTML, CSS and XML
+    private static bool _showAll; // All files are listed, not only HTML, CSS, XML and Markdown
     private static ResultStore _results = null!;
 
     // A count typed in front of a key in the pane with the focus: 5j, 5k, 5gg, 5G (as in Blyant's file browser)
@@ -74,6 +74,7 @@ internal static partial class Browser
         var settings = Settings.Load();
         _results = new ResultStore(engine, vnu, settings.Checks);
         Keyboard.Idle = Idle;
+        string? notSaved;
         try
         {
             Restore(settings, directory);
@@ -81,7 +82,7 @@ internal static partial class Browser
         }
         finally
         {
-            Remember(settings);
+            notSaved = Remember(settings);
             Keyboard.Idle = null;
             _results.Dispose();
             Tools.ShowCursor();
@@ -98,6 +99,8 @@ internal static partial class Browser
             }
         }
 
+        // (told after the screen is cleared, so it can be read)
+        if (notSaved != null) Console.Error.WriteLine($"{CommandLine.Program}: the settings could not be saved: {notSaved}");
         return 0;
     }
 
@@ -132,8 +135,8 @@ internal static partial class Browser
 
     private static string? NullIfEmpty(string text) => text.Length == 0 ? null : text;
 
-    // Keep where the panes are, for the next time (settings.ini)
-    private static void Remember(Settings settings)
+    // Keep where the panes are, for the next time (settings.ini). Returns why the file could not be written, or null
+    private static string? Remember(Settings settings)
     {
         string SelectedName(Pane pane) =>
             pane.Items.Count > 0 && pane.Index < pane.Items.Count && pane.Items[pane.Index].Name != ParentName
@@ -147,7 +150,7 @@ internal static partial class Browser
         // (while peeking two panes are shown for the peek: what was set before it is kept)
         settings.BrowseDual = _peeking ? _peekWasDual : _dualPane;
         settings.FileNumbers = FileNumbers;
-        settings.Save();
+        return settings.Save();
     }
 
     private static long _nextDiskCheck;
@@ -158,7 +161,8 @@ internal static partial class Browser
         var changed = _results.TakeChanged();
         if (Environment.TickCount64 < _nextDiskCheck) return changed;
         _nextDiskCheck = Environment.TickCount64 + 1000;
-        foreach (var pane in IsDual ? Panes : [ActivePane])
+        // (while peeking, the other pane is hidden behind the peek: its files are not checked)
+        foreach (var pane in IsDual && !_peeking ? Panes : [ActivePane])
         {
             if (pane.Directory.Length == 0) continue;
             try
@@ -195,6 +199,8 @@ internal static partial class Browser
 
         while (true)
         {
+            if (_quitAtOnce) break;
+
             // A command typed in the peek runs here, in the list (the problem selected in the peek stays selected)
             if (_peekCommand is { } pending)
             {
@@ -476,7 +482,7 @@ internal static partial class Browser
         }
     }
 
-    // Read the content of the directory of a pane: directories first, then files (HTML, CSS and XML, or all with ":all"),
+    // Read the content of the directory of a pane: directories first, then files (HTML, CSS, XML and Markdown, or all with ":all"),
     // both sorted by name
     private static bool LoadItems(Pane pane, string? select)
     {

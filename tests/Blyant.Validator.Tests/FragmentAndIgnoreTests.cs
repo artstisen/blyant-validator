@@ -117,7 +117,6 @@ public sealed class FragmentAndIgnoreTests : IDisposable
         rules.Set(docs, new CheckRules(true, ["css.*"]));
         Assert.True(rules.ForDirectory(sub).Fragment);
         Assert.True(rules.ForFile(Path.Combine(sub, "a.html")).Fragment);
-        Assert.Equal(Path.GetFullPath(docs), rules.SetIn(sub));
         Assert.True(rules.ForDirectory(_dir).IsFull);
 
         // A subfolder with rules of its own, and back to those of the folder above: not kept

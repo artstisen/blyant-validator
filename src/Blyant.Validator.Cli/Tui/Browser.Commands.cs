@@ -73,7 +73,7 @@ internal static partial class Browser
                 if (selectedName.Length > 0) _message = Clipboard.Copy(selectedName, selectedName);
                 break;
             case "all":
-                // All files are listed, or only HTML, CSS and XML
+                // All files are listed, or only HTML, CSS, XML and Markdown
                 _showAll = !_showAll;
                 foreach (var pane in Panes) Reload(pane);
                 _message = _showAll ? "All files are listed" : "Only HTML, CSS, XML and Markdown files are listed";
@@ -205,8 +205,9 @@ internal static partial class Browser
     // and a file is replaced safely (DocumentIo.SafeWriteAllText)
     private static void FormatFiles()
     {
+        // (all the marked files, also those a filter hides)
         var paths = ActivePane.Marks.Count > 0
-            ? ActivePane.Items.Where(i => ActivePane.Marks.Contains(i.Path)).Select(i => i.Path).ToList()
+            ? ActivePane.Marks.Where(File.Exists).Order(StringComparer.OrdinalIgnoreCase).ToList()
             : SelectedItem() is { IsDirectory: false } item ? [item.Path] : [];
         // (Markdown is validated, but not formatted)
         paths = paths.Where(p => SourceDocument.DetectKind(p) is DocumentKind.Html or DocumentKind.Css or DocumentKind.Xml).ToList();
@@ -216,12 +217,14 @@ internal static partial class Browser
             return;
         }
 
-        var changes = new List<(string Path, string Text, bool Bom, int Before, int After)>();
+        var changes = new List<(string Path, string Text, bool Bom, int Before, int After, DateTime Written, long Length)>();
         var refused = new List<string>();
         foreach (var path in paths)
         {
             try
             {
+                var info = new FileInfo(path);
+                var (written, length) = (info.LastWriteTimeUtc, info.Length);
                 var document = DocumentIo.Load(path);
                 IFormatter formatter = document.Kind switch
                 {
@@ -231,7 +234,7 @@ internal static partial class Browser
                 };
                 var formatted = formatter.Format(document, new FormatOptions());
                 if (formatted != document.Content)
-                    changes.Add((path, formatted, document.HasUtf8Bom, LineCount(document.Content), LineCount(formatted)));
+                    changes.Add((path, formatted, document.HasUtf8Bom, LineCount(document.Content), LineCount(formatted), written, length));
             }
             catch (Core.FormatException e)
             {
@@ -256,17 +259,26 @@ internal static partial class Browser
         var note = changes.Count == 1
             ? $"{changes[0].Before} lines become {changes[0].After}. Only layout changes."
             : "Only layout changes.";
-        if (refused.Count > 0) note += $" {refused.Count} cannot be formatted (unclosed blocks).";
+        if (refused.Count > 0) note += $" {refused.Count} cannot be formatted.";
         if (!ChoiceBox.Confirm("Format", question, note, false)) return;
 
-        var done = 0;
+        var done = new List<string>();
         foreach (var change in changes)
         {
             try
             {
+                // A file saved in another program while the question was open is left as it is now: its changes
+                // would be lost
+                var now = new FileInfo(change.Path);
+                if (now.LastWriteTimeUtc != change.Written || now.Length != change.Length)
+                {
+                    refused.Add($"{Path.GetFileName(change.Path)}: it was changed meanwhile");
+                    continue;
+                }
+
                 DocumentIo.SafeWriteAllText(change.Path, change.Text, change.Bom);
                 _results.Refresh(change.Path);
-                done++;
+                done.Add(Path.GetFileName(change.Path));
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
@@ -275,7 +287,7 @@ internal static partial class Browser
         }
 
         _peekSource = null;
-        _message = done == 1 ? "Formatted " + Path.GetFileName(changes[0].Path) : $"Formatted {done} files";
+        _message = done.Count == 1 ? "Formatted " + done[0] : $"Formatted {done.Count} files";
         if (refused.Count > 0) _message += ". Not formatted: " + refused[0];
     }
 
@@ -327,8 +339,8 @@ internal static partial class Browser
         new("I", "The full text of the problems of the line (in the problems: of the selected one)"),
         new("P", "The problems of the file, or its text again"),
         new("Enter", "In the problems: show the problem in the file"),
-        new("Tab Esc", "Back to the list"),
-        new(":command", "Runs in the list (:ignore ignores the selected problem)"),
+        new("Tab Esc q", "Back to the list"),
+        new(":command", "Runs in the list (:ignore: the selected problem, or the first on the line)"),
         HelpRow.Heading("Commands"),
         new(":cd path", "Go to a directory (relative to the one shown)"),
         new(":home", "The home directory"),

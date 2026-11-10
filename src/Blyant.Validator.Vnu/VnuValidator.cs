@@ -42,6 +42,9 @@ public sealed class VnuValidator(VnuOptions options) : IValidator
 
     public bool CanValidate(DocumentKind kind) => kind is DocumentKind.Html or DocumentKind.Css;
 
+    /// <summary>How long vnu may take for a file before it is stopped.</summary>
+    public static TimeSpan Timeout { get; } = TimeSpan.FromMinutes(2);
+
     public async Task<IReadOnlyList<Diagnostic>> ValidateAsync(SourceDocument document, CancellationToken cancellationToken = default)
     {
         var jar = options.ResolveJar();
@@ -53,7 +56,13 @@ public sealed class VnuValidator(VnuOptions options) : IValidator
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
+            // vnu's messages are full of “quotes”: read as UTF-8, and Java told to write UTF-8 (whatever the code page)
+            StandardOutputEncoding = new System.Text.UTF8Encoding(false),
+            StandardErrorEncoding = new System.Text.UTF8Encoding(false),
         };
+        psi.ArgumentList.Add("-Dstdout.encoding=UTF-8");
+        psi.ArgumentList.Add("-Dstderr.encoding=UTF-8");
+        psi.ArgumentList.Add("-Dfile.encoding=UTF-8");
         psi.ArgumentList.Add("-jar");
         psi.ArgumentList.Add(jar);
         psi.ArgumentList.Add("--format");
@@ -74,17 +83,49 @@ public sealed class VnuValidator(VnuOptions options) : IValidator
         }
 
         using (process)
+        using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
         {
-            var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-            var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
-            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-            var stdout = await stdoutTask.ConfigureAwait(false);
-            var stderr = await stderrTask.ConfigureAwait(false);
+            timeout.CancelAfter(Timeout);
+            string stdout, stderr;
+            try
+            {
+                var stdoutTask = process.StandardOutput.ReadToEndAsync(timeout.Token);
+                var stderrTask = process.StandardError.ReadToEndAsync(timeout.Token);
+                await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false);
+                stdout = await stdoutTask.ConfigureAwait(false);
+                stderr = await stderrTask.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Stopped (the program closes) or too slow: Java must not go on running on its own
+                Stop(process);
+                if (cancellationToken.IsCancellationRequested) throw;
+                throw new VnuNotAvailableException($"vnu did not answer within {Timeout.TotalMinutes:0} minutes, and was stopped.");
+            }
 
             if (string.IsNullOrWhiteSpace(stdout))
                 throw new VnuNotAvailableException($"vnu produced no output (exit code {process.ExitCode}). {stderr.Trim()}");
 
-            return Parse(document.Path, stdout);
+            try
+            {
+                return Parse(document.Path, stdout);
+            }
+            catch (Exception e) when (e is JsonException or InvalidOperationException or System.FormatException)
+            {
+                throw new VnuNotAvailableException($"vnu's output could not be read: {e.Message}", e);
+            }
+        }
+    }
+
+    private static void Stop(Process process)
+    {
+        try
+        {
+            if (!process.HasExited) process.Kill(entireProcessTree: true);
+        }
+        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
+        {
+            // It ended meanwhile, or cannot be stopped
         }
     }
 
@@ -93,11 +134,14 @@ public sealed class VnuValidator(VnuOptions options) : IValidator
     {
         using var doc = JsonDocument.Parse(json);
         var result = new List<Diagnostic>();
-        if (!doc.RootElement.TryGetProperty("messages", out var messages)) return result;
+        if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty("messages", out var messages) ||
+            messages.ValueKind != JsonValueKind.Array)
+            return result;
 
         foreach (var m in messages.EnumerateArray())
         {
-            var type = GetString(m, "type");
+            if (m.ValueKind != JsonValueKind.Object) continue;
+            var type = GetString(m, "type") ?? "message";
             var subType = GetString(m, "subType");
             var severity = (type, subType) switch
             {
@@ -108,7 +152,8 @@ public sealed class VnuValidator(VnuOptions options) : IValidator
 
             var last = new SourcePosition(GetInt(m, "lastLine"), GetInt(m, "lastColumn"));
             var firstLine = GetInt(m, "firstLine");
-            var first = new SourcePosition(firstLine == 0 ? last.Line : firstLine, GetInt(m, "firstColumn"));
+            var firstColumn = GetInt(m, "firstColumn");
+            var first = new SourcePosition(firstLine == 0 ? last.Line : firstLine, firstColumn == 0 ? Math.Min(1, last.Column) : firstColumn);
 
             var code = subType is null ? $"vnu.{type}" : $"vnu.{type}.{subType}";
             result.Add(new Diagnostic(file, severity, code, GetString(m, "message") ?? "", first, last, "vnu"));
@@ -120,5 +165,5 @@ public sealed class VnuValidator(VnuOptions options) : IValidator
         e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
     private static int GetInt(JsonElement e, string name) =>
-        e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetInt32() : 0;
+        e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var n) ? n : 0;
 }
