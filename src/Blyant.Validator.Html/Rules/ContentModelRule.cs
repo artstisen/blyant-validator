@@ -76,6 +76,27 @@ public sealed class ContentModelRule : IHtmlRule
             ["track"] = "audio video",
         }.ToFrozenDictionary(p => p.Key, p => Set(p.Value), Ci);
 
+    /// <summary>Elements that must not have these elements as descendants (HTML standard, content models).</summary>
+    private static readonly FrozenDictionary<string, FrozenSet<string>> ForbiddenDescendants =
+        new Dictionary<string, string>(Ci)
+        {
+            ["header"] = "header footer",
+            ["footer"] = "header footer",
+            ["address"] = "address header footer h1 h2 h3 h4 h5 h6 hgroup article aside nav section",
+            ["dfn"] = "dfn",
+            ["label"] = "label",
+            ["meter"] = "meter",
+            ["progress"] = "progress",
+            ["article"] = "main",
+            ["aside"] = "main",
+            ["nav"] = "main",
+        }.ToFrozenDictionary(p => p.Key, p => Set(p.Value), Ci);
+
+    /// <summary>Form controls that a label labels.</summary>
+    private static readonly FrozenSet<string> Labelable = Set("button input meter output progress select textarea");
+
+    private static readonly FrozenSet<string> Headings = Set("h1 h2 h3 h4 h5 h6");
+
     /// <summary>Elements in which text (other than whitespace) is not allowed.</summary>
     private static readonly FrozenSet<string> NoText = Set("ul ol menu dl colgroup select optgroup picture html head");
 
@@ -87,7 +108,60 @@ public sealed class ContentModelRule : IHtmlRule
         foreach (var extra in mains.Skip(1))
             context.Report(extra, Severity.Error, "html.content-model",
                 "A document must not include more than one visible “main” element.");
+
+        foreach (var element in context.Root.Descendants().Where(e => !e.IsForeign))
+        {
+            switch (element.Lower)
+            {
+                case "label":
+                    CheckLabel(context, element);
+                    break;
+                case "hgroup":
+                    CheckHgroup(context, element);
+                    break;
+                case "h1" or "h2" or "h3" or "h4" or "h5" or "h6" when IsEmptyHeading(element):
+                    context.Report(element, Severity.Warning, "html.empty-heading", "Empty heading.");
+                    break;
+            }
+        }
     }
+
+    // A label labels one control: the one inside it (which must have the ID of "for", if it has one)
+    private static void CheckLabel(HtmlRuleContext context, HElement label)
+    {
+        var controls = label.Descendants()
+            .Where(e => !e.IsForeign && Labelable.Contains(e.Lower) &&
+                        !string.Equals(e.GetAttribute("type")?.Value.Trim(), "hidden", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (controls.Count > 1)
+            context.Report(controls[1], Severity.Error, "html.content-model",
+                "The “label” element may contain at most one “button”, “input”, “meter”, “output”, “progress”, “select”, or “textarea” descendant.");
+
+        if (label.GetAttribute("for")?.Value is { } target && controls.Count > 0 &&
+            controls[0].GetAttribute("id")?.Value != target)
+            context.Report(controls[0], Severity.Error, "html.content-model",
+                $"Any “{controls[0].Lower}” descendant of a “label” element with a “for” attribute must have an ID value that matches that “for” attribute.");
+    }
+
+    // An hgroup holds one heading, and paragraphs before or after it
+    private static void CheckHgroup(HtmlRuleContext context, HElement hgroup)
+    {
+        var children = hgroup.Children.OfType<HElement>().Where(e => e.Lower is not ("script" or "template")).ToList();
+        var headings = children.Count(e => Headings.Contains(e.Lower));
+        if (headings != 1)
+            context.Report(hgroup, Severity.Error, "html.content-model", headings == 0
+                ? "Element “hgroup” is missing a required child element: a heading (“h1” … “h6”)."
+                : "An “hgroup” element must contain only one heading (“h1” … “h6”).");
+        foreach (var other in children.Where(e => !Headings.Contains(e.Lower) && e.Lower != "p"))
+            context.Report(other, Severity.Error, "html.content-model",
+                $"Element “{other.Lower}” not allowed as child of element “hgroup” in this context.");
+    }
+
+    // A heading without text (an image with alt text counts as text)
+    private static bool IsEmptyHeading(HElement heading) =>
+        heading.TextContent.Trim().Length == 0 &&
+        !heading.Descendants().Any(e => e.Lower == "img" && !string.IsNullOrWhiteSpace(e.GetAttribute("alt")?.Value) ||
+                                        e.Lower == "svg" || e.IsForeign);
 
     private static void Walk(HtmlRuleContext context, HElement parent, List<HElement> ancestors)
     {
@@ -140,6 +214,24 @@ public sealed class ContentModelRule : IHtmlRule
         if (FlowOnly.Contains(name) && parentChecked && PhrasingContainer(parent, ancestors) is not null)
         {
             NotAllowed();
+            return;
+        }
+
+        // Elements that must not be inside some others (header in footer, h2 in address, main in article …)
+        foreach (var ancestor in ancestors)
+        {
+            if (ancestor.IsForeign || !ForbiddenDescendants.TryGetValue(ancestor.Lower, out var forbidden) ||
+                !forbidden.Contains(name))
+                continue;
+            context.Report(element, Severity.Error, "html.content-model",
+                $"The element “{name}” must not appear as a descendant of the “{ancestor.Lower}” element.");
+            return;
+        }
+
+        if (name == "main" && ancestors.LastOrDefault(a => a.Lower is "header" or "footer") is { } section)
+        {
+            context.Report(element, Severity.Error, "html.content-model",
+                $"The element “main” must not appear as a descendant of the “{section.Lower}” element.");
             return;
         }
 

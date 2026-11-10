@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Added
+- HTML: sectioning (`header`/`footer` nesting, `address`, `main` placement), elements not allowed inside
+  themselves, labels with more than one control or a mismatched `for`, `hgroup`, and empty headings (warning)
+- HTML: the attributes of `<input>` per type, and the form of `min`, `max`, `step` and `value` per type
 - XML formatting (`format`, and `F` in the TUI): elements that hold only elements are indented; text, mixed content
   and `xml:space="preserve"` are kept as written. Not-well-formed files are not formatted
 - RSS 2.0 and Atom feeds are checked: required elements, RFC 822 and RFC 3339 dates, URLs, guids, enclosures, ids,

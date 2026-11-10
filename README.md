@@ -158,7 +158,13 @@ replaces them safely (a temporary file is written first), keeping their encoding
 - **Content models**: what lists, definition lists, tables, `<select>`, `<head>` and `<picture>` may hold; where
   `<li>`, `<dt>`/`<dd>`, table parts, `<option>`, `<figcaption>`, `<legend>`, `<summary>` and `<source>` may be;
   blocks inside inline elements (`<div>` in `<span>`, also through `<a>`); links and buttons inside links and
-  buttons; text where only elements may be; more than one visible `<main>`.
+  buttons; text where only elements may be; more than one visible `<main>`; `<header>`/`<footer>` inside each other,
+  headings and sections inside `<address>`, `<main>` inside `<article>`, `<aside>`, `<nav>`, `<header>` or `<footer>`;
+  `<dfn>`, `<label>`, `<meter>` and `<progress>` inside themselves; a `<label>` with more than one control, or a control
+  whose ID is not the label's `for`; `<hgroup>` without exactly one heading; empty headings (a warning).
+- **`<input>` per type**: attributes that do not apply to the type (`min` on a text field, `placeholder` on a checkbox,
+  `checked` on an e-mail field, `value` on a file field …), and the form of `min`, `max`, `step` and `value` for
+  numbers, dates, months, weeks, times, colors and URLs (`2026-11-10`, `14:30`, `#336699` …).
 - **CSS in the page**: `<style>` elements and `style` attributes are checked with the CSS validator, with the
   places of the problems in the HTML file.
 - Missing `<title>` and `lang`, `<img>` without `alt`, duplicate IDs.
@@ -300,7 +306,7 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] HTML: content-model rules, attribute checks, obsolete elements
 - [x] HTML: check `<style>` elements and `style` attributes with the CSS validator
 - [ ] CSS: grammars for the last new features (anchor positioning areas, `offset-*`, `mask-border-*`)
-- [ ] HTML: more content models (forms, headings, sectioning), and the attributes of `<input>` per type
+- [x] HTML: more content models (forms, headings, sectioning), and the attributes of `<input>` per type
 - [x] XML: well-formedness, and sitemaps
 - [x] XML: formatting, and RSS/Atom feeds
 - [x] Markdown checks, and the llms.txt format

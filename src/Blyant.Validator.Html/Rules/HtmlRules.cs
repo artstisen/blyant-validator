@@ -21,6 +21,7 @@ public static class HtmlRuleSet
         new ObsoleteRule(),
         new AttributeRule(),
         new ContentModelRule(),
+        new InputRule(),
     ];
 }
 
