@@ -7,8 +7,8 @@
   panes) in `settings.ini` in the data directory, as Blyant does, and starts there again. `browse <folder>` shows that
   folder in the pane with the focus
 - An icon (Windows): a checkmark in the style of Blyant's icon, drawn by `tools/icon.py`
-- `:path` in the TUI: the full path of the selected file or folder to the clipboard (OSC 52), as in Blyant's file
-  browser
+- `:path` and `:name` in the TUI: the full path, or the name, of the selected file or folder to the clipboard
+  (OSC 52), as in Blyant's file browser
 - Screenshots of the TUI in the README, made by `tools/screenshots.py` (as Blyant's) from a made-up site
 - As in Blyant, a folder `data` with a `settings.ini` in the directory the program is started in is used for the
   settings instead of the one next to the program

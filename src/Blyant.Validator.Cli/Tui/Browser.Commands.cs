@@ -19,7 +19,7 @@ internal static partial class Browser
     /// When a command is added, renamed or removed, change this table, RunCommand and HelpRows together
     /// </summary>
     internal static readonly CommandTable CommandTable = new(
-        ["all", "cd", "engine", "format", "help", "home", "panes", "path", "peek", "problems", "quit", "refresh"],
+        ["all", "cd", "engine", "format", "help", "home", "name", "panes", "path", "peek", "problems", "quit", "refresh"],
         ["q", "h", "exit", "close"],
         new Dictionary<string, string[]> { ["engine"] = ["native", "vnu"] });
 
@@ -64,6 +64,11 @@ internal static partial class Browser
                 // ":path" in Blyant's file browser
                 var selected = SelectedItem() is { Path.Length: > 0 } item ? item.Path : ActivePane.Directory;
                 if (selected.Length > 0) _message = Clipboard.Copy(selected, selected);
+                break;
+            case "name":
+                // The name of the selected file or directory to the clipboard, as ":name" in Blyant's file browser
+                var selectedName = SelectedName();
+                if (selectedName.Length > 0) _message = Clipboard.Copy(selectedName, selectedName);
                 break;
             case "all":
                 // All files are listed, or only HTML and CSS
@@ -168,6 +173,16 @@ internal static partial class Browser
         if (refused.Count > 0) _message += ". Not formatted: " + refused[0];
     }
 
+    // The name for ":name": of the selected file or directory; on "..", of the directory shown (the root of a drive
+    // has no name of its own: "C:\"); in the list of drives, the drive
+    private static string SelectedName()
+    {
+        if (SelectedItem() is { } item && item.Name != ParentName) return item.Name;
+        var directory = Path.TrimEndingDirectorySeparator(ActivePane.Directory);
+        var name = Path.GetFileName(directory);
+        return name.Length > 0 ? name : ActivePane.Directory;
+    }
+
     private static int LineCount(string text) => text.Length == 0 ? 0 : text.Count(c => c == '\n') + (text.EndsWith('\n') ? 0 : 1);
 
     /// <summary>The help (? or ":help")</summary>
@@ -212,6 +227,7 @@ internal static partial class Browser
         new(":format", "As F"),
         new(":engine name", "native (built in) or vnu (the Nu Html Checker, needs Java)"),
         new(":path", "The full path of the selected file or directory to the clipboard (OSC 52)"),
+        new(":name", "The name of the selected file or directory to the clipboard"),
         new(":all", "List all files, or only HTML and CSS"),
         new(":refresh", "As r"),
         new(":help :quit", "This help; quit (:q)"),

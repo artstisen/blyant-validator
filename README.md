@@ -50,7 +50,8 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 - `F` formats the selected file, or the files marked with `Space`, after asking.
 - `T` shows one pane or two, `/` filters the list, `:` opens the command line (`:cd`, `:engine vnu`, `:all` to
   list all files …, with `Tab` completion), and `?` shows all keys. `q` quits.
-- `:path` copies the full path of the selected file or folder to the clipboard, as in Blyant. It is sent with the
+- `:path` copies the full path of the selected file or folder to the clipboard, and `:name` its name (on `..`, the
+  name of the folder shown), as in Blyant. It is sent with the
   terminal's clipboard sequence (OSC 52), so it works over SSH too, and no other program is started. Most terminals
   take it (Windows Terminal, kitty, WezTerm, Alacritty, iTerm2 …); the Terminal of macOS, GNOME Terminal and the
   Linux console do not, and are told about.
