@@ -42,6 +42,13 @@ internal static partial class Browser
     private static string _message = string.Empty;
     private static bool _showAll; // All files are listed, not only HTML, CSS and XML
     private static ResultStore _results = null!;
+
+    // A count typed in front of a key in the pane with the focus: 5j, 5k, 5gg, 5G (as in Blyant's file browser)
+    private static readonly ListCount _listCount = new();
+
+    /// <summary>The rows of the panes are numbered, as 12gg counts them ("..": 1). ":number", ":nonumber", the
+    /// setting "filenumbers"; off unless turned on, as in Blyant</summary>
+    internal static bool FileNumbers { get; set; }
     private static int PageSize => Screen.LineCount - ListTop - 2;
 
     /// <summary>
@@ -102,6 +109,7 @@ internal static partial class Browser
         string Existing(string path) => path.Length > 0 && System.IO.Directory.Exists(path) ? Path.GetFullPath(path) : current;
 
         _dualPane = settings.BrowseDual;
+        FileNumbers = settings.FileNumbers;
         _active = settings.BrowsePane;
         Panes[0].Directory = Existing(settings.BrowseDirectory1);
         Panes[1].Directory = Existing(settings.BrowseDirectory2);
@@ -138,6 +146,7 @@ internal static partial class Browser
         settings.BrowsePane = _active;
         // (while peeking two panes are shown for the peek: what was set before it is kept)
         settings.BrowseDual = _peeking ? _peekWasDual : _dualPane;
+        settings.FileNumbers = FileNumbers;
         settings.Save();
     }
 
@@ -218,6 +227,21 @@ internal static partial class Browser
             var hadMessage = _message.Length > 0;
             _message = string.Empty;
 
+            // A count in front of a key, in the pane with the focus: 5j 5k (5 rows), 5gg 5G (row 5), shown below the
+            // pane. Esc only drops it. Other keys do what they do once
+            if (_listCount.Add(key))
+            {
+                Draw(hadMessage);
+                continue;
+            }
+
+            var count = _listCount.Take();
+            if (count != null && key.Key == ConsoleKey.Escape)
+            {
+                Draw(hadMessage);
+                continue;
+            }
+
             // A key that uses the other pane ends the peek first
             if (_peeking && !KeepsPeek(key)) StopPeek();
 
@@ -238,12 +262,12 @@ internal static partial class Browser
             }
             else if (key.KeyChar == 'G')
             {
-                ActivePane.Index = ActivePane.Items.Count - 1;
+                ActivePane.Index = ListCount.Row(count, ActivePane.Items.Count, false);
                 redraw = false;
             }
             else if (key.KeyChar == 'g')
             {
-                if (Console.ReadKey(true).KeyChar == 'g') ActivePane.Index = 0;
+                if (Console.ReadKey(true).KeyChar == 'g') ActivePane.Index = ListCount.Row(count, ActivePane.Items.Count, true);
                 redraw = false;
             }
             else if (key.Key == ConsoleKey.Escape)
@@ -264,12 +288,12 @@ internal static partial class Browser
             }
             else if (key.Key is ConsoleKey.J or ConsoleKey.DownArrow)
             {
-                ActivePane.Index = Math.Min(ActivePane.Index + 1, Math.Max(0, ActivePane.Items.Count - 1));
+                ActivePane.Index = Math.Min(ActivePane.Index + (count ?? 1), Math.Max(0, ActivePane.Items.Count - 1));
                 redraw = false;
             }
             else if (key.Key is ConsoleKey.K or ConsoleKey.UpArrow)
             {
-                ActivePane.Index = Math.Max(0, ActivePane.Index - 1);
+                ActivePane.Index = Math.Max(0, ActivePane.Index - (count ?? 1));
                 redraw = false;
             }
             else if (key.Key == ConsoleKey.PageDown || Keyboard.IsControl(key, ConsoleKey.D) ||

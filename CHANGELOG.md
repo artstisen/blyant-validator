@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+- TUI: `:number` and `:nonumber` number the rows of the panes, kept in `settings.ini` (`filenumbers`), and a count in
+  front of a key moves that many rows or goes to that row (`5j`, `5k`, `12gg`, `12G`), as in Blyant's file browser
 - Fragment mode, for HTML written to be inserted in a page made elsewhere (a CMS article): `validate --fragment`,
   and `:fragment` in the TUI. The doctype, title and language of the page are not checked; a doctype, `<html>`,
   `<head>`, `<body>`, `<title>`, `<meta>` or `<base>` in a fragment is a warning (`html.fragment-page-part`)

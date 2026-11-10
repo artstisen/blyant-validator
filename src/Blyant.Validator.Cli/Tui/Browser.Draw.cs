@@ -223,7 +223,7 @@ internal static partial class Browser
         var sizeColumn = end - SizeColumnWidth + 1;
         var resultColumn = (showSize ? sizeColumn - 1 : end + 1) - ResultColumnWidth;
         var name = Tools.TruncateString(item.Name + (item.IsDirectory && item.Name != ParentName ? "/" : ""),
-            Math.Max(4, resultColumn - (left + 3) - 1), true);
+            Math.Max(4, resultColumn - (left + 3) - 1 - ListNumbers.Width(FileNumbers, pane.Items.Count)), true);
 
         if (item.Path.Length > 0 && pane.Marks.Contains(item.Path))
         {
@@ -301,14 +301,16 @@ internal static partial class Browser
         _ => (bytes / (1024.0 * 1024)).ToString("0.0", CultureInfo.InvariantCulture) + " MB",
     };
 
-    // Draw (or remove) the selection pointer in front of an item of a pane. In the pane without the focus the pointer
-    // is not highlighted
+    // Draw (or remove) the selection pointer in front of an item of a pane, leaving the cursor after it (and before
+    // it the number of the row, when the numbers are on). In the pane without the focus the pointer is not
+    // highlighted, nor its number
     private static void DrawPointer(int number, int index, bool selected)
     {
         var pane = ShownPane(number);
         var row = index - pane.Top;
         if (row < 0 || row >= PageSize || index >= pane.Items.Count) return;
         Tools.SetCursor(ListTop + row, PaneArea(number).Left);
+        ListNumbers.Write(index, ListNumbers.Width(FileNumbers, pane.Items.Count), selected && HasFocus(number));
         ConsoleColors.SetColors(!selected ? ConsoleColors.ColorPreset.Normal :
             HasFocus(number) ? ConsoleColors.ColorPreset.SelectorInverted : ConsoleColors.ColorPreset.Divider);
         Console.Write(selected ? "->" : "  ");
@@ -332,6 +334,8 @@ internal static partial class Browser
             var status = " " + (pane.Items.Count == 0 ? 0 : pane.Index + 1) + "/" + pane.Items.Count + " ";
             if (pane.Filter.Length > 0) status += "/" + pane.Filter + " ";
             if (pane.Marks.Count > 0) status = " Marked: " + pane.Marks.Count + " -" + status;
+            // A count being typed (5j), below the pane it moves in
+            if (pane == ActivePane && _listCount.Shown.Length > 0) status = " " + _listCount.Shown + status;
             status = Tools.TruncateString(status, Math.Max(4, width - 6), true);
             Tools.SetCursor(Screen.LineCount - 2, left + width - status.Length - 2);
             Console.Write(status);

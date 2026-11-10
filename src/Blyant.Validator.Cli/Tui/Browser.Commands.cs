@@ -20,8 +20,8 @@ internal static partial class Browser
     /// When a command is added, renamed or removed, change this table, RunCommand and HelpRows together
     /// </summary>
     internal static readonly CommandTable CommandTable = new(
-        ["all", "cd", "engine", "format", "fragment", "help", "home", "ignore", "name", "panes", "path", "peek", "problems",
-            "quit", "refresh", "unignore"],
+        ["all", "cd", "engine", "format", "fragment", "help", "home", "ignore", "name", "nonumber", "number", "panes",
+            "path", "peek", "problems", "quit", "refresh", "unignore"],
         ["q", "h", "exit", "close"],
         new Dictionary<string, string[]> { ["engine"] = ["native", "vnu"] });
 
@@ -97,6 +97,11 @@ internal static partial class Browser
                 break;
             case "fragment":
                 ToggleFragment();
+                break;
+            case "number" or "nonumber":
+                // The numbers of the rows of the panes on or off (kept in the settings), as in Blyant
+                FileNumbers = name == "number";
+                _message = FileNumbers ? "Line numbers on" : "Line numbers off";
                 break;
             case "ignore":
                 Ignore(argument);
@@ -292,6 +297,7 @@ internal static partial class Browser
         HelpRow.Heading("Blyant Validator: the files"),
         new("j/k Up/Down", "Select a file or directory"),
         new("gg G", "First and last"),
+        new("5j 5k 5gg 5G", "A count first: 5 rows down or up; row 5 (as :number numbers them)"),
         new("Ctrl+D Ctrl+U", "A page down or up (also PgDn, PgUp)"),
         new("l Enter", "Open a directory; on a file: the peek, with the focus in it"),
         new("h - Backspace", "The directory above"),
@@ -333,6 +339,7 @@ internal static partial class Browser
         new(":path", "The full path of the selected file or directory to the clipboard (OSC 52)"),
         new(":name", "The name of the selected file or directory to the clipboard"),
         new(":all", "List all files, or only HTML, CSS, XML and Markdown"),
+        new(":number :nonumber", "Number the rows of the panes, or not"),
         HelpRow.Heading("Not a full check (for the folder shown and its subfolders)"),
         new(":fragment", "HTML files are fragments (the content of a <body>, for a CMS), or full pages again"),
         new(":ignore code", "Ignore problems with a code (css.* ignores all CSS codes); no code: the selected problem"),

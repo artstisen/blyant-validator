@@ -28,6 +28,9 @@ internal sealed class Settings
     /// <summary>Two panes side by side (false: one).</summary>
     public bool BrowseDual { get; set; } = true;
 
+    /// <summary>The rows of the panes are numbered (:number), as in Blyant ("filenumbers").</summary>
+    public bool FileNumbers { get; set; }
+
     /// <summary>The folders whose files are not fully checked (:fragment, :ignore).</summary>
     public FolderRules Checks { get; set; } = new();
 
@@ -99,6 +102,7 @@ internal sealed class Settings
         settings.BrowseSelected2 = Get("browsesel2");
         settings.BrowsePane = Get("browsepane") == "2" ? 1 : 0;
         settings.BrowseDual = !Get("browsedual").Equals("false", StringComparison.OrdinalIgnoreCase);
+        settings.FileNumbers = Get("filenumbers").Equals("true", StringComparison.OrdinalIgnoreCase);
         settings.Checks = FolderRules.Read(values);
         return settings;
     }
@@ -139,6 +143,8 @@ internal sealed class Settings
         text.Append("browsepane=").Append(BrowsePane + 1).Append('\n');
         // Two panes side by side (false: one pane)
         text.Append("browsedual=").Append(BrowseDual ? "true" : "false").Append('\n');
+        // The rows of the panes are numbered
+        text.Append("filenumbers=").Append(FileNumbers ? "true" : "false").Append('\n');
         text.Append('\n');
         text.Append("; CHECKS\n");
         // Folders (and their subfolders) whose HTML files are fragments, and the problem codes ignored in them

@@ -21,6 +21,7 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal(string.Empty, settings.BrowseDirectory1);
         Assert.Equal(0, settings.BrowsePane);
         Assert.True(settings.BrowseDual);
+        Assert.False(settings.FileNumbers);
     }
 
     [Fact]
@@ -34,6 +35,7 @@ public sealed class SettingsTests : IDisposable
             BrowseSelected2 = "",
             BrowsePane = 1,
             BrowseDual = false,
+            FileNumbers = true,
         };
         Assert.Null(written.Save());
 
@@ -41,6 +43,7 @@ public sealed class SettingsTests : IDisposable
         Assert.StartsWith("; Last modified ", text);
         Assert.Contains("[SETTINGS]\n", text);
         Assert.Contains("browsepane=2\n", text);
+        Assert.Contains("filenumbers=true\n", text);
 
         var read = Settings.Load();
         Assert.Equal(written.BrowseDirectory1, read.BrowseDirectory1);
@@ -48,6 +51,7 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal("index.html", read.BrowseSelected1);
         Assert.Equal(1, read.BrowsePane);
         Assert.False(read.BrowseDual);
+        Assert.True(read.FileNumbers);
     }
 
     [Fact]

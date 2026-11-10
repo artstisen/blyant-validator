@@ -53,6 +53,9 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 - `T` shows one pane or two, `/` filters the list, `:` opens the command line (`:cd`, `:engine vnu`, `:all` to
   list all files …, with `Tab` completion), and `?` shows all keys. `q` or `Esc` quits, after asking (as in
   Blyant); Ctrl+C quits at once.
+- `:number` numbers the rows of the panes, and `:nonumber` takes the numbers away again, as in Blyant. A count in
+  front of a key uses them: `5j` and `5k` move 5 rows, `12gg` and `12G` go to row 12 (the count is shown at the
+  bottom right of the pane while it is typed, and `Esc` drops it).
 - `:path` copies the full path of the selected file or folder to the clipboard, and `:name` its name (on `..`, the
   name of the folder shown), as in Blyant. It is sent with the
   terminal's clipboard sequence (OSC 52), so it works over SSH too, and no other program is started. Most terminals
@@ -66,7 +69,7 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 The TUI needs a window of at least 80×24, like Blyant.
 
 It remembers where it was: the folder and the selected file of both panes, the pane with the focus, and whether one
-or two panes were shown, and the rules of the folders (`:fragment`, `:ignore`). `blyant-validator` (or `browse` without a folder) starts there again; `browse <folder>`
+or two panes were shown, whether the rows are numbered, and the rules of the folders (`:fragment`, `:ignore`). `blyant-validator` (or `browse` without a folder) starts there again; `browse <folder>`
 shows that folder in the pane with the focus. The first time, it starts in the current directory. This is kept in
 `settings.ini`, in Blyant's format, in the folder `data` next to the program (or, if that folder cannot be written
 to, in `Blyant Validator/data` in your application data folder). As in Blyant, a folder `data` with a
