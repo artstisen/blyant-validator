@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>blyant-validator</AssemblyName>
+    <RootNamespace>Blyant.Validator.Cli</RootNamespace>
+    <!-- Single-file publishing; see "Building" in README.md for the publish command. -->
+    <PublishSingleFile>true</PublishSingleFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Blyant.Validator.Core\Blyant.Validator.Core.csproj" />
+    <ProjectReference Include="..\Blyant.Validator.Html\Blyant.Validator.Html.csproj" />
+    <ProjectReference Include="..\Blyant.Validator.Css\Blyant.Validator.Css.csproj" />
+    <ProjectReference Include="..\Blyant.Validator.Vnu\Blyant.Validator.Vnu.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.14" />
+  </ItemGroup>
+
+</Project>
