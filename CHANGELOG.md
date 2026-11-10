@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+- The TUI remembers where it was (the folders and selected files of both panes, the pane with the focus, one or two
+  panes) in `settings.ini` in the data directory, as Blyant does, and starts there again. `browse <folder>` shows that
+  folder in the pane with the focus
+- An icon (Windows): a checkmark in the style of Blyant's icon, drawn by `tools/icon.py`
+
 ### Changed
 - In the peek, `n`/`N` go to the next and previous problem, as `]`/`[` do. After a `/` search they go to the
   matches instead (as in Vim and Blyant), and `]`/`[` make them go to the problems again

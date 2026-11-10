@@ -59,6 +59,12 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 
 The TUI needs a window of at least 80×24, like Blyant.
 
+It remembers where it was: the folder and the selected file of both panes, the pane with the focus, and whether one
+or two panes were shown. `blyant-validator` (or `browse` without a folder) starts there again; `browse <folder>`
+shows that folder in the pane with the focus. The first time, it starts in the current directory. This is kept in
+`settings.ini`, in Blyant's format, in the folder `data` next to the program (or, if that folder cannot be written
+to, in `Blyant Validator/data` in your application data folder).
+
 Paths can be files or directories. Directories are searched for `.html`, `.htm`, `.xhtml` and `.css` files;
 add `--recursive` to include subdirectories.
 
@@ -172,6 +178,10 @@ dotnet build
 dotnet test
 dotnet run --project src/Blyant.Validator.Cli -- validate index.html
 ```
+
+On Windows the program has an icon in the style of Blyant's, with a checkmark:
+`src/Blyant.Validator.Cli/BlyantValidator.ico` (and `.svg`), drawn by `python tools/icon.py` (needs Pillow; only to
+draw the icon, not to build).
 
 To publish a single self-contained executable (no .NET install needed on the target machine), pick a
 runtime identifier such as `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64` or `osx-arm64`:

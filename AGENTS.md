@@ -60,7 +60,11 @@ purpose: a fix in one is carried to the other by hand, when it matters.
   hints, `README.md` and `CHANGELOG.md` together. `TuiTests.Commands_AreHandledAndInTheHelp` checks the commands
 - The engines run on a background thread (`ResultStore`); everything that draws runs on the main thread. The
   TUI never starts other programs, except Java for `:engine vnu`
-- Files are only written by formatting, after asking, with `DocumentIo.SafeWriteAllText`
+- Files are only written by formatting, after asking, and the settings file (`Settings.cs`), when the TUI closes.
+  Both with `DocumentIo.SafeWriteAllText`
+- The settings file is `settings.ini` in the data directory, in Blyant's format (`[SETTINGS]` and `name=value` read
+  by name). A new setting is read and written by name in `Settings.cs`, and tested in `SettingsTests`
+- The icon (`BlyantValidator.ico` and `.svg`) is drawn by `tools/icon.py`: change the script, not the files
 - Text from files (names, lines) is written with `TextMetrics.Printable` or `Tools.TruncateString`, so a file can
   never send escape codes to the terminal
 - `PeekDocument`, `ResultStore` and the command line classes do not touch the console, and are tested. The drawing

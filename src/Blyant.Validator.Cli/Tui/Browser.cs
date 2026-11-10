@@ -45,9 +45,11 @@ internal static partial class Browser
     private static int PageSize => Screen.LineCount - ListTop - 2;
 
     /// <summary>
-    /// Show the TUI in a directory. Returns when it is closed
+    /// Show the TUI. Returns when it is closed
     /// </summary>
-    public static int Run(string directory, string engine, VnuOptions vnu)
+    /// <param name="directory">The directory to show, or null for the directories it was in last (settings.ini; the
+    /// current directory the first time)</param>
+    public static int Run(string? directory, string engine, VnuOptions vnu)
     {
         var encoding = Console.OutputEncoding;
         var controlC = false;
@@ -64,19 +66,15 @@ internal static partial class Browser
 
         _results = new ResultStore(engine, vnu);
         Keyboard.Idle = Idle;
+        var settings = Settings.Load();
         try
         {
-            var start = Path.GetFullPath(directory);
-            foreach (var pane in Panes)
-            {
-                pane.Directory = start;
-                LoadItems(pane, null);
-            }
-
+            Restore(settings, directory);
             Loop();
         }
         finally
         {
+            Remember(settings);
             Keyboard.Idle = null;
             _results.Dispose();
             Tools.ShowCursor();
@@ -94,6 +92,53 @@ internal static partial class Browser
         }
 
         return 0;
+    }
+
+    // The panes as they were left (settings.ini), or a directory given: shown in the pane with the focus, the other
+    // pane keeping its directory. A directory that is gone gives the current directory
+    private static void Restore(Settings settings, string? directory)
+    {
+        var current = Path.GetFullPath(".");
+        string Existing(string path) => path.Length > 0 && System.IO.Directory.Exists(path) ? Path.GetFullPath(path) : current;
+
+        _dualPane = settings.BrowseDual;
+        _active = settings.BrowsePane;
+        Panes[0].Directory = Existing(settings.BrowseDirectory1);
+        Panes[1].Directory = Existing(settings.BrowseDirectory2);
+        string?[] selected = [NullIfEmpty(settings.BrowseSelected1), NullIfEmpty(settings.BrowseSelected2)];
+        if (directory != null)
+        {
+            ActivePane.Directory = Path.GetFullPath(directory);
+            selected[_active] = null;
+        }
+
+        for (var i = 0; i < Panes.Length; i++)
+        {
+            if (LoadItems(Panes[i], selected[i])) continue;
+            Panes[i].Directory = current;
+            LoadItems(Panes[i], null);
+        }
+
+        _message = string.Empty;
+    }
+
+    private static string? NullIfEmpty(string text) => text.Length == 0 ? null : text;
+
+    // Keep where the panes are, for the next time (settings.ini)
+    private static void Remember(Settings settings)
+    {
+        string SelectedName(Pane pane) =>
+            pane.Items.Count > 0 && pane.Index < pane.Items.Count && pane.Items[pane.Index].Name != ParentName
+                ? pane.Items[pane.Index].Name : string.Empty;
+
+        settings.BrowseDirectory1 = Panes[0].Directory;
+        settings.BrowseDirectory2 = Panes[1].Directory;
+        settings.BrowseSelected1 = SelectedName(Panes[0]);
+        settings.BrowseSelected2 = SelectedName(Panes[1]);
+        settings.BrowsePane = _active;
+        // (while peeking two panes are shown for the peek: what was set before it is kept)
+        settings.BrowseDual = _peeking ? _peekWasDual : _dualPane;
+        settings.Save();
     }
 
     private static long _nextDiskCheck;

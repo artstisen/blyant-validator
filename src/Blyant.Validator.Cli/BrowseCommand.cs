@@ -5,8 +5,11 @@ namespace Blyant.Validator.Cli;
 
 internal static class BrowseCommand
 {
-    /// <summary>Open the TUI in a folder. It needs a terminal: with input or output redirected it is refused.</summary>
-    public static int Run(string folder, string engine, string? vnuJar, string? java)
+    /// <summary>
+    /// Open the TUI in a folder, or (null) where it was left last. It needs a terminal: with input or output
+    /// redirected it is refused
+    /// </summary>
+    public static int Run(string? folder, string engine, string? vnuJar, string? java)
     {
         if (Console.IsInputRedirected || Console.IsOutputRedirected)
         {
@@ -14,7 +17,7 @@ internal static class BrowseCommand
             return 2;
         }
 
-        if (!Directory.Exists(folder))
+        if (folder != null && !Directory.Exists(folder))
         {
             Console.Error.WriteLine($"{CommandLine.Program}: '{folder}' is not a directory.");
             return 2;

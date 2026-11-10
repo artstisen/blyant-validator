@@ -181,7 +181,7 @@ internal static class CommandLine
         sb.AppendLine();
         sb.AppendLine("Usage:");
         sb.AppendLine($"  {Program} <command> [options]");
-        sb.AppendLine($"  {Program}            (no command: the TUI, in the current directory)");
+        sb.AppendLine($"  {Program}            (no command: the TUI, where it was left last)");
         sb.AppendLine();
         sb.AppendLine("Commands:");
         AppendTable(sb, commands.Select(c => (c.Name, c.Description)));

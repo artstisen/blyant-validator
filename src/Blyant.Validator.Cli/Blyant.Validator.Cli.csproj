@@ -7,6 +7,9 @@
     <RootNamespace>Blyant.Validator.Cli</RootNamespace>
     <!-- Single-file publishing; see "Building" in README.md for the publish command. -->
     <PublishSingleFile>true</PublishSingleFile>
+    <!-- The icon of blyant-validator.exe (Windows): a checkmark in the style of Blyant's icon, 16 to 256 pixels.
+         It is drawn by tools/icon.py -->
+    <ApplicationIcon>BlyantValidator.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

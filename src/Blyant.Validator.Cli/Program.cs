@@ -37,7 +37,7 @@ var browse = new CommandSpec("browse", "Open the TUI: browse folders and see the
         OptionKind.Text, ValueName: "<path>"),
     new("--java", null, "Path to the java executable (default: JAVA_HOME, then PATH).",
         OptionKind.Text, ValueName: "<path>"),
-], "<folder>", "The folder to start in (default: the current directory).", ArgumentRequired: false);
+], "<folder>", "The folder to start in (default: where the TUI was left last).", ArgumentRequired: false);
 
 var credits = new CommandSpec("credits", "Show the open-source projects Blyant Validator builds on.", []);
 
@@ -45,9 +45,9 @@ CommandSpec[] commands = [validate, format, browse, credits];
 
 if (args.Length == 0)
 {
-    // In a terminal: the TUI. Otherwise (output redirected, a script): the help, as a mistake
+    // In a terminal: the TUI, where it was left last. Otherwise (output redirected, a script): the help, as a mistake
     if (!Console.IsInputRedirected && !Console.IsOutputRedirected)
-        return BrowseCommand.Run(".", "native", null, null);
+        return BrowseCommand.Run(null, "native", null, null);
     Console.Error.Write(CommandLine.RootHelp(commands));
     return 2;
 }
@@ -115,7 +115,7 @@ try
             parsed.Flag("--use-tabs"),
             parsed.Number("--line-width")), cancel.Token),
         "browse" => BrowseCommand.Run(
-            parsed.Arguments.FirstOrDefault() ?? ".",
+            parsed.Arguments.FirstOrDefault(),
             parsed.Text("--engine")!,
             parsed.Text("--vnu-jar"),
             parsed.Text("--java")),
