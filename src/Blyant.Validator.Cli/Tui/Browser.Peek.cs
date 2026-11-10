@@ -85,6 +85,7 @@ internal static partial class Browser
     private static string PeekTitle()
     {
         if (SelectedItem() is not { IsDirectory: false } item) return PeekedDirectory() ?? string.Empty;
+        if (!ResultStore.IsValidated(item.Path)) return item.Name + " - not checked";
         var result = _results.Last(item.Path);
         var summary = result == null || _results.IsPending(item.Path) ? "checking..."
             : result.Failure != null ? "could not be checked"
@@ -378,7 +379,9 @@ internal static partial class Browser
     {
         var document = _peekDocument!;
         var result = _peekSource?.Result;
-        IReadOnlyList<string> notes = result == null ? ["Checking..."]
+        IReadOnlyList<string> notes = !ResultStore.IsValidated(document.Path)
+                ? ["Not checked: not an HTML or CSS file"]
+            : result == null ? ["Checking..."]
             : result.Failure != null ? ["Could not be checked: " + result.Failure]
             : document.Diagnostics.Count == 0 ? ["No problems found."]
             : [];

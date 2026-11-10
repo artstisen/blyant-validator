@@ -13,6 +13,8 @@
 
 ### Fixed
 - The title of the peek no longer says "0 warnings" or "0 errors"
+- With `:all`, a file that is not HTML or CSS (Markdown, SVG …) no longer shows "Checking..." for ever in the
+  problems and the title of the peek: it says that it is not checked
 
 ### Changed
 - In the peek, `n`/`N` go to the next and previous problem, as `]`/`[` do. After a `/` search they go to the
