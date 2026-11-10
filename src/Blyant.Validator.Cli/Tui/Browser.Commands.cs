@@ -19,7 +19,7 @@ internal static partial class Browser
     /// When a command is added, renamed or removed, change this table, RunCommand and HelpRows together
     /// </summary>
     internal static readonly CommandTable CommandTable = new(
-        ["all", "cd", "engine", "format", "help", "home", "panes", "peek", "problems", "quit", "refresh"],
+        ["all", "cd", "engine", "format", "help", "home", "panes", "path", "peek", "problems", "quit", "refresh"],
         ["q", "h", "exit", "close"],
         new Dictionary<string, string[]> { ["engine"] = ["native", "vnu"] });
 
@@ -58,6 +58,12 @@ internal static partial class Browser
                 break;
             case "refresh":
                 RefreshPane(ActivePane);
+                break;
+            case "path":
+                // The full path of the selected file or directory (on ".." the directory shown) to the clipboard, as
+                // ":path" in Blyant's file browser
+                var selected = SelectedItem() is { Path.Length: > 0 } item ? item.Path : ActivePane.Directory;
+                if (selected.Length > 0) _message = Clipboard.Copy(selected, selected);
                 break;
             case "all":
                 // All files are listed, or only HTML and CSS
@@ -205,6 +211,7 @@ internal static partial class Browser
         new(":problems", "As P"),
         new(":format", "As F"),
         new(":engine name", "native (built in) or vnu (the Nu Html Checker, needs Java)"),
+        new(":path", "The full path of the selected file or directory to the clipboard (OSC 52)"),
         new(":all", "List all files, or only HTML and CSS"),
         new(":refresh", "As r"),
         new(":help :quit", "This help; quit (:q)"),

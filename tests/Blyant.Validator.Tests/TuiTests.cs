@@ -110,6 +110,31 @@ public sealed class TuiTests : IDisposable
     }
 
     [Fact]
+    public void Clipboard_SequenceIsOsc52WithBase64()
+    {
+        Assert.Equal("\u001b]52;c;QzpcU2l0ZXNcaW5kZXguaHRtbA==\u0007", Clipboard.Osc52Sequence(@"C:\Sites\index.html"));
+    }
+
+    [Theory]
+    [InlineData("linux", null, null, true)]
+    [InlineData("xterm-256color", "Apple_Terminal", null, true)]
+    [InlineData("xterm-256color", null, "7600", true)]
+    [InlineData("xterm-kitty", null, "7600", false)]
+    [InlineData("xterm-256color", "WezTerm", "7600", false)]
+    [InlineData("xterm-256color", null, null, false)]
+    public void Clipboard_KnowsTerminalsWithoutIt(string term, string? program, string? vte, bool without)
+    {
+        string? Variable(string name) => name switch
+        {
+            "TERM" => term,
+            "TERM_PROGRAM" => program,
+            "VTE_VERSION" => vte,
+            _ => null,
+        };
+        Assert.Equal(without, Clipboard.WithoutClipboard(Variable));
+    }
+
+    [Fact]
     public void CommandHistory_KeepsTheNewestFirst()
     {
         var history = new CommandHistory();
