@@ -7,8 +7,8 @@
 #   win-x64 ... A self-contained single file for each platform. The .NET runtime is included in the file,
 #               so nothing has to be installed to run it.
 # Each version is also packed for a release in "publish/release", named by the version: a zip for Windows and the
-# portable version (BlyantValidator-0.4.0-win-x64.zip), and a tar.gz for Linux and macOS
-# (BlyantValidator-0.4.0-linux-x64.tar.gz), where the program is marked as one that can be run. Each has a folder
+# portable version (BlyantValidator-0.5.0-win-x64.zip), and a tar.gz for Linux and macOS
+# (BlyantValidator-0.5.0-linux-x64.tar.gz), where the program is marked as one that can be run. Each has a folder
 # "BlyantValidator" with the program, README.txt and LICENSE. README.txt is made from docs/release/README.txt: a short
 # read-me for the downloaded program, with the credits and the notices of the licences (the .NET runtime is in the
 # program file), and the address of the repository on GitHub (from the Git remote "origin"). It has LF line endings
@@ -56,7 +56,7 @@ if (-not $repository) {
     $repository = ($remote.Trim() -replace '^git@github\.com:', 'https://github.com/') -replace '\.git$', ''
 }
 
-# The version (0.4.0), for the names of the archives: the same in Directory.Build.props and in README.md
+# The version (0.5.0), for the names of the archives: the same in Directory.Build.props and in README.md
 [xml]$props = Get-Content (Join-Path $PSScriptRoot "Directory.Build.props")
 $version = $props.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-Object { $_ } | Select-Object -First 1
 $readme = [regex]::Match((Get-Content (Join-Path $PSScriptRoot "README.md") -Raw), 'Status: [^(]*\(([0-9][^)]*)\)').Groups[1].Value

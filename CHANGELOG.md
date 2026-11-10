@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 (2026-11-10)
 
 ### Fixed
 - A crash (an unhandled exception) on digits of other scripts in sitemap and feed dates and in `<input>` values
