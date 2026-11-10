@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+- The TUI: `blyant-validator` without a command (or `blyant-validator browse [folder]`) is a file browser in the
+  terminal, adapted from the file browser of Blyant. One or two panes list folders and HTML/CSS files with their
+  results (`ok`, `3E 1W`), checked in the background and again when a file changes
+- The peek (`V`): the selected file in colors, with the lines that have problems marked and the place of each error
+  highlighted; `Tab` goes into it (`j`/`k`, `]`/`[` next/previous problem, `/` search). `P` lists the problems
+- Formatting in the TUI (`F`), of the selected or the marked files, after asking
+- Commands on the `:` command line with Tab completion: `:cd`, `:home`, `:engine native|vnu`, `:all`, `:refresh`,
+  `:panes`, `:peek`, `:problems`, `:format`, `:help`, `:quit`
+
 ## 0.3.0
 
 ### Changed

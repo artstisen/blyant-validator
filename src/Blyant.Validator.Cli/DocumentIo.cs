@@ -9,9 +9,13 @@ internal static class DocumentIo
     private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
     private static readonly UTF8Encoding Utf8WithBom = new(encoderShouldEmitUTF8Identifier: true);
 
-    public static async Task<SourceDocument> LoadAsync(string path, CancellationToken ct)
+    public static async Task<SourceDocument> LoadAsync(string path, CancellationToken ct) =>
+        FromBytes(path, await File.ReadAllBytesAsync(path, ct).ConfigureAwait(false));
+
+    public static SourceDocument Load(string path) => FromBytes(path, File.ReadAllBytes(path));
+
+    private static SourceDocument FromBytes(string path, byte[] bytes)
     {
-        var bytes = await File.ReadAllBytesAsync(path, ct).ConfigureAwait(false);
         var hasBom = bytes.AsSpan().StartsWith(Utf8WithBom.Preamble);
         var content = Utf8NoBom.GetString(bytes, hasBom ? 3 : 0, bytes.Length - (hasBom ? 3 : 0));
         return new SourceDocument(path, content, SourceDocument.DetectKind(path)) { HasUtf8Bom = hasBom };

@@ -29,7 +29,8 @@ internal sealed record CommandSpec(
     string Description,
     IReadOnlyList<OptionSpec> Options,
     string? ArgumentName = null,
-    string? ArgumentDescription = null);
+    string? ArgumentDescription = null,
+    bool ArgumentRequired = true);
 
 /// <summary>A mistake in the command line. The message is shown with a hint to use --help.</summary>
 internal sealed class UsageException(string message) : Exception(message);
@@ -134,7 +135,7 @@ internal static class CommandLine
             result.Set(option, value);
         }
 
-        if (!result.Help && command.ArgumentName is not null && result.Arguments.Count == 0)
+        if (!result.Help && command.ArgumentName is not null && command.ArgumentRequired && result.Arguments.Count == 0)
             throw new UsageException($"'{command.Name}' needs at least one {command.ArgumentName.Trim('<', '>')} argument.");
 
         return result;
@@ -148,7 +149,8 @@ internal static class CommandLine
         sb.AppendLine();
         sb.AppendLine("Usage:");
         sb.Append($"  {Program} {command.Name}");
-        if (command.ArgumentName is not null) sb.Append($" {command.ArgumentName}...");
+        if (command.ArgumentName is not null)
+            sb.Append(command.ArgumentRequired ? $" {command.ArgumentName}..." : $" [{command.ArgumentName}]");
         sb.AppendLine(" [options]");
 
         if (command.ArgumentName is not null)
@@ -179,6 +181,7 @@ internal static class CommandLine
         sb.AppendLine();
         sb.AppendLine("Usage:");
         sb.AppendLine($"  {Program} <command> [options]");
+        sb.AppendLine($"  {Program}            (no command: the TUI, in the current directory)");
         sb.AppendLine();
         sb.AppendLine("Commands:");
         AppendTable(sb, commands.Select(c => (c.Name, c.Description)));

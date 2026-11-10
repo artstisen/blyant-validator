@@ -44,6 +44,28 @@ W3C CSS Validation Service (<https://github.com/w3c/css-validator>), and written
   rename them. Messages may be improved
 - Text shown to the user is English
 
+## The TUI
+The TUI (`Cli/Tui`) is adapted from the file browser of Blyant (MIT License, same author). Its terminal parts
+(`Tui/Terminal`: keys, colors, boxes, the command line, the help) and the highlighters (`Tui/Highlighting`) are
+copies of Blyant's code, trimmed; each file says what it was adapted from. They are kept apart from Blyant on
+purpose: a fix in one is carried to the other by hand, when it matters.
+
+- It looks and works like Blyant's file browser: the same keys where they do the same thing (`j`/`k`, `gg`/`G`,
+  `Tab`, `T`, `V`, `/`, `:`, `?`), the same colors (Blyant's Default scheme) and the same layout
+- The screen is 79 columns and 23 rows at least (a window of 80x24): the last column and row of the window are not
+  used. Key hints that do not fit are left out (`Menu.WriteKeyHints`), and nothing is placed at a fixed column
+  after a text of variable length
+- Text shown is English, written where it is used. There are no language files
+- When a key or command is added or changed, update `Browser.CommandTable`, `RunCommand`, `HelpRows`, the key
+  hints, `README.md` and `CHANGELOG.md` together. `TuiTests.Commands_AreHandledAndInTheHelp` checks the commands
+- The engines run on a background thread (`ResultStore`); everything that draws runs on the main thread. The
+  TUI never starts other programs, except Java for `:engine vnu`
+- Files are only written by formatting, after asking, with `DocumentIo.SafeWriteAllText`
+- Text from files (names, lines) is written with `TextMetrics.Printable` or `Tools.TruncateString`, so a file can
+  never send escape codes to the terminal
+- `PeekDocument`, `ResultStore` and the command line classes do not touch the console, and are tested. The drawing
+  is tried in a terminal: `dotnet run --project src/Blyant.Validator.Cli -- browse <folder>`
+
 ## Validators and formatters
 - The engines in `Blyant.Validator.Html` and `Blyant.Validator.Css` do not touch the console or the
   file system, so they can be tested. Reading, writing and printing belong in `Blyant.Validator.Cli`

@@ -4,7 +4,7 @@ A cross-platform command-line tool that validates and formats HTML and CSS files
 C#/.NET 10 and designed as an optional companion to the [Blyant editor](https://blyant-editor.com/),
 but it works on its own too.
 
-> **Status: early development (0.3.0).** CSS validation and both formatters work. HTML validation
+> **Status: early development (0.4.0).** CSS validation and both formatters work. HTML validation
 > reports parse errors and has a small starter rule set; more rules will follow.
 >
 > Blyant Validator has no dependencies besides .NET.
@@ -21,10 +21,41 @@ See [CREDITS.md](CREDITS.md) for details, and run `blyant-validator credits`.
 ## Usage
 
 ```
+blyant-validator                          (the TUI, in the current directory)
+blyant-validator browse   [folder] [options]
 blyant-validator validate <paths>... [options]
 blyant-validator format   <paths>... [options]
 blyant-validator credits
 ```
+
+### The TUI
+
+Started without a command (or with `browse`), Blyant Validator is a file browser in the terminal, in the style of
+the file browser of the Blyant editor: one or two panes, and a peek of the selected file in the other pane.
+
+```
+ FILES                                   Blyant Validator
+ ~/sites/blog                          | about.html - 3 errors, 1 warning
+-- PANE 1 -----------------------------+-- PEEK --------------------------
+-> ..                                  |     10   <main>
+   css/                                | E   11     <div><span>Welcome
+   about.html          3E 1W    2.1 KB |     12     </div>
+   index.html          ok       1.4 KB |     13   </main>
+```
+
+- Each HTML and CSS file shows its result: `ok`, the number of errors and warnings (`3E 1W`), `...` while it is
+  checked, or `failed`. Files are checked in the background, and checked again when they change on disk, so the
+  list stays up to date while you edit the files in another program.
+- `V` peeks at the selected file: its text in colors, with a mark (`E`, `W`, `i`) in front of the lines with
+  problems and the place of each error highlighted. `P` shows the list of its problems instead.
+- `Tab` goes into the peek: `j`/`k` move, `]`/`[` go to the next and previous problem (its message is shown on
+  the bottom line), `/` searches, `h`/`l` scroll sideways, and in the list of problems `Enter` shows a problem in
+  the file. `Tab` or `Esc` goes back to the list.
+- `F` formats the selected file, or the files marked with `Space`, after asking.
+- `T` shows one pane or two, `/` filters the list, `:` opens the command line (`:cd`, `:engine vnu`, `:all` to
+  list all files …, with `Tab` completion), and `?` shows all keys. `q` quits.
+
+The TUI needs a window of at least 80×24, like Blyant.
 
 Paths can be files or directories. Directories are searched for `.html`, `.htm`, `.xhtml` and `.css` files;
 add `--recursive` to include subdirectories.
@@ -155,7 +186,7 @@ dotnet publish src/Blyant.Validator.Cli -c Release -r win-x64 --self-contained
 | `src/Blyant.Validator.Html` | HTML reader with parse errors (`Parsing/`), validator rules (`Rules/`) and formatter. |
 | `src/Blyant.Validator.Css` | CSS tokenizer and parser (`Syntax/`), value grammars (`Values/`, `Data/`), validator and formatter. |
 | `src/Blyant.Validator.Vnu` | Adapter that runs `vnu.jar` and converts its JSON output. |
-| `src/Blyant.Validator.Cli` | The `blyant-validator` command-line tool. |
+| `src/Blyant.Validator.Cli` | The `blyant-validator` program: the commands, and the TUI in `Tui/` (its terminal parts in `Tui/Terminal/` and the highlighters in `Tui/Highlighting/` are adapted from Blyant). |
 | `tests/Blyant.Validator.Tests` | xUnit tests. |
 
 Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed in [CHANGELOG.md](CHANGELOG.md).
@@ -168,6 +199,7 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] CSS: tokenizer and parser following CSS Syntax Level 3
 - [x] CSS: property, value, unit, selector and at-rule checks
 - [x] HTML and CSS formatters
+- [x] TUI: file browser with results, peek with problems marked, formatting
 - [ ] CSS: grammars for the remaining properties (grid templates, masks, …)
 - [ ] HTML: content-model rules, attribute checks, obsolete elements
 - [ ] HTML: check `<style>` elements and `style` attributes with the CSS validator

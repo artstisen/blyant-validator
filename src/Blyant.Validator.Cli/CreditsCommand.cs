@@ -12,6 +12,7 @@ internal static class CreditsCommand
         Console.WriteLine("Blyant Validator is modelled on these open-source projects, with thanks:");
         Print(Credits.Inspiration);
         Console.WriteLine();
+        Console.WriteLine("The TUI is adapted from the file browser of the Blyant editor (MIT License).");
         Console.WriteLine("Built with .NET only: Blyant Validator has no other dependencies.");
         Console.WriteLine("See CREDITS.md for details.");
         return 0;

@@ -29,12 +29,25 @@ var format = new CommandSpec("format", "Re-indent and tidy HTML and CSS files.",
         OptionKind.Number, ValueName: "<n>", Default: "100", Min: 20),
 ], "<paths>", "HTML/CSS files or directories to process.");
 
+var browse = new CommandSpec("browse", "Open the TUI: browse folders and see the problems of each file.",
+[
+    new("--engine", "-e", "Validation engine: 'native' (built in) or 'vnu' (Nu Html Checker, needs Java).",
+        OptionKind.Text, Choices: ["native", "vnu"], Default: "native"),
+    new("--vnu-jar", null, "Path to vnu.jar (default: BLYANT_VNU_JAR environment variable).",
+        OptionKind.Text, ValueName: "<path>"),
+    new("--java", null, "Path to the java executable (default: JAVA_HOME, then PATH).",
+        OptionKind.Text, ValueName: "<path>"),
+], "<folder>", "The folder to start in (default: the current directory).", ArgumentRequired: false);
+
 var credits = new CommandSpec("credits", "Show the open-source projects Blyant Validator builds on.", []);
 
-CommandSpec[] commands = [validate, format, credits];
+CommandSpec[] commands = [validate, format, browse, credits];
 
 if (args.Length == 0)
 {
+    // In a terminal: the TUI. Otherwise (output redirected, a script): the help, as a mistake
+    if (!Console.IsInputRedirected && !Console.IsOutputRedirected)
+        return BrowseCommand.Run(".", "native", null, null);
     Console.Error.Write(CommandLine.RootHelp(commands));
     return 2;
 }
@@ -101,6 +114,11 @@ try
             parsed.Number("--indent-size"),
             parsed.Flag("--use-tabs"),
             parsed.Number("--line-width")), cancel.Token),
+        "browse" => BrowseCommand.Run(
+            parsed.Arguments.FirstOrDefault() ?? ".",
+            parsed.Text("--engine")!,
+            parsed.Text("--vnu-jar"),
+            parsed.Text("--java")),
         _ => CreditsCommand.Run(),
     };
 }

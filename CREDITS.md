@@ -24,6 +24,11 @@ Blyant Validator is an independent project, written from scratch in C#. It is no
 by the W3C or the authors of the projects above. No source code from either project is included. If any is
 added in the future, its licence text will be added to [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
+## Blyant
+
+The TUI is adapted from the file browser of the [Blyant editor](https://blyant-editor.com/) (MIT License, by the
+same author): its panes, keys, colors, boxes, command line, help and syntax highlighting.
+
 ## Built with
 
 Blyant Validator is built with [.NET](https://dotnet.microsoft.com/) only, and has no other dependencies.
