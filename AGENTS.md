@@ -74,8 +74,10 @@ purpose: a fix in one is carried to the other by hand, when it matters.
   is tried in a terminal: `dotnet run --project src/Blyant.Validator.Cli -- browse <folder>`
 
 ## Validators and formatters
-- The engines in `Blyant.Validator.Html` and `Blyant.Validator.Css` do not touch the console or the
-  file system, so they can be tested. Reading, writing and printing belong in `Blyant.Validator.Cli`
+- The engines in `Blyant.Validator.Html`, `Blyant.Validator.Css` and `Blyant.Validator.Xml` do not touch the
+  console or the file system, so they can be tested.
+- XML is read with .NET's `XmlReader` with DTDs ignored and no resolver (`XmlResolver = null`): a file must never
+  make the validator read other files or the network. `XmlValidatorTests.ExternalEntities_AreNotRead` checks it Reading, writing and printing belong in `Blyant.Validator.Cli`
 - A formatter changes only layout (whitespace, line breaks, indentation, a missing last `;`), never
   what the document means. Tests check that formatting twice gives the same result as formatting once,
   and that the tokens of a CSS file are the same before and after

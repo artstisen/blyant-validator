@@ -68,6 +68,8 @@
 <text x="425.6" y="213.8" fill="#767676" textLength="8.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">|</text>
 <text x="442.4" y="213.8" fill="#767676" textLength="25.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  7</text>
 <text x="492.8" y="213.8" fill="#61D6D6" textLength="58.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">&lt;/head&gt;</text>
+<text x="14.0" y="230.8" fill="#CCCCCC" textLength="117.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   sitemap.xml</text>
+<text x="350.0" y="230.8" fill="#E74856" textLength="16.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">1E</text>
 <text x="425.6" y="230.8" fill="#767676" textLength="8.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">|</text>
 <text x="442.4" y="230.8" fill="#767676" textLength="25.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">  8</text>
 <text x="492.8" y="230.8" fill="#61D6D6" textLength="50.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">&lt;body&gt;</text>
@@ -155,8 +157,8 @@
 <text x="442.4" y="502.8" fill="#767676" textLength="25.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 24</text>
 <text x="509.6" y="502.8" fill="#61D6D6" textLength="58.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">&lt;/main&gt;</text>
 <text x="14.0" y="519.8" fill="#767676" textLength="16.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">--</text>
-<text x="30.8" y="519.8" fill="#E74856" textLength="260.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 1 with errors, 1 with warnings</text>
-<text x="299.6" y="519.8" fill="#767676" textLength="537.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">-------- 4/7 --+------------------------------------------------</text>
+<text x="30.8" y="519.8" fill="#E74856" textLength="260.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 2 with errors, 1 with warnings</text>
+<text x="299.6" y="519.8" fill="#767676" textLength="537.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">-------- 4/8 --+------------------------------------------------</text>
 <rect x="14.0" y="524" width="781.2" height="17" fill="#E74856"/>
 <text x="14.0" y="536.8" fill="#F2F2F2" textLength="772.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 14:7 error: An “img” element must have an “alt” attribute, except under certain conditions.</text>
 </svg>

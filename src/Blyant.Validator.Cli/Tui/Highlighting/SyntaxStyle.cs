@@ -25,6 +25,7 @@ internal static class SyntaxHighlighter
         None,
         Html,
         Css,
+        Xml,
     }
 
     public static Kind KindOf(string fileName) =>
@@ -32,6 +33,7 @@ internal static class SyntaxHighlighter
         {
             ".html" or ".htm" or ".xhtml" => Kind.Html,
             ".css" => Kind.Css,
+            ".xml" or ".svg" => Kind.Xml,
             _ => Kind.None,
         };
 
@@ -45,9 +47,12 @@ internal static class SyntaxHighlighter
         nextState = state;
         if (kind == Kind.None || line.Length == 0) return null;
         var styles = new SyntaxStyle[line.Length];
-        nextState = kind == Kind.Html
-            ? HtmlHighlighter.Scan(line, state, styles)
-            : CssHighlighter.Scan(line, 0, line.Length, state, styles);
+        nextState = kind switch
+        {
+            Kind.Html => HtmlHighlighter.Scan(line, state, styles),
+            Kind.Xml => HtmlHighlighter.Scan(line, state, styles, xml: true),
+            _ => CssHighlighter.Scan(line, 0, line.Length, state, styles),
+        };
         return Array.Exists(styles, style => style != SyntaxStyle.None) ? styles : null;
     }
 

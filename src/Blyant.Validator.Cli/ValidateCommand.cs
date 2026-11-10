@@ -3,6 +3,7 @@ using Blyant.Validator.Core;
 using Blyant.Validator.Css;
 using Blyant.Validator.Html;
 using Blyant.Validator.Vnu;
+using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Cli;
 
@@ -21,8 +22,8 @@ internal static class ValidateCommand
         }
 
         IValidator[] validators = settings.Engine == "vnu"
-            ? [new VnuValidator(new VnuOptions(settings.VnuJar, settings.Java))]
-            : [new HtmlValidator(), new CssValidator()];
+            ? [new VnuValidator(new VnuOptions(settings.VnuJar, settings.Java)), new XmlValidator()]
+            : [new HtmlValidator(), new CssValidator(), new XmlValidator()];
 
         var all = new List<Diagnostic>();
         var checkedCount = 0;
@@ -32,7 +33,7 @@ internal static class ValidateCommand
             var validator = validators.FirstOrDefault(v => v.CanValidate(document.Kind));
             if (validator is null)
             {
-                Console.Error.WriteLine($"blyant-validator: skipping '{file}' (not an HTML or CSS file).");
+                Console.Error.WriteLine($"blyant-validator: skipping '{file}' (not an HTML, CSS or XML file).");
                 continue;
             }
 

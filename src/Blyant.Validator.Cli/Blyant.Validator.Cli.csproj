@@ -17,6 +17,7 @@
     <ProjectReference Include="..\Blyant.Validator.Html\Blyant.Validator.Html.csproj" />
     <ProjectReference Include="..\Blyant.Validator.Css\Blyant.Validator.Css.csproj" />
     <ProjectReference Include="..\Blyant.Validator.Vnu\Blyant.Validator.Vnu.csproj" />
+    <ProjectReference Include="..\Blyant.Validator.Xml\Blyant.Validator.Xml.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -3,6 +3,11 @@
 ## Unreleased
 
 ### Added
+- XML: `.xml` and `.svg` files are checked for well-formedness, with the common mistakes (a bare `&`, `&nbsp;`) told
+  in plain words. DTDs are ignored and nothing outside the file is loaded
+- Sitemaps and sitemap indexes are checked by the rules of sitemaps.org: namespace, UTF-8, `loc`, `lastmod`,
+  `changefreq`, `priority`, unknown and repeated elements, size limits; duplicate URLs and other hosts are warnings
+- XML in the TUI: listed with its result, and shown in the peek in colors; a sitemap in the screenshots
 - HTML: the CSS of a page is validated: `<style>` elements as style sheets and `style` attributes as declarations,
   with the places of the problems in the HTML file
 - HTML: obsolete elements and attributes (`<center>`, `<font>`, `align`, `bgcolor`, `<a name>` …), with what to use

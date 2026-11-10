@@ -4,6 +4,7 @@ using Blyant.Validator.Core;
 using Blyant.Validator.Css;
 using Blyant.Validator.Html;
 using Blyant.Validator.Vnu;
+using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Cli.Tui;
 
@@ -53,7 +54,7 @@ internal sealed class ResultStore : IDisposable
         }
     }
 
-    /// <summary>True for the files that are validated (HTML and CSS).</summary>
+    /// <summary>True for the files that are validated (HTML, CSS and XML).</summary>
     public static bool IsValidated(string path) => SourceDocument.DetectKind(path) != DocumentKind.Unknown;
 
     /// <summary>
@@ -141,9 +142,14 @@ internal sealed class ResultStore : IDisposable
         try
         {
             var document = await DocumentIo.LoadAsync(path, ct).ConfigureAwait(false);
-            IValidator validator = _engine == "vnu"
-                ? new VnuValidator(_vnu)
-                : document.Kind == DocumentKind.Css ? new CssValidator() : new HtmlValidator();
+            // (vnu checks HTML and CSS; XML is always checked here)
+            IValidator validator = document.Kind switch
+            {
+                DocumentKind.Xml => new XmlValidator(),
+                _ when _engine == "vnu" => new VnuValidator(_vnu),
+                DocumentKind.Css => new CssValidator(),
+                _ => new HtmlValidator(),
+            };
             var diagnostics = await validator.ValidateAsync(document, ct).ConfigureAwait(false);
             return new FileResult(stamp.Written, stamp.Length, diagnostics, null);
         }

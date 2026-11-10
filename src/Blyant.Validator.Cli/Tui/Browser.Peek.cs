@@ -236,7 +236,7 @@ internal static partial class Browser
             names.AddRange(info.EnumerateFiles()
                 .Where(f => IsShown(f, string.Empty) && (_showAll || ResultStore.IsValidated(f.Name)))
                 .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase).Select(f => f.Name));
-            if (names.Count == 0) return ["(no HTML or CSS files)"];
+            if (names.Count == 0) return ["(no HTML, CSS or XML files)"];
             if (names.Count <= count) return names;
             var shown = names.Take(count).ToList();
             shown[^1] = $"... and {names.Count - count + 1} more";
@@ -380,7 +380,7 @@ internal static partial class Browser
         var document = _peekDocument!;
         var result = _peekSource?.Result;
         IReadOnlyList<string> notes = !ResultStore.IsValidated(document.Path)
-                ? ["Not checked: not an HTML or CSS file"]
+                ? ["Not checked: not HTML, CSS or XML"]
             : result == null ? ["Checking..."]
             : result.Failure != null ? ["Could not be checked: " + result.Failure]
             : document.Diagnostics.Count == 0 ? ["No problems found."]

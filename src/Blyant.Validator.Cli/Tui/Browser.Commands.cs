@@ -71,10 +71,10 @@ internal static partial class Browser
                 if (selectedName.Length > 0) _message = Clipboard.Copy(selectedName, selectedName);
                 break;
             case "all":
-                // All files are listed, or only HTML and CSS
+                // All files are listed, or only HTML, CSS and XML
                 _showAll = !_showAll;
                 foreach (var pane in Panes) Reload(pane);
-                _message = _showAll ? "All files are listed" : "Only HTML and CSS files are listed";
+                _message = _showAll ? "All files are listed" : "Only HTML, CSS and XML files are listed";
                 break;
             case "engine":
                 if (argument.Length == 0)
@@ -108,7 +108,8 @@ internal static partial class Browser
         var paths = ActivePane.Marks.Count > 0
             ? ActivePane.Items.Where(i => ActivePane.Marks.Contains(i.Path)).Select(i => i.Path).ToList()
             : SelectedItem() is { IsDirectory: false } item ? [item.Path] : [];
-        paths = paths.Where(ResultStore.IsValidated).ToList();
+        // (XML is validated, but not formatted)
+        paths = paths.Where(p => SourceDocument.DetectKind(p) is DocumentKind.Html or DocumentKind.Css).ToList();
         if (paths.Count == 0)
         {
             _message = "Select an HTML or CSS file to format";
@@ -230,7 +231,7 @@ internal static partial class Browser
         new(":engine name", "native (built in) or vnu (the Nu Html Checker, needs Java)"),
         new(":path", "The full path of the selected file or directory to the clipboard (OSC 52)"),
         new(":name", "The name of the selected file or directory to the clipboard"),
-        new(":all", "List all files, or only HTML and CSS"),
+        new(":all", "List all files, or only HTML, CSS and XML"),
         new(":refresh", "As r"),
         new(":help :quit", "This help; quit (:q)"),
     ];

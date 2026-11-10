@@ -34,7 +34,7 @@ internal static class FormatCommand
             var formatter = formatters.FirstOrDefault(f => f.CanFormat(document.Kind));
             if (formatter is null)
             {
-                Console.Error.WriteLine($"blyant-validator: skipping '{file}' (not an HTML or CSS file).");
+                Console.Error.WriteLine($"blyant-validator: skipping '{file}' (only HTML and CSS files are formatted).");
                 continue;
             }
 

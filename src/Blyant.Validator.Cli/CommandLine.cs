@@ -177,7 +177,7 @@ internal static class CommandLine
     public static string RootHelp(IReadOnlyList<CommandSpec> commands)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"Blyant Validator {Version}: validate and format HTML and CSS files.");
+        sb.AppendLine($"Blyant Validator {Version}: validate and format HTML and CSS files, and validate XML.");
         sb.AppendLine();
         sb.AppendLine("Usage:");
         sb.AppendLine($"  {Program} <command> [options]");

@@ -4,7 +4,7 @@
 
 var recursive = new OptionSpec("--recursive", "-r", "Search directories recursively for .html, .htm and .css files.");
 
-var validate = new CommandSpec("validate", "Check HTML and CSS files for errors.",
+var validate = new CommandSpec("validate", "Check HTML, CSS and XML files (sitemaps, SVG) for errors.",
 [
     recursive,
     new("--engine", "-e", "Validation engine: 'native' (built in) or 'vnu' (Nu Html Checker, needs Java).",

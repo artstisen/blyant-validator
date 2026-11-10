@@ -43,6 +43,7 @@
 <text x="249.2" y="213.8" fill="#F2F2F2" textLength="84.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.--------.</text>
 <text x="350.0" y="213.8" fill="#16C60C" textLength="16.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">ok</text>
 <text x="425.6" y="213.8" fill="#767676" textLength="8.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">|</text>
+<text x="14.0" y="230.8" fill="#CCCCCC" textLength="117.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">   sitemap.xml</text>
 <text x="249.2" y="230.8" fill="#F2F2F2" textLength="8.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">|</text>
 <text x="257.6" y="230.8" fill="#61D6D6" textLength="58.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> Format</text>
 <text x="324.8" y="230.8" fill="#F2F2F2" textLength="277.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">&#x27;-------------------------------.</text>
@@ -79,8 +80,8 @@
 <text x="425.6" y="485.8" fill="#767676" textLength="8.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">|</text>
 <text x="425.6" y="502.8" fill="#767676" textLength="8.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">|</text>
 <text x="14.0" y="519.8" fill="#767676" textLength="16.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">--</text>
-<text x="30.8" y="519.8" fill="#E74856" textLength="260.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 1 with errors, 1 with warnings</text>
-<text x="299.6" y="519.8" fill="#767676" textLength="151.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">-------- 7/7 --+--</text>
+<text x="30.8" y="519.8" fill="#E74856" textLength="260.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 2 with errors, 1 with warnings</text>
+<text x="299.6" y="519.8" fill="#767676" textLength="151.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">-------- 7/8 --+--</text>
 <text x="450.8" y="519.8" fill="#E74856" textLength="117.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve"> 1 with errors</text>
 <text x="576.8" y="519.8" fill="#767676" textLength="260.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">------------------------ 3/3 --</text>
 <rect x="22.4" y="524" width="42.0" height="17" fill="#CCCCCC"/>

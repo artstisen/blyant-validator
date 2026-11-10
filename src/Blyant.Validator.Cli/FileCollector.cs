@@ -3,7 +3,7 @@
 /// <summary>Expands the paths given on the command line into a list of files.</summary>
 internal static class FileCollector
 {
-    private static readonly string[] Patterns = ["*.html", "*.htm", "*.xhtml", "*.css"];
+    private static readonly string[] Patterns = ["*.html", "*.htm", "*.xhtml", "*.css", "*.xml", "*.svg"];
 
     public static List<string> Collect(IEnumerable<string> paths, bool recursive, TextWriter errors)
     {

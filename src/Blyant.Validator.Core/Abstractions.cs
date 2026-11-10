@@ -6,6 +6,9 @@ public enum DocumentKind
     Unknown,
     Html,
     Css,
+
+    /// <summary>XML files (.xml), sitemaps among them, and SVG files (.svg), which are XML.</summary>
+    Xml,
 }
 
 /// <summary>A document to validate or format.</summary>
@@ -22,6 +25,7 @@ public sealed record SourceDocument(string Path, string Content, DocumentKind Ki
         {
             ".html" or ".htm" or ".xhtml" => DocumentKind.Html,
             ".css" => DocumentKind.Css,
+            ".xml" or ".svg" => DocumentKind.Xml,
             _ => DocumentKind.Unknown,
         };
 

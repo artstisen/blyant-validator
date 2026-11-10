@@ -156,8 +156,28 @@ PRINT_CSS = """@media print {
 }
 """
 
+SITEMAP = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://harbour-lights.example/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://harbour-lights.example/about.html</loc>
+    <lastmod>10/11/2026</lastmod>
+  </url>
+  <url>
+    <loc>https://harbour-lights.example/news.html</loc>
+    <changefreq>daily</changefreq>
+  </url>
+</urlset>
+"""
+
 FILES = {
     'index.html': INDEX,
+    'sitemap.xml': SITEMAP,
     'about.html': ABOUT,
     'contact.html': CONTACT,
     'news.html': NEWS,
@@ -357,6 +377,8 @@ SCENES = [
     ('problems', 'Blyant Validator: P, the problems of a file', {}, [], ['P', '<Tab>', 'jj'], False),
     ('css', 'Blyant Validator: a style sheet in the peek', {'browsepane': '2'}, [], ['V', '<Tab>', 'n'], False),
     ('format', 'Blyant Validator: F, formatting a file after asking', {'browsesel1': 'news.html'}, [], ['F'], False),
+    ('sitemap', 'Blyant Validator: a sitemap, checked by the rules of sitemaps.org', {'browsesel1': 'sitemap.xml'}, [],
+     ['V', '<Tab>', 'n'], False),
 ]
 
 

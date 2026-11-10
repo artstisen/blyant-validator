@@ -1,6 +1,6 @@
 # Blyant Validator
 
-A cross-platform command-line tool that validates and formats HTML and CSS files. It's written in
+A cross-platform command-line tool that validates and formats HTML and CSS files, and validates XML files such as sitemaps. It's written in
 C#/.NET 10 and designed as an optional companion to the [Blyant editor](https://blyant-editor.com/),
 but it works on its own too.
 
@@ -37,7 +37,7 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 
 ![The files of a site in two panes, with the result of each file](docs/screenshots/file-browser.svg)
 
-- Each HTML and CSS file shows its result: `ok`, the number of errors and warnings (`3E 1W`), `...` while it is
+- Each HTML, CSS and XML file shows its result: `ok`, the number of errors and warnings (`3E 1W`), `...` while it is
   checked, or `failed`. Files are checked in the background, and checked again when they change on disk, so the
   list stays up to date while you edit the files in another program.
 - `V` peeks at the selected file: its text in colors, with a mark (`E`, `W`, `i`) in front of the lines with
@@ -81,8 +81,10 @@ site with mistakes on purpose, as Blyant's are.
 | `Tab` into the peek, and `n` to the next problem: its message on the bottom line | `P`: the problems of the file; `Enter` shows one in the file |
 | ![A style sheet in the peek](docs/screenshots/css.svg) | ![Formatting a file](docs/screenshots/format.svg) |
 | A style sheet: an unknown property and an unknown unit | `F`: formatting a file, after asking |
+| ![A sitemap](docs/screenshots/sitemap.svg) | |
+| A sitemap, checked by the rules of sitemaps.org | |
 
-Paths can be files or directories. Directories are searched for `.html`, `.htm`, `.xhtml` and `.css` files;
+Paths can be files or directories. Directories are searched for `.html`, `.htm`, `.xhtml`, `.css`, `.xml` and `.svg` files;
 add `--recursive` to include subdirectories.
 
 ### validate
@@ -163,6 +165,19 @@ replaces them safely (a temporary file is written first), keeping their encoding
 
 SVG and MathML inside a page are only checked for parse errors.
 
+### XML
+
+- **Well-formedness** of `.xml` and `.svg` files (XML 1.0): unclosed and mismatched tags, duplicate attributes,
+  a bare `&`, HTML entities such as `&nbsp;` that XML does not know, more than one root element … The first
+  mistake is reported, at its line and column (XML stops there, as browsers do). DTDs are ignored and nothing outside
+  the file is ever loaded.
+- **Sitemaps** (`urlset` and `sitemapindex`), by the rules of [sitemaps.org](https://www.sitemaps.org/protocol.html):
+  the namespace, UTF-8, a required `<loc>` with an absolute http(s) URL of at most 2,048 characters, `lastmod` as a
+  W3C date (`2026-11-10`), `changefreq` and `priority` values, unknown or repeated elements, at most 50,000 entries
+  and 50 MB; URLs listed twice and URLs of another host are warnings. Extensions (`image:`, `video:`, `news:`,
+  `xhtml:link`) are allowed.
+- XML is checked natively also with `--engine vnu`, and it is not formatted.
+
 ## Formatting
 
 Formatting only changes layout; the formatted file means exactly the same as before.
@@ -232,6 +247,7 @@ dotnet publish src/Blyant.Validator.Cli -c Release -r win-x64 --self-contained
 | `src/Blyant.Validator.Core` | Shared types: `Diagnostic`, `IValidator`, `IFormatter`, credits. |
 | `src/Blyant.Validator.Html` | HTML reader with parse errors (`Parsing/`), validator rules (`Rules/`) and formatter. |
 | `src/Blyant.Validator.Css` | CSS tokenizer and parser (`Syntax/`), value grammars (`Values/`, `Data/`), validator and formatter. |
+| `src/Blyant.Validator.Xml` | XML validator: well-formedness and sitemaps. |
 | `src/Blyant.Validator.Vnu` | Adapter that runs `vnu.jar` and converts its JSON output. |
 | `src/Blyant.Validator.Cli` | The `blyant-validator` program: the commands, and the TUI in `Tui/` (its terminal parts in `Tui/Terminal/` and the highlighters in `Tui/Highlighting/` are adapted from Blyant). |
 | `tests/Blyant.Validator.Tests` | xUnit tests. |
@@ -252,6 +268,7 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] HTML: check `<style>` elements and `style` attributes with the CSS validator
 - [ ] CSS: grammars for the last new features (anchor positioning areas, `offset-*`, `mask-border-*`)
 - [ ] HTML: more content models (forms, headings, sectioning), and the attributes of `<input>` per type
-- [ ] XML: well-formedness, and sitemaps
+- [x] XML: well-formedness, and sitemaps
+- [ ] XML: formatting, and RSS/Atom feeds
 - [ ] Comparison test suite against vnu output
 - [ ] Release builds for Windows, Linux and macOS
