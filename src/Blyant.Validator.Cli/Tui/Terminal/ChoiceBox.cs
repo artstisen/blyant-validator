@@ -112,6 +112,45 @@ internal static class ChoiceBox
     }
 
     /// <summary>
+    /// Show texts in a box as wide as the screen allows, each wrapped to the width of the box, until a key is
+    /// pressed. A text can have its own colors (a heading); an empty text is a blank row. When there is more than the
+    /// box can hold, the rest is left out and told about
+    /// </summary>
+    internal static void ShowTexts(string caption, IReadOnlyList<(string Text, ConsoleColors.ColorPreset Colors)> texts)
+    {
+        var inner = Screen.LineWidth - 6;
+        var rows = new List<(string Text, ConsoleColors.ColorPreset Colors)>();
+        foreach (var (text, colors) in texts)
+        {
+            if (text.Length == 0) rows.Add((string.Empty, colors));
+            else rows.AddRange(Wrap(text, inner - 4).Select(line => (line, colors)));
+        }
+
+        // A blank row, the texts, a blank row, the key and a blank row
+        var most = Math.Max(1, Screen.LineCount - 9);
+        if (rows.Count > most)
+        {
+            rows = rows.GetRange(0, most - 1);
+            rows.Add(("(more than fits in the window)", ConsoleColors.ColorPreset.Divider));
+        }
+
+        var (top, left, _, _) = DrawFrame(caption, inner, rows.Count + 4);
+        for (var i = 0; i < rows.Count; i++)
+        {
+            Tools.SetCursor(top + 2 + i, left + 3);
+            ConsoleColors.SetColors(rows[i].Colors);
+            Console.Write(TextMetrics.Printable(rows[i].Text));
+        }
+
+        Tools.SetCursor(top + 3 + rows.Count, left + 3);
+        ConsoleColors.SetColors(ConsoleColors.ColorPreset.Divider);
+        Console.Write(AnyKey);
+        ConsoleColors.SetColors(ConsoleColors.ColorPreset.Normal);
+        Tools.WriteBottomLine(string.Empty, ConsoleColors.ColorPreset.Normal, false);
+        Console.ReadKey(true);
+    }
+
+    /// <summary>
     /// The top of a box with its title in a tab, as the tabs of Blyant's frames:
     ///
     ///   .---------.

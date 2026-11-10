@@ -215,7 +215,7 @@ internal static partial class Browser
             if (key.KeyChar == ':')
             {
                 var command = CommandPrompt.Read(':', CommandTable);
-                if (command != null && RunCommand(command) == CommandResult.Quit) break;
+                if (command != null && RunCommand(command) == CommandResult.Quit && ConfirmExit()) break;
             }
             else if (key.KeyChar == '?')
             {
@@ -247,11 +247,11 @@ internal static partial class Browser
                     ActivePane.Filter = string.Empty;
                     LoadItems(ActivePane, null);
                 }
-                else break;
+                else if (ConfirmExit()) break;
             }
             else if (key.Key == ConsoleKey.Q)
             {
-                break;
+                if (ConfirmExit()) break;
             }
             else if (key.Key is ConsoleKey.J or ConsoleKey.DownArrow)
             {
@@ -331,6 +331,11 @@ internal static partial class Browser
             if (Tools.TakeRedrawRequest()) Draw(true);
         }
     }
+
+    // Esc, q and ":quit" ask before the program is closed, as Blyant does (Ctrl+C closes it at once). No closes the
+    // box, and the page is drawn again
+    private static bool ConfirmExit() =>
+        ChoiceBox.Confirm("Exit", "Exit " + Menu.ApplicationName + "?", string.Empty, false);
 
     private static Item? SelectedItem() =>
         ActivePane.Items.Count > 0 && ActivePane.Index < ActivePane.Items.Count ? ActivePane.Items[ActivePane.Index] : null;

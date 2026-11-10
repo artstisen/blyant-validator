@@ -9,6 +9,8 @@
 - An icon (Windows): a checkmark in the style of Blyant's icon, drawn by `tools/icon.py`
 - `:path` and `:name` in the TUI: the full path, or the name, of the selected file or folder to the clipboard
   (OSC 52), as in Blyant's file browser
+- `I` in the peek: the full text of the problems of the line (or the selected problem) in a box, with its place,
+  severity and code. A message cut on the bottom line ends with "(I: all)"
 - Screenshots of the TUI in the README, made by `tools/screenshots.py` (as Blyant's) from a made-up site
 - As in Blyant, a folder `data` with a `settings.ini` in the directory the program is started in is used for the
   settings instead of the one next to the program
@@ -19,6 +21,8 @@
   problems and the title of the peek: it says that it is not checked
 
 ### Changed
+- `Esc`, `q` and `:quit` ask before the TUI is closed ("Exit Blyant Validator?"), as Blyant does. Ctrl+C still
+  closes it at once
 - In the peek, `n`/`N` go to the next and previous problem, as `]`/`[` do. After a `/` search they go to the
   matches instead (as in Vim and Blyant), and `]`/`[` make them go to the problems again
 

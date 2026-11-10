@@ -15,9 +15,9 @@ internal static partial class Browser
         Problems,
     }
 
-    private const string PeekTextKeys = "j/k Line | n/N Problem | / Search | h/l Scroll | P Problems | Tab Back";
-    private const string PeekSearchKeys = "j/k Line | n/N Match | ]/[ Problem | / Search | P Problems | Tab Back";
-    private const string PeekProblemKeys = "j/k Select | Enter Show in file | P Text | Tab Back";
+    private const string PeekTextKeys = "j/k Line | n/N Problem | I Full text | / Search | P Problems | Tab Back";
+    private const string PeekSearchKeys = "j/k Line | n/N Match | ]/[ Problem | I Full text | P Problems | Tab Back";
+    private const string PeekProblemKeys = "j/k Select | Enter Show in file | I Full text | P Text | Tab Back";
 
     private static bool _peeking;
     private static bool _peekWasDual;
@@ -474,11 +474,7 @@ internal static partial class Browser
             if (Keyboard.IsRedraw(key))
             {
                 Screen.ApplyAutoSize();
-                _peekFocused = false;
-                Draw(true);
-                _peekFocused = true;
-                DrawPaneHeader(0);
-                DrawPaneHeader(1);
+                RedrawInPeek();
                 continue;
             }
 
@@ -502,9 +498,55 @@ internal static partial class Browser
                 continue;
             }
 
+            if (key.Key == ConsoleKey.I)
+            {
+                message = ShowProblemText(document);
+                if (message.Length == 0) RedrawInPeek();
+                continue;
+            }
+
             if (_peekMode == PeekMode.Problems) message = ProblemKey(document, key);
             else message = TextKey(document, key);
         }
+    }
+
+    // All is drawn again while the focus stays in the peek (the window was resized, or a box covered the panes)
+    private static void RedrawInPeek()
+    {
+        _peekFocused = false;
+        Draw(true);
+        _peekFocused = true;
+        DrawPaneHeader(0);
+        DrawPaneHeader(1);
+    }
+
+    // I: the full text of the problems of the line of the cursor (in the problems: of the selected one) in a box,
+    // for messages longer than the bottom line. Returns a message when there is nothing to show
+    private static string ShowProblemText(PeekDocument document)
+    {
+        IReadOnlyList<Diagnostic> problems = _peekMode == PeekMode.Problems
+            ? [.. document.Diagnostics.Skip(_problemSelected).Take(1)]
+            : document.On(_peekCursor);
+        if (problems.Count == 0)
+            return _peekMode == PeekMode.Problems ? "No problems in this file" : "No problem on this line";
+
+        var texts = new List<(string, ConsoleColors.ColorPreset)>();
+        foreach (var d in problems)
+        {
+            if (texts.Count > 0) texts.Add((string.Empty, ConsoleColors.ColorPreset.Normal));
+            var place = d.Start.Line > 0 ? $"Line {d.Start.Line}, column {d.Start.Column}" : "The whole file";
+            texts.Add(($"{place}: {d.Severity.ToString().ToLowerInvariant()} [{d.Code}]", d.Severity switch
+            {
+                Severity.Error => ConsoleColors.ColorPreset.Error,
+                Severity.Warning => ConsoleColors.ColorPreset.Warning,
+                _ => ConsoleColors.ColorPreset.Info,
+            }));
+            texts.Add((d.Message, ConsoleColors.ColorPreset.Normal));
+        }
+
+        var name = Path.GetFileName(document.Path);
+        ChoiceBox.ShowTexts(problems.Count == 1 ? $"Problem - {name}" : $"{problems.Count} problems - {name}", texts);
+        return string.Empty;
     }
 
     private static void SwitchPeekMode(PeekDocument document)
@@ -650,7 +692,12 @@ internal static partial class Browser
             : d.Severity == Severity.Warning ? ConsoleColors.ColorPreset.AttentionInverted
             : ConsoleColors.ColorPreset.HighlightInverted);
         var text = $" {d.Start.Line}:{d.Start.Column} {d.Severity.ToString().ToLowerInvariant()}: {d.Message}{more} ";
-        Console.Write(Tools.TruncateString(text, Screen.LineWidth - 2, true));
+        // A message that does not fit tells that I shows all of it
+        const string hint = "... (I: all) ";
+        var room = Screen.LineWidth - 2;
+        Console.Write(TextMetrics.WidthOf(text) <= room
+            ? text
+            : Tools.TruncateString(text, room - hint.Length, false) + hint);
         ConsoleColors.SetColors(ConsoleColors.ColorPreset.Normal);
     }
 

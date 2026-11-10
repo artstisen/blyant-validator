@@ -45,11 +45,14 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 - `Tab` goes into the peek: `j`/`k` move, `n`/`N` go to the next and previous problem (its message is shown on
   the bottom line), `/` searches, `h`/`l` scroll sideways, and in the list of problems `Enter` shows a problem in
   the file. `Tab` or `Esc` goes back to the list.
+- `I` shows the full text of the problems on the line (in the list of problems: of the selected one) in a box, for
+  messages longer than the window is wide. A message that is cut on the bottom line ends with "(I: all)".
 - As in Vim, `n`/`N` follow what you looked for last: after a `/` search they go to the matches, and `]`/`[` (which
   always go to problems) make them go to the problems again.
 - `F` formats the selected file, or the files marked with `Space`, after asking.
 - `T` shows one pane or two, `/` filters the list, `:` opens the command line (`:cd`, `:engine vnu`, `:all` to
-  list all files …, with `Tab` completion), and `?` shows all keys. `q` quits.
+  list all files …, with `Tab` completion), and `?` shows all keys. `q` or `Esc` quits, after asking (as in
+  Blyant); Ctrl+C quits at once.
 - `:path` copies the full path of the selected file or folder to the clipboard, and `:name` its name (on `..`, the
   name of the folder shown), as in Blyant. It is sent with the
   terminal's clipboard sequence (OSC 52), so it works over SSH too, and no other program is started. Most terminals
