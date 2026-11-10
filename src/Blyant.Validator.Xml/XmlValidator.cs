@@ -24,8 +24,12 @@ public sealed partial class XmlValidator : IValidator
     {
         var diagnostics = new List<Diagnostic>();
         var document = Parse(path, xml, diagnostics);
-        if (document?.Root is { } root && Sitemap.IsSitemap(root))
-            Sitemap.Check(path, xml, root, diagnostics);
+        if (document?.Root is { } root)
+        {
+            if (Sitemap.IsSitemap(root)) Sitemap.Check(path, xml, root, diagnostics);
+            else if (Feeds.IsRss(root)) Feeds.CheckRss(path, root, diagnostics);
+            else if (Feeds.IsAtom(root)) Feeds.CheckAtom(path, root, diagnostics);
+        }
         return [.. diagnostics.OrderBy(d => d.Start.Line).ThenBy(d => d.Start.Column)];
     }
 

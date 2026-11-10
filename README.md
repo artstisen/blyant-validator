@@ -176,7 +176,14 @@ SVG and MathML inside a page are only checked for parse errors.
   W3C date (`2026-11-10`), `changefreq` and `priority` values, unknown or repeated elements, at most 50,000 entries
   and 50 MB; URLs listed twice and URLs of another host are warnings. Extensions (`image:`, `video:`, `news:`,
   `xhtml:link`) are allowed.
-- XML is checked natively also with `--engine vnu`, and it is not formatted.
+- **News feeds**: RSS 2.0 (the [RSS Advisory Board's spec](https://www.rssboard.org/rss-specification)): `version`,
+  one `channel` with `title`, `link` and `description`, items with a `title` or `description`, RFC 822 dates
+  (`Tue, 10 Nov 2026 14:30:00 GMT`; a wrong weekday is a warning), absolute links, a `guid` that is a URL unless
+  `isPermaLink="false"`, `enclosure`, `ttl`, `image`, `skipHours` and `skipDays`. Atom (RFC 4287): `id`, `title`
+  and `updated` on the feed and its entries, an author, RFC 3339 dates (`2026-11-10T14:30:00Z`), ids as absolute
+  IRIs, `link href`, content or an alternate link. Extensions in a namespace (`atom:link`, `content:encoded`,
+  `dc:creator`, `itunes:*`) are allowed. Feeds can be `.xml`, `.rss` or `.atom` files.
+- XML is checked natively also with `--engine vnu`.
 
 ### Markdown and llms.txt
 
@@ -206,6 +213,11 @@ Formatting only changes layout; the formatted file means exactly the same as bef
   whitespace inside values made single spaces, and a missing last `;` added. Comments are kept, and so is
   one empty line where the file had empty lines. Custom properties (`--name`) keep their value exactly as
   written. A file with a block that is never closed is not formatted.
+- **XML**: elements that hold only elements get their children on lines of their own, indented. An element with
+  text in it (a `<loc>`, a `<title>`, SVG `<text>`, mixed content) is kept exactly as written, and so is everything
+  under `xml:space="preserve"`. Comments, CDATA, the declaration and the doctype are kept, and one empty line where the
+  file had empty lines. Runs of spaces between attributes become one space. A file that is not well-formed is not
+  formatted.
 - **HTML**: block-level elements (`div`, `p`, `li`, `table` …) get lines of their own and are indented.
   Text and inline elements stay together, keeping the line breaks of the source; elements whose content
   fits within `--line-width` stay on one line. Whitespace is only added or removed where the browser
@@ -290,7 +302,7 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [ ] CSS: grammars for the last new features (anchor positioning areas, `offset-*`, `mask-border-*`)
 - [ ] HTML: more content models (forms, headings, sectioning), and the attributes of `<input>` per type
 - [x] XML: well-formedness, and sitemaps
-- [ ] XML: formatting, and RSS/Atom feeds
+- [x] XML: formatting, and RSS/Atom feeds
 - [x] Markdown checks, and the llms.txt format
 - [ ] Comparison test suite against vnu output
 - [ ] Release builds for Windows, Linux and macOS

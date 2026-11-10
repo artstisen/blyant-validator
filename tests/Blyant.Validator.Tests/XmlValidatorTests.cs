@@ -18,7 +18,7 @@ public sealed class XmlValidatorTests : IDisposable
     [Theory]
     [InlineData("<?xml version=\"1.0\"?><root><a>1</a><b x=\"y\"/></root>")]
     [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><circle cx=\"5\" cy=\"5\" r=\"4\"/></svg>")]
-    [InlineData("<rss version=\"2.0\"><channel><title>A &amp; B</title></channel></rss>")]
+    [InlineData("<catalog><book id=\"b1\"><title>A &amp; B</title></book></catalog>")]
     [InlineData("<!DOCTYPE note SYSTEM \"note.dtd\"><note>x</note>")]
     public void WellFormed_HasNoProblems(string xml)
     {

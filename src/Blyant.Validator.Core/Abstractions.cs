@@ -31,7 +31,7 @@ public sealed record SourceDocument(string Path, string Content, DocumentKind Ki
             ".md" or ".markdown" => DocumentKind.Markdown,
             ".html" or ".htm" or ".xhtml" => DocumentKind.Html,
             ".css" => DocumentKind.Css,
-            ".xml" or ".svg" => DocumentKind.Xml,
+            ".xml" or ".svg" or ".rss" or ".atom" => DocumentKind.Xml,
             _ => DocumentKind.Unknown,
         };
 

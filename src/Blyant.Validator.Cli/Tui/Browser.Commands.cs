@@ -2,6 +2,7 @@
 using Blyant.Validator.Core;
 using Blyant.Validator.Css;
 using Blyant.Validator.Html;
+using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Cli.Tui;
 
@@ -108,11 +109,11 @@ internal static partial class Browser
         var paths = ActivePane.Marks.Count > 0
             ? ActivePane.Items.Where(i => ActivePane.Marks.Contains(i.Path)).Select(i => i.Path).ToList()
             : SelectedItem() is { IsDirectory: false } item ? [item.Path] : [];
-        // (XML is validated, but not formatted)
-        paths = paths.Where(p => SourceDocument.DetectKind(p) is DocumentKind.Html or DocumentKind.Css).ToList();
+        // (Markdown is validated, but not formatted)
+        paths = paths.Where(p => SourceDocument.DetectKind(p) is DocumentKind.Html or DocumentKind.Css or DocumentKind.Xml).ToList();
         if (paths.Count == 0)
         {
-            _message = "Select an HTML or CSS file to format";
+            _message = "Select an HTML, CSS or XML file to format";
             return;
         }
 
@@ -123,7 +124,12 @@ internal static partial class Browser
             try
             {
                 var document = DocumentIo.Load(path);
-                IFormatter formatter = document.Kind == DocumentKind.Css ? new CssFormatter() : new HtmlFormatter();
+                IFormatter formatter = document.Kind switch
+                {
+                    DocumentKind.Css => new CssFormatter(),
+                    DocumentKind.Xml => new XmlFormatter(),
+                    _ => new HtmlFormatter(),
+                };
                 var formatted = formatter.Format(document, new FormatOptions());
                 if (formatted != document.Content)
                     changes.Add((path, formatted, document.HasUtf8Bom, LineCount(document.Content), LineCount(formatted)));

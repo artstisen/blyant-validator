@@ -51,7 +51,7 @@ internal static class SyntaxHighlighter
         {
             ".html" or ".htm" or ".xhtml" => Kind.Html,
             ".css" => Kind.Css,
-            ".xml" or ".svg" => Kind.Xml,
+            ".xml" or ".svg" or ".rss" or ".atom" => Kind.Xml,
             ".md" or ".markdown" => Kind.Markdown,
             _ when Path.GetFileName(fileName).ToLowerInvariant() is "llms.txt" or "llms-full.txt" => Kind.Markdown,
             _ => Kind.None,

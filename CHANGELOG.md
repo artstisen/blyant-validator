@@ -3,6 +3,10 @@
 ## Unreleased
 
 ### Added
+- XML formatting (`format`, and `F` in the TUI): elements that hold only elements are indented; text, mixed content
+  and `xml:space="preserve"` are kept as written. Not-well-formed files are not formatted
+- RSS 2.0 and Atom feeds are checked: required elements, RFC 822 and RFC 3339 dates, URLs, guids, enclosures, ids,
+  authors. `.rss` and `.atom` files are XML too
 - Markdown (`.md`, `.markdown`): warnings for code blocks never closed, `#Heading` without a space, empty and
   skipped headings, more than one H1, unclosed and empty links, undefined and duplicate references, anchors with no
   heading, and relative links and images to files that do not exist

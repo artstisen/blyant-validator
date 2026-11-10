@@ -1,6 +1,7 @@
 ﻿using Blyant.Validator.Core;
 using Blyant.Validator.Css;
 using Blyant.Validator.Html;
+using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Cli;
 
@@ -24,7 +25,7 @@ internal static class FormatCommand
             UseTabs = settings.UseTabs,
             LineWidth = settings.LineWidth,
         };
-        IFormatter[] formatters = [new HtmlFormatter(), new CssFormatter()];
+        IFormatter[] formatters = [new HtmlFormatter(), new CssFormatter(), new XmlFormatter()];
         var unformatted = 0;
         var failed = 0;
 
@@ -34,7 +35,7 @@ internal static class FormatCommand
             var formatter = formatters.FirstOrDefault(f => f.CanFormat(document.Kind));
             if (formatter is null)
             {
-                Console.Error.WriteLine($"blyant-validator: skipping '{file}' (only HTML and CSS files are formatted).");
+                Console.Error.WriteLine($"blyant-validator: skipping '{file}' (only HTML, CSS and XML files are formatted).");
                 continue;
             }
 

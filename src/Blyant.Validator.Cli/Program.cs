@@ -17,7 +17,7 @@ var validate = new CommandSpec("validate", "Check HTML, CSS, XML (sitemaps, SVG)
         OptionKind.Text, ValueName: "<path>"),
 ], "<paths>", "HTML/CSS files or directories to process.");
 
-var format = new CommandSpec("format", "Re-indent and tidy HTML and CSS files.",
+var format = new CommandSpec("format", "Re-indent and tidy HTML, CSS and XML files.",
 [
     recursive,
     new("--write", "-w", "Overwrite files with the formatted result instead of printing it."),
