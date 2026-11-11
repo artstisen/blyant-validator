@@ -23,7 +23,7 @@ internal static partial class Browser
         ["all", "cd", "engine", "format", "fragment", "help", "home", "ignore", "name", "nonumber", "number", "panes",
             "path", "peek", "problems", "quit", "refresh", "unignore"],
         ["q", "h", "exit", "close"],
-        new Dictionary<string, string[]> { ["engine"] = ["native", "vnu"] });
+        new Dictionary<string, string[]> { ["engine"] = [.. Engines.Names] });
 
     private static CommandResult RunCommand(string command)
     {
@@ -81,18 +81,22 @@ internal static partial class Browser
             case "engine":
                 if (argument.Length == 0)
                 {
-                    _message = $"Engine: {_results.Engine} (:engine native or :engine vnu)";
+                    _message = $"Engine: {_results.Engines} (:engine native, vnu, typst or vnu,typst)";
                 }
-                else if (argument.ToLowerInvariant() is "native" or "vnu")
+                else if (Engines.Parse(argument) is { } engines)
                 {
-                    _results.Engine = argument.ToLowerInvariant();
-                    _message = _results.Engine == "vnu"
-                        ? "Engine: vnu (the Nu Html Checker, run with Java for each file)"
-                        : "Engine: native";
+                    _results.Engines = engines;
+                    _message = engines.ToString() switch
+                    {
+                        "vnu" => "Engine: vnu (the Nu Html Checker for HTML and CSS, run with Java for each file)",
+                        "typst" => "Engine: typst (the Typst CLI for Typst files, run for each file)",
+                        "vnu,typst" => "Engines: vnu for HTML and CSS, typst for Typst (each run for each file)",
+                        _ => "Engine: native",
+                    };
                 }
                 else
                 {
-                    _message = "Use :engine native or :engine vnu";
+                    _message = "Use :engine native, vnu, typst or vnu,typst";
                 }
                 break;
             case "fragment":
@@ -133,7 +137,7 @@ internal static partial class Browser
         _results.SetRules(folder, rules with { Fragment = !rules.Fragment });
         _message = !rules.Fragment
             ? "HTML here is checked as fragments (the content of a <body>)" +
-              (_results.Engine == "vnu" ? ", with the native engine only" : "")
+              (_results.Engines.Vnu ? ", with the native engine only" : "")
             : "HTML here is checked as full pages";
         _peekSource = null;
     }
@@ -347,7 +351,7 @@ internal static partial class Browser
         new(":panes :peek", "As T and V"),
         new(":problems", "As P"),
         new(":format", "As F"),
-        new(":engine name", "native (built in) or vnu (the Nu Html Checker, needs Java)"),
+        new(":engine name", "native (built in), vnu (the Nu Html Checker, needs Java), typst (the Typst CLI), vnu,typst"),
         new(":path", "The full path of the selected file or directory to the clipboard (OSC 52)"),
         new(":name", "The name of the selected file or directory to the clipboard"),
         new(":all", "List all files, or only HTML, CSS, XML, Markdown and Typst"),

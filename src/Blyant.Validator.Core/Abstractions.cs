@@ -72,6 +72,9 @@ public sealed record SourceDocument(string Path, string Content, DocumentKind Ki
     }
 }
 
+/// <summary>An engine that runs another program (vnu with Java, the Typst CLI) and could not be run.</summary>
+public class EngineNotAvailableException(string message, Exception? inner = null) : Exception(message, inner);
+
 /// <summary>Checks a document and reports diagnostics.</summary>
 public interface IValidator
 {

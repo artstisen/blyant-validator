@@ -8,13 +8,16 @@ var recursive = new OptionSpec("--recursive", "-r",
 var validate = new CommandSpec("validate", "Check HTML, CSS, XML (sitemaps, feeds, SVG), Markdown (llms.txt) and Typst files.",
 [
     recursive,
-    new("--engine", "-e", "Validation engine: 'native' (built in) or 'vnu' (Nu Html Checker, needs Java).",
-        OptionKind.Text, Choices: ["native", "vnu"], Default: "native"),
+    new("--engine", "-e", "Validation engines: 'native' (built in), 'vnu' (the Nu Html Checker for HTML and CSS, needs " +
+        "Java), 'typst' (the Typst CLI for Typst files), or both with a comma: 'vnu,typst'. The rest is checked natively.",
+        OptionKind.Text, ValueName: "<engines>", Default: "native"),
     new("--output", "-o", "Output format: 'text' or 'json'.",
         OptionKind.Text, Choices: ["text", "json"], Default: "text"),
     new("--vnu-jar", null, "Path to vnu.jar (default: BLYANT_VNU_JAR environment variable).",
         OptionKind.Text, ValueName: "<path>"),
     new("--java", null, "Path to the java executable (default: JAVA_HOME, then PATH).",
+        OptionKind.Text, ValueName: "<path>"),
+    new("--typst", null, "Path to the typst executable (default: BLYANT_TYPST environment variable, then PATH).",
         OptionKind.Text, ValueName: "<path>"),
     new("--fragment", null, "Check HTML files as fragments: the content of a <body>, for a page made elsewhere (a CMS). " +
         "The doctype, title and language of the page are not checked."),
@@ -36,11 +39,14 @@ var format = new CommandSpec("format", "Re-indent and tidy HTML, CSS and XML fil
 
 var browse = new CommandSpec("browse", "Open the TUI: browse folders and see the problems of each file.",
 [
-    new("--engine", "-e", "Validation engine: 'native' (built in) or 'vnu' (Nu Html Checker, needs Java).",
-        OptionKind.Text, Choices: ["native", "vnu"], Default: "native"),
+    new("--engine", "-e", "Validation engines: 'native' (built in), 'vnu' (the Nu Html Checker for HTML and CSS, needs " +
+        "Java), 'typst' (the Typst CLI for Typst files), or both with a comma: 'vnu,typst'. The rest is checked natively.",
+        OptionKind.Text, ValueName: "<engines>", Default: "native"),
     new("--vnu-jar", null, "Path to vnu.jar (default: BLYANT_VNU_JAR environment variable).",
         OptionKind.Text, ValueName: "<path>"),
     new("--java", null, "Path to the java executable (default: JAVA_HOME, then PATH).",
+        OptionKind.Text, ValueName: "<path>"),
+    new("--typst", null, "Path to the typst executable (default: BLYANT_TYPST environment variable, then PATH).",
         OptionKind.Text, ValueName: "<path>"),
 ], "<folder>", "The folder to start in (default: where the TUI was left last).", ArgumentRequired: false);
 
@@ -66,7 +72,7 @@ if (args.Length == 0)
 {
     // In a terminal: the TUI, where it was left last. Otherwise (output redirected, a script): the help, as a mistake
     if (!Console.IsInputRedirected && !Console.IsOutputRedirected)
-        return BrowseCommand.Run(null, "native", null, null);
+        return BrowseCommand.Run(null, Engines.Native, null, null, null);
     Console.Error.Write(CommandLine.RootHelp(commands));
     return 2;
 }
@@ -114,6 +120,20 @@ if (command.Name == "format" && parsed.Flag("--check") && parsed.Flag("--write")
     return 2;
 }
 
+// The engines (validate, browse)
+var engines = Engines.Native;
+if (command.Name is "validate" or "browse")
+{
+    if (Engines.Parse(parsed.Text("--engine")!) is not { } chosen)
+    {
+        Console.Error.WriteLine($"{CommandLine.Program}: '{parsed.Text("--engine")}' is not an engine: use native, vnu, typst or vnu,typst.");
+        Console.Error.WriteLine($"Run '{CommandLine.Program} {command.Name} --help' to see its options.");
+        return 2;
+    }
+
+    engines = chosen;
+}
+
 // The codes to ignore (validate)
 List<string> ignore = [];
 foreach (var entry in command.Name == "validate" ? parsed.Texts("--ignore").SelectMany(Blyant.Validator.Core.IgnoreList.Split) : [])
@@ -142,12 +162,13 @@ try
         "validate" => await ValidateCommand.RunAsync(new ValidateCommand.Settings(
             [.. parsed.Arguments],
             parsed.Flag("--recursive"),
-            parsed.Text("--engine")!,
+            engines,
             parsed.Text("--output")!,
             parsed.Text("--vnu-jar"),
             parsed.Text("--java"),
             parsed.Flag("--fragment"),
-            ignore), cancel.Token),
+            ignore,
+            parsed.Text("--typst")), cancel.Token),
         "format" => await FormatCommand.RunAsync(new FormatCommand.Settings(
             [.. parsed.Arguments],
             parsed.Flag("--recursive"),
@@ -158,9 +179,10 @@ try
             parsed.Number("--line-width")), cancel.Token),
         "browse" => BrowseCommand.Run(
             parsed.Arguments.FirstOrDefault(),
-            parsed.Text("--engine")!,
+            engines,
             parsed.Text("--vnu-jar"),
-            parsed.Text("--java")),
+            parsed.Text("--java"),
+            parsed.Text("--typst")),
         _ => CreditsCommand.Run(),
     };
 }

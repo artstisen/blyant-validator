@@ -30,7 +30,7 @@ public sealed record VnuOptions(string? JarPath = null, string? JavaPath = null)
     }
 }
 
-public sealed class VnuNotAvailableException(string message, Exception? inner = null) : Exception(message, inner);
+public sealed class VnuNotAvailableException(string message, Exception? inner = null) : EngineNotAvailableException(message, inner);
 
 /// <summary>
 /// Optional backend that delegates to the Nu Html Checker (https://github.com/validator/validator)

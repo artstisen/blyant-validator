@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Blyant.Validator.Core\Blyant.Validator.Core.csproj" />
+    <ProjectReference Include="..\Blyant.Validator.Typst\Blyant.Validator.Typst.csproj" />
+  </ItemGroup>
+
+</Project>

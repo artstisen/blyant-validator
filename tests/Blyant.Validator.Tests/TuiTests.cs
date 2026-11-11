@@ -1,4 +1,5 @@
-﻿using Blyant.Validator.Cli.Tui;
+﻿using Blyant.Validator.Cli;
+using Blyant.Validator.Cli.Tui;
 using Blyant.Validator.Cli.Tui.Terminal;
 using Blyant.Validator.Core;
 using Blyant.Validator.Vnu;
@@ -59,7 +60,7 @@ public sealed class TuiTests : IDisposable
     {
         var path = Path.Combine(_dir, "a.css");
         await File.WriteAllTextAsync(path, "a { colr: red }");
-        using var store = new ResultStore("native", new VnuOptions());
+        using var store = new ResultStore(Engines.Native, new VnuOptions());
 
         Assert.Null(store.Get(path));
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
@@ -80,7 +81,7 @@ public sealed class TuiTests : IDisposable
     {
         var path = Path.Combine(_dir, "a.html");
         await File.WriteAllTextAsync(path, "<p>x</p>");
-        using var store = new ResultStore("vnu", new VnuOptions(Path.Combine(_dir, "missing.jar")));
+        using var store = new ResultStore(new Engines(Vnu: true, Typst: false), new VnuOptions(Path.Combine(_dir, "missing.jar")));
 
         store.Get(path);
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));

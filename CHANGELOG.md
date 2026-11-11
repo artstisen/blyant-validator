@@ -11,6 +11,11 @@
   there, and package names of the wrong form. Warnings: `=Heading` without its space, a label twice in a file. The
   errors were compared with those of the Typst compiler 0.15, on real documents and 300 damaged copies of them:
   none that the compiler does not find
+- `--engine typst` (and `:engine typst` in the TUI): Typst files are checked by the Typst CLI (`typst compile`, the PDF
+  thrown away), for all that the compiler finds, also what code means. A chapter is compiled as part of its document
+  (its main file is found as for the references), and its own errors and warnings are kept. `--typst <path>` (or
+  `BLYANT_TYPST`) tells where `typst` is. Engines can be given together: `--engine vnu,typst`. With this engine the
+  program can go online: Typst downloads the packages a document imports
 - Typst in the TUI: listed with its result, and shown in the peek in Blyant's Typst colors (`TypstHighlighter.cs`,
   copied from Blyant)
 

@@ -137,7 +137,7 @@ public sealed class SafetyTests : IDisposable
     {
         var path = Path.Combine(_dir, "old.html");
         await File.WriteAllBytesAsync(path, Encoding.Latin1.GetBytes("<p>café</p>"));
-        using var store = new ResultStore("native", new VnuOptions());
+        using var store = new ResultStore(Engines.Native, new VnuOptions());
         store.Get(path);
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
         var result = store.Get(path)!;

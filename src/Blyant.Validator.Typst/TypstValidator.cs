@@ -157,6 +157,38 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
         return (labels, nearby);
     }
 
+    /// <summary>
+    /// The main file of the document a file is in: the file that includes it, and the file that includes that … (looked
+    /// for in the folder of each and the folder above); the file itself when no file includes it
+    /// </summary>
+    public static string MainFile(string path, TypstFiles files)
+    {
+        var current = Path.GetFullPath(path);
+        var seen = new HashSet<string>(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase) { current };
+        while (Includer(current, files) is { } includer && seen.Add(includer)) current = includer;
+        return current;
+    }
+
+    // A Typst file in the folder of a file or the folder above that includes it, or null
+    private static string? Includer(string full, TypstFiles files)
+    {
+        if (files.TypstFilesIn == null || files.Read == null) return null;
+        var comparer = OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+        var folder = Path.GetDirectoryName(full);
+        var parent = folder == null ? null : Path.GetDirectoryName(folder);
+        foreach (var candidate in new[] { folder, parent }.OfType<string>().SelectMany(files.TypstFilesIn).Distinct().Take(MaxFiles))
+        {
+            var other = Path.GetFullPath(candidate);
+            if (comparer.Equals(other, full) || files.Read(other) is not { } text) continue;
+            var otherFolder = Path.GetDirectoryName(other) ?? ".";
+            if (TypstReader.Read(text).Paths.Any(p => p.Function == "include" && !p.Path.StartsWith('@') &&
+                                                       comparer.Equals(Resolve(otherFolder, p.Path), full)))
+                return other;
+        }
+
+        return null;
+    }
+
     // Read the Typst files a file includes or imports, and theirs; false when one cannot be read, or a package is
     // imported (its labels are not known)
     private static bool Follow(string full, TypstReader reader, TypstFiles files, Dictionary<string, TypstReader> readers)

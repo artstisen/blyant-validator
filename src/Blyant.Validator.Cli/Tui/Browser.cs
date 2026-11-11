@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Blyant.Validator.Cli.Tui.Terminal;
+using Blyant.Validator.TypstCompiler;
 using Blyant.Validator.Vnu;
 
 namespace Blyant.Validator.Cli.Tui;
@@ -56,7 +57,7 @@ internal static partial class Browser
     /// </summary>
     /// <param name="directory">The directory to show, or null for the directories it was in last (settings.ini; the
     /// current directory the first time)</param>
-    public static int Run(string? directory, string engine, VnuOptions vnu)
+    public static int Run(string? directory, Engines engines, VnuOptions vnu, TypstCompilerOptions typst)
     {
         var encoding = Console.OutputEncoding;
         var controlC = false;
@@ -72,7 +73,7 @@ internal static partial class Browser
         }
 
         var settings = Settings.Load();
-        _results = new ResultStore(engine, vnu, settings.Checks);
+        _results = new ResultStore(engines, vnu, settings.Checks, typst);
         Keyboard.Idle = Idle;
         string? notSaved;
         try

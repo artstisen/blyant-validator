@@ -6,6 +6,7 @@ using Blyant.Validator.Html;
 using Blyant.Validator.Vnu;
 using Blyant.Validator.Markdown;
 using Blyant.Validator.Typst;
+using Blyant.Validator.TypstCompiler;
 using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Cli.Tui;
@@ -37,28 +38,30 @@ internal sealed class ResultStore : IDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _worker;
     private int _changed;
-    private volatile string _engine;
+    private volatile Engines _engines;
 
     // Counts the changes of engine and rules: a result made before one is not kept (it was made the old way)
     private int _generation;
     private readonly VnuOptions _vnu;
+    private readonly TypstCompilerOptions _typst;
 
-    public ResultStore(string engine, VnuOptions vnu, FolderRules? rules = null)
+    public ResultStore(Engines engines, VnuOptions vnu, FolderRules? rules = null, TypstCompilerOptions? typst = null)
     {
-        _engine = engine;
+        _engines = engines;
         _vnu = vnu;
+        _typst = typst ?? new TypstCompilerOptions();
         Rules = rules ?? new FolderRules();
         _worker = Task.Run(WorkAsync);
     }
 
-    /// <summary>"native" or "vnu". Changing it validates the files again.</summary>
-    public string Engine
+    /// <summary>The engines (native, vnu, typst). Changing them validates the files again.</summary>
+    public Engines Engines
     {
-        get => _engine;
+        get => _engines;
         set
         {
-            if (_engine == value) return;
-            _engine = value;
+            if (_engines == value) return;
+            _engines = value;
             Interlocked.Increment(ref _generation);
             _results.Clear();
         }
@@ -170,15 +173,17 @@ internal sealed class ResultStore : IDisposable
         {
             var document = await DocumentIo.LoadAsync(path, ct).ConfigureAwait(false);
             var rules = Rules.ForFile(path);
+            var engines = _engines;
             // (Fragments are checked by the native engine only)
-            var fragment = rules.Fragment && document.Kind == DocumentKind.Html && _engine != "vnu";
-            // (vnu checks HTML and CSS; XML is always checked here)
+            var fragment = rules.Fragment && document.Kind == DocumentKind.Html && !engines.Vnu;
+            // (vnu checks HTML and CSS, typst Typst; XML and Markdown are always checked here)
             IValidator validator = document.Kind switch
             {
                 DocumentKind.Xml => new XmlValidator(),
                 DocumentKind.Markdown => new MarkdownValidator(DocumentIo.IsFileOrFolder),
+                DocumentKind.Typst when engines.Typst => new TypstCompilerValidator(_typst, DocumentIo.TypstFiles),
                 DocumentKind.Typst => new TypstValidator(DocumentIo.TypstFiles),
-                _ when _engine == "vnu" => new VnuValidator(_vnu),
+                _ when engines.Vnu => new VnuValidator(_vnu),
                 DocumentKind.Css => new CssValidator(),
                 _ => new HtmlValidator(fragment),
             };
@@ -201,7 +206,7 @@ internal sealed class ResultStore : IDisposable
         {
             // Anything else (a mistake in a check, a file too large for memory) is told about for this file, and
             // the other files are still checked: the worker must not stop
-            var why = e is IOException or UnauthorizedAccessException or VnuNotAvailableException or System.Text.Json.JsonException
+            var why = e is IOException or UnauthorizedAccessException or EngineNotAvailableException or System.Text.Json.JsonException
                 ? e.Message
                 : $"Internal error ({e.GetType().Name}): {e.Message}";
             return new FileResult(stamp.Written, stamp.Length, [], why);

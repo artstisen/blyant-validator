@@ -59,7 +59,7 @@ purpose: a fix in one is carried to the other by hand, when it matters.
 - When a key or command is added or changed, update `Browser.CommandTable`, `RunCommand`, `HelpRows`, the key
   hints, `README.md` and `CHANGELOG.md` together. `TuiTests.Commands_AreHandledAndInTheHelp` checks the commands
 - The engines run on a background thread (`ResultStore`); everything that draws runs on the main thread. The
-  TUI never starts other programs, except Java for `:engine vnu`
+  TUI never starts other programs, except Java for `:engine vnu` and the Typst CLI for `:engine typst`
 - Files are only written by formatting, after asking, and the settings file (`Settings.cs`), when the TUI closes.
   Both with `DocumentIo.SafeWriteAllText`
 - The settings file is `settings.ini` in the data directory, in Blyant's format (`[SETTINGS]` and `name=value` read
@@ -106,6 +106,10 @@ purpose: a fix in one is carried to the other by hand, when it matters.
   around it (doctype, title, language) are left out of `HtmlRuleSet.Fragment`. A new rule about the page as a whole
   is left out there too
 - Ignored codes (`--ignore`, `:ignore`) are matched by `IgnoreList`, and rely on the codes being stable
+- The engines that run other programs (`Blyant.Validator.Vnu`, `Blyant.Validator.TypstCompiler`) are chosen, never
+  used by default: `--engine` and `:engine` (`Engines`). They stop the program they run when it takes too long or the
+  check is stopped, read its output as UTF-8, and throw an `EngineNotAvailableException` when it cannot be run. The
+  native checks never go online; the typst engine can, as Typst downloads packages: README.md says so
 - Typst (`Blyant.Validator.Typst`) is only checked for what the Typst compiler refuses and that can be told without
   compiling. A new check is tried with the compiler (`typst compile file.typ --diagnostic-format short`): what it
   takes must give no error here, and what it refuses with that check's message must be found. Code is never

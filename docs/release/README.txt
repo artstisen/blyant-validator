@@ -74,6 +74,8 @@ THE COMMAND LINE
              --fragment          HTML for a page made elsewhere (a CMS)
              -i, --ignore <codes>  Leave out problems by their code (css.*)
              -e, --engine vnu    The Nu Html Checker (needs Java and vnu.jar)
+             -e, --engine typst  The Typst compiler for Typst files (needs
+                                 the Typst CLI; Typst can download packages)
 
     format   -w, --write         Write the files (else: print the result)
              --check             Only tell whether files are formatted

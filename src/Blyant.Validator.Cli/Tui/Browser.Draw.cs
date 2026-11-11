@@ -64,9 +64,9 @@ internal static partial class Browser
         Tools.ClearScreen();
         Menu.WriteModeLabel(Caption);
         Menu.WriteNameInTopBar();
-        if (_results.Engine == "vnu")
+        if (!_results.Engines.IsNative)
         {
-            const string marker = " ENGINE: VNU ";
+            var marker = " ENGINE: " + _results.Engines.ToString().ToUpperInvariant() + " ";
             Tools.SetCursor(0, Math.Max(0, Screen.LineWidth - marker.Length - 1));
             ConsoleColors.SetColors(ConsoleColors.ColorPreset.AttentionInverted);
             Console.Write(marker);

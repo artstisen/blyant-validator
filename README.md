@@ -88,7 +88,7 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 - As in Vim, `n`/`N` follow what you looked for last: after a `/` search they go to the matches, and `]`/`[` (which
   always go to problems) make them go to the problems again.
 - `F` formats the selected file, or the files marked with `Space`, after asking.
-- `T` shows one pane or two, `/` filters the list, `:` opens the command line (`:cd`, `:engine vnu`, `:all` to
+- `T` shows one pane or two, `/` filters the list, `:` opens the command line (`:cd`, `:engine vnu`, `:engine typst`, `:all` to
   list all files …, with `Tab` completion), and `?` shows all keys. `q` or `Esc` quits, after asking (as in
   Blyant); Ctrl+C quits at once.
 - `:number` numbers the rows of the panes, and `:nonumber` takes the numbers away again, as in Blyant. A count in
@@ -138,10 +138,11 @@ done once.
 
 | Option | Description |
 | --- | --- |
-| `-e, --engine native\|vnu` | `native` (default) uses the built-in checker. `vnu` runs the Nu Html Checker; see below. |
+| `-e, --engine <engines>` | `native` (default) uses the built-in checks. `vnu` runs the Nu Html Checker for HTML and CSS, `typst` the Typst CLI for Typst files, and `vnu,typst` both; the other files are checked natively. See below. |
 | `-o, --output text\|json` | `text` (default) prints `file:line:column: severity: message [code]`. `json` is for editors and scripts. |
 | `-r, --recursive` | Search directories recursively (not `.git`, `.vs` …, `node_modules`). |
 | `--vnu-jar <path>` | Path to `vnu.jar` (or set `BLYANT_VNU_JAR`). |
+| `--typst <path>` | Path to `typst` (or set `BLYANT_TYPST`; default: `typst` on `PATH`). |
 | `--java <path>` | Path to `java` (default: `JAVA_HOME`, then `PATH`). |
 | `--fragment` | Check HTML files as fragments: the content of a `<body>`, for a page made elsewhere (a CMS). See below. |
 | `-i, --ignore <codes>` | Ignore problems with these codes, comma-separated (`css.*` ignores all codes starting with `css.`). Can be given more than once. |
@@ -171,7 +172,7 @@ attributes (Windows). Output is written as UTF-8, also to a file or a pipe.
 | --- | --- |
 | 0 | No errors found (warnings are allowed). |
 | 1 | Errors found, or `format --check` found unformatted files. |
-| 2 | The tool itself failed: bad arguments, a path that does not exist, a file that cannot be read or written, vnu not available, a file that could not be formatted, or an error of the program itself. The other files are still done. |
+| 2 | The tool itself failed: bad arguments, a path that does not exist, a file that cannot be read or written, vnu or Typst not available, a file that could not be formatted, or an error of the program itself. The other files are still done. |
 
 A file that is not UTF-8 (Windows-1252, Latin-1, UTF-16 …) is not read: decoded as UTF-8 its other characters would
 be lost. `validate` reports it as an error of the file (`file.not-utf8`, with the line of the first byte that is not
@@ -407,6 +408,28 @@ For the most complete HTML checking, Blyant Validator can run the Nu Html Checke
 3. Run `blyant-validator validate index.html --engine vnu --vnu-jar path/to/vnu.jar`,
    or set `BLYANT_VNU_JAR` once and leave out `--vnu-jar`.
 
+### Using the Typst compiler (`--engine typst`)
+
+The native checks of Typst find what the compiler refuses in the syntax. For all that the compiler finds, also what
+code means (an unknown function or variable, a wrong argument, a missing font), Blyant Validator can run the Typst
+CLI itself:
+
+1. Install the [Typst CLI](https://github.com/typst/typst) (`winget install Typst.Typst`, `brew install typst`, or a
+   release of it).
+2. Run `blyant-validator validate book --recursive --engine typst`, with `--typst path/to/typst` when it is not on
+   `PATH` (or set `BLYANT_TYPST`). In the TUI: `:engine typst`. With the Nu Html Checker too: `--engine vnu,typst`.
+
+Each Typst file is compiled with `typst compile`, and the PDF is thrown away: no file is written. A chapter is
+compiled as part of its document: when another file includes it (looked for in its folder and the folder above, and
+upwards from there), the main file is compiled, and the errors and warnings in the chapter are kept, so a chapter
+may refer to the labels of the others. A chapter that no file around it includes is compiled on its own, as
+`typst compile` would. As the compiler, the engine stops at the first error of the code (after all the errors of the
+syntax). It is run for each file, so it is slower than the native checks.
+
+Typst downloads the packages a document imports (`@preview/…`) the first time it compiles it: with `--engine typst`
+the program can go online, which the native checks never do. The TUI starts no other programs unless `:engine vnu` or
+`:engine typst` is chosen.
+
 ## Building
 
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download).
@@ -454,6 +477,7 @@ dotnet publish src/Blyant.Validator.Cli -c Release -r win-x64 --self-contained
 | `src/Blyant.Validator.Markdown` | Markdown reader and validator, and the llms.txt format. |
 | `src/Blyant.Validator.Typst` | Typst reader (markup, code and math) and validator. |
 | `src/Blyant.Validator.Vnu` | Adapter that runs `vnu.jar` and converts its JSON output. |
+| `src/Blyant.Validator.TypstCompiler` | The `typst` engine: runs the Typst CLI and reads its diagnostics. |
 | `src/Blyant.Validator.Cli` | The `blyant-validator` program: the commands, and the TUI in `Tui/` (its terminal parts in `Tui/Terminal/` and the highlighters in `Tui/Highlighting/` are adapted from Blyant). |
 | `tests/Blyant.Validator.Tests` | xUnit tests. |
 
@@ -478,6 +502,6 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] Markdown checks, and the llms.txt format
 - [x] Fragments (HTML for a CMS) and ignored problem codes, per folder in the TUI
 - [x] Typst: what the compiler refuses without compiling, references, files and packages
-- [ ] Typst: an optional `--engine typst` that runs the Typst CLI for all its errors
+- [x] Typst: an optional `--engine typst` that runs the Typst CLI for all its errors
 - [ ] Comparison test suite against vnu output
 - [x] Release builds for Windows, Linux and macOS (`publish.ps1`)

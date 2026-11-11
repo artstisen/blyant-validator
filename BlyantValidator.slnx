@@ -6,6 +6,7 @@
     <Project Path="src/Blyant.Validator.Html/Blyant.Validator.Html.csproj" />
     <Project Path="src/Blyant.Validator.Markdown/Blyant.Validator.Markdown.csproj" />
     <Project Path="src/Blyant.Validator.Typst/Blyant.Validator.Typst.csproj" />
+    <Project Path="src/Blyant.Validator.TypstCompiler/Blyant.Validator.TypstCompiler.csproj" />
     <Project Path="src/Blyant.Validator.Vnu/Blyant.Validator.Vnu.csproj" />
     <Project Path="src/Blyant.Validator.Xml/Blyant.Validator.Xml.csproj" />
   </Folder>

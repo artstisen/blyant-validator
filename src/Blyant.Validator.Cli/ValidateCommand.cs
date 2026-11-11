@@ -5,6 +5,7 @@ using Blyant.Validator.Html;
 using Blyant.Validator.Vnu;
 using Blyant.Validator.Markdown;
 using Blyant.Validator.Typst;
+using Blyant.Validator.TypstCompiler;
 using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Cli;
@@ -12,8 +13,8 @@ namespace Blyant.Validator.Cli;
 internal static class ValidateCommand
 {
     public sealed record Settings(
-        string[] Paths, bool Recursive, string Engine, string Output, string? VnuJar, string? Java,
-        bool Fragment = false, IReadOnlyList<string>? Ignore = null);
+        string[] Paths, bool Recursive, Engines Engines, string Output, string? VnuJar, string? Java,
+        bool Fragment = false, IReadOnlyList<string>? Ignore = null, string? Typst = null);
 
     public static async Task<int> RunAsync(Settings settings, CancellationToken ct)
     {
@@ -24,11 +25,19 @@ internal static class ValidateCommand
             return 2;
         }
 
-        IValidator[] validators = settings.Engine == "vnu"
-            ? [new VnuValidator(new VnuOptions(settings.VnuJar, settings.Java)), new XmlValidator(), Markdown(), Typst()]
-            : [new HtmlValidator(settings.Fragment), new CssValidator(), new XmlValidator(), Markdown(), Typst()];
+        // (an engine checks its kinds of files; the others are checked natively)
+        var engines = settings.Engines;
+        IValidator[] validators =
+        [
+            .. engines.Vnu
+                ? (IValidator[])[new VnuValidator(new VnuOptions(settings.VnuJar, settings.Java))]
+                : [new HtmlValidator(settings.Fragment), new CssValidator()],
+            new XmlValidator(),
+            Markdown(),
+            engines.Typst ? new TypstCompilerValidator(new TypstCompilerOptions(settings.Typst), DocumentIo.TypstFiles) : Typst(),
+        ];
         var ignore = settings.Ignore ?? [];
-        if (settings.Fragment && settings.Engine == "vnu")
+        if (settings.Fragment && engines.Vnu)
             Console.Error.WriteLine("blyant-validator: --fragment works with the native engine only; vnu checks HTML files as pages.");
 
         var all = new List<Diagnostic>();
@@ -73,14 +82,14 @@ internal static class ValidateCommand
                 all.AddRange(shown);
                 checkedCount++;
             }
-            catch (VnuNotAvailableException ex)
+            catch (EngineNotAvailableException ex)
             {
                 Console.Error.WriteLine($"blyant-validator: {ex.Message}");
                 return 2;
             }
         }
 
-        var mode = new Mode(settings.Fragment && settings.Engine != "vnu", ignore, ignoredCount);
+        var mode = new Mode(settings.Fragment && !engines.Vnu, ignore, ignoredCount);
         if (settings.Output == "json") WriteJson(all, mode, Console.Out);
         else WriteText(all, checkedCount, mode, Console.Out);
 

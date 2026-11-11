@@ -27,7 +27,7 @@ public sealed class RobustnessTests : IDisposable
     {
         var path = Path.Combine(_dir, "a.html");
         await File.WriteAllTextAsync(path, "<h2>Title</h2>");
-        using var store = new ResultStore("native", new VnuOptions());
+        using var store = new ResultStore(Engines.Native, new VnuOptions());
         store.Get(path);
         store.SetRules(_dir, new CheckRules(true, []));
         // (a result made before the change is not kept: the file is checked again, with the new rules)
@@ -42,7 +42,7 @@ public sealed class RobustnessTests : IDisposable
     [Fact]
     public void ResultStore_DoesNotAskForAFileThatIsGone()
     {
-        using var store = new ResultStore("native", new VnuOptions());
+        using var store = new ResultStore(Engines.Native, new VnuOptions());
         var path = Path.Combine(_dir, "gone.html");
         Assert.Null(store.Get(path));
         Assert.False(store.IsPending(path));

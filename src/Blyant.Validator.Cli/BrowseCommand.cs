@@ -1,4 +1,5 @@
 ﻿using Blyant.Validator.Cli.Tui;
+using Blyant.Validator.TypstCompiler;
 using Blyant.Validator.Vnu;
 
 namespace Blyant.Validator.Cli;
@@ -9,7 +10,7 @@ internal static class BrowseCommand
     /// Open the TUI in a folder, or (null) where it was left last. It needs a terminal: with input or output
     /// redirected it is refused
     /// </summary>
-    public static int Run(string? folder, string engine, string? vnuJar, string? java)
+    public static int Run(string? folder, Engines engines, string? vnuJar, string? java, string? typst)
     {
         if (Console.IsInputRedirected || Console.IsOutputRedirected)
         {
@@ -23,6 +24,6 @@ internal static class BrowseCommand
             return 2;
         }
 
-        return Browser.Run(folder, engine, new VnuOptions(vnuJar, java));
+        return Browser.Run(folder, engines, new VnuOptions(vnuJar, java), new TypstCompilerOptions(typst));
     }
 }

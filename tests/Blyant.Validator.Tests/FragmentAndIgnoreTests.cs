@@ -147,7 +147,7 @@ public sealed class FragmentAndIgnoreTests : IDisposable
     {
         var path = Path.Combine(_dir, "article.html");
         await File.WriteAllTextAsync(path, "<h2>Title</h2>\n<p style=\"colr: red\">Text</p>\n");
-        using var store = new ResultStore("native", new VnuOptions());
+        using var store = new ResultStore(Engines.Native, new VnuOptions());
 
         store.Get(path);
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));

@@ -19,6 +19,7 @@
     <ProjectReference Include="..\Blyant.Validator.Xml\Blyant.Validator.Xml.csproj" />
     <ProjectReference Include="..\Blyant.Validator.Markdown\Blyant.Validator.Markdown.csproj" />
     <ProjectReference Include="..\Blyant.Validator.Typst\Blyant.Validator.Typst.csproj" />
+    <ProjectReference Include="..\Blyant.Validator.TypstCompiler\Blyant.Validator.TypstCompiler.csproj" />
   </ItemGroup>
 
   <ItemGroup>
