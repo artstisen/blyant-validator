@@ -443,7 +443,7 @@ and its arguments (a path with blanks in double quotes); it is kept in the setti
 |---|---|
 | `nvim +{line}` | Neovim, at the line |
 | `vim +{line}` | Vim, at the line |
-| `"C:\Program Files\Blyant\Blyant.exe"` | Blyant |
+| `"C:\Program Files\Blyant\Blyant.exe" +{line}` | Blyant, at the line |
 | `"C:\Program Files\Microsoft VS Code\Code.exe" --goto {file}:{line}` | VS Code, at the line |
 
 `{file}` is the file and `{line}` the line; without `{file}` the file is added as the last argument. `O` (or
