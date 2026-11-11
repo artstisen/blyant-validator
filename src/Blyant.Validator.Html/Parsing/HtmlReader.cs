@@ -262,8 +262,7 @@ public sealed class HtmlReader
         var name = _s[nameStart.._pos];
         var end = _s.IndexOf('>', _pos);
         if (end < 0) Error(start, "eof-in-tag", "End of file seen inside an end tag.");
-        else if (!string.IsNullOrWhiteSpace(_s[_pos..end]) && _s[_pos..end].Trim() != "/")
-            Error(start, "end-tag-attributes", $"End tag “{name}” had attributes.");
+        else CheckEndTagRest(start, name, _s[_pos..end]);
         _pos = end < 0 ? _s.Length : end + 1;
         var raw = _s[start.._pos];
 
@@ -465,8 +464,23 @@ public sealed class HtmlReader
         if (element.Lower is "textarea" or "title")
             CheckCharacterReferences(element.RawContent, _pos, attribute: false);
         var close = _s.IndexOf('>', end);
+        if (close < 0) Error(end, "eof-in-tag", "End of file seen inside an end tag.");
+        else CheckEndTagRest(end, element.Name, _s[(end + 2 + element.Lower.Length)..close]);
         _pos = close < 0 ? _s.Length : close + 1;
         element.EndTag = _s[end.._pos];
+    }
+
+    /// <summary>
+    /// What follows the name of an end tag, up to its "&gt;": only blanks (or a "/"). Anything else is taken as
+    /// attributes of the end tag, also by browsers: "&lt;/title" with its "&gt;" left out takes the next tag into it
+    /// ("&lt;/title\n&lt;meta charset=…&gt;"), and that tag is lost
+    /// </summary>
+    private void CheckEndTagRest(int start, string name, string rest)
+    {
+        if (string.IsNullOrWhiteSpace(rest) || rest.Trim() == "/") return;
+        Error(start, "end-tag-attributes", rest.Contains('<')
+            ? $"End tag “{name}” had attributes: “<” seen in it. Probable cause: Missing “>” immediately before, so the tag after it is part of the end tag."
+            : $"End tag “{name}” had attributes.");
     }
 
     private int FindEndTag(string name, int from)

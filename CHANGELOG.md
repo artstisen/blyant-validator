@@ -29,6 +29,11 @@
 - Typst in the TUI: listed with its result, and shown in the peek in Blyant's Typst colors (`TypstHighlighter.cs`,
   copied from Blyant)
 
+### Fixed
+- The end tags of `title`, `style`, `script` and `textarea` were not checked for attributes: `</title` with its `>`
+  left out takes the next tag into it (`</title` and on the next line `<meta charset="utf-8">`, which browsers then
+  drop), and the page was "ok". It is now `html.parse.end-tag-attributes`, with the missing `>` as its probable cause
+
 ## 0.5.0 (2026-11-10)
 
 ### Fixed

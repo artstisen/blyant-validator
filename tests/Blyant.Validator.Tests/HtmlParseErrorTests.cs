@@ -20,6 +20,7 @@ public class HtmlParseErrorTests
     [InlineData("<p>&copy; &amp; &#169; &#xA9; a & b <a href=\"?a=1&b=2\">x</a></p>")]
     [InlineData("<!-- a -- comment --><select><option>A<option>B</select>")]
     [InlineData("<script>if (a < b && c) { x = '</div>'; }</script><textarea>a < b</textarea>")]
+    [InlineData("<textarea>a</textarea ><textarea>b</textarea\n><textarea>c</textarea/><script>x</SCRIPT\t>")]
     public async Task ValidMarkup_HasNoErrors(string body)
     {
         Assert.Empty(await CodesInBody(body));
@@ -35,6 +36,9 @@ public class HtmlParseErrorTests
     [InlineData("<a href=a\"b>x</a>", "html.parse.bad-unquoted-value")]
     [InlineData("<div/>", "html.parse.self-closing-non-void")]
     [InlineData("<div></div class=x>", "html.parse.end-tag-attributes")]
+    [InlineData("<textarea>a</textarea class=x>", "html.parse.end-tag-attributes")]
+    [InlineData("<script>x</script\n<p>text</p>", "html.parse.end-tag-attributes")]
+    [InlineData("<div>a</div\n<p>b</p>", "html.parse.end-tag-attributes")]
     [InlineData("<!--->", "html.parse.abrupt-comment")]
     [InlineData("<!-- a --!>", "html.parse.comment-bang")]
     [InlineData("<!-- <!-- -->", "html.parse.nested-comment")]
