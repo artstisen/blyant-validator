@@ -203,6 +203,70 @@ public class TypstValidatorTests
         Assert.Contains("typst.too-deep", Errors(text));
     }
 
+    // A folder of files given as texts: the folders listed in the order given (not sorted), as a file system may
+    private static TypstFiles FilesOf(Dictionary<string, string> texts) =>
+        new(texts.ContainsKey, p => texts.GetValueOrDefault(p), f => [.. texts.Keys.Where(k => Path.GetDirectoryName(k) == f)]);
+
+    [Fact]
+    public void AnIncludeFromTheRoot_IsFromTheFolderOfTheMainFile()
+    {
+        var folder = Path.GetFullPath("rooted");
+        var main = Path.Combine(folder, "main.typ");
+        var one = Path.Combine(folder, "ch", "one.typ");
+        var texts = new Dictionary<string, string>
+        {
+            [main] = "= Intro <intro>\n#include \"/ch/one.typ\"\n",
+            [one] = "See @intro.\n",
+        };
+
+        Assert.Empty(TypstValidator.Validate(one, texts[one], FilesOf(texts)));
+        Assert.Equal(main, TypstValidator.MainFile(one, FilesOf(texts)));
+    }
+
+    [Fact]
+    public void ANulInAPath_IsNotAFile_AndThrowsNothing()
+    {
+        var text = "#image(\"a\u0000b.png\")\n#include \"c\u0000.typ\"\nSee @x.\n";
+        var codes = Check(text, new TypstFiles(_ => true, _ => "", _ => [])).Select(d => d.Code).ToList();
+        Assert.DoesNotContain("typst.missing-file", codes);
+    }
+
+    [Fact]
+    public void TheMainFile_IsChosenInTheSameOrder_OnEverySystem()
+    {
+        // (two files include the chapter, listed as a file system may: not by name)
+        var folder = Path.GetFullPath("two-mains");
+        var print = Path.Combine(folder, "print.typ");
+        var book = Path.Combine(folder, "book.typ");
+        var one = Path.Combine(folder, "one.typ");
+        var texts = new Dictionary<string, string>
+        {
+            [print] = "#include \"one.typ\"\n",
+            [one] = "= One\n",
+            [book] = "#include \"one.typ\"\n",
+        };
+
+        Assert.Equal(book, TypstValidator.MainFile(one, FilesOf(texts)));
+    }
+
+    [Fact]
+    public void AnIncludeInOtherCase_IsTheFile_UnlessTheFolderHasBoth()
+    {
+        var folder = Path.GetFullPath("cased");
+        var main = Path.Combine(folder, "main.typ");
+        var one = Path.Combine(folder, "one.typ");
+        var texts = new Dictionary<string, string>
+        {
+            [main] = "= Intro <intro>\n#include \"One.typ\"\n",
+            [one] = "See @intro.\n",
+        };
+        Assert.Equal(main, TypstValidator.MainFile(one, FilesOf(texts)));
+
+        // (a file system that tells case apart, with both files: One.typ is another file)
+        texts[Path.Combine(folder, "One.typ")] = "= Other\n";
+        Assert.Equal(one, TypstValidator.MainFile(one, FilesOf(texts)));
+    }
+
     [Fact]
     public void TypstFiles_AreKnown()
     {

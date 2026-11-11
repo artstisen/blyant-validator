@@ -45,6 +45,22 @@ public sealed class TypstEngineTests : IDisposable
         Assert.Equal(new SourcePosition(1, 1), inMain[2].Start);
     }
 
+    [Fact]
+    public void PathsFromTheWorkingDirectory_AreRead_AsTypstWritesThemOnLinuxAndMacOS()
+    {
+        // (Typst runs in the folder of the main file, and tells the files of the document from there)
+        var main = Path.Combine(_dir, "main.typ");
+        var chapter = Path.Combine(_dir, "ch", "one.typ");
+        var output = "ch/one.typ:3:22: error: unexpected argument: bogus\nmain.typ:1:15: warning: unknown font family: x\n";
+
+        var d = Assert.Single(TypstCompilerValidator.Parse(output, "ch/one.typ", chapter, main));
+        Assert.Equal(new SourcePosition(3, 23), d.Start);
+        var all = TypstCompilerValidator.ParseAll(output, main);
+        Assert.Equal(2, all.Count);
+        Assert.Contains(all, p => p.File == chapter && p.Severity == Severity.Error);
+        Assert.Contains(all, p => p.File == main && p.Severity == Severity.Warning);
+    }
+
     [Theory]
     [InlineData("native", false, false)]
     [InlineData("vnu", true, false)]

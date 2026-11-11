@@ -168,7 +168,9 @@ internal static partial class Browser
         ChoiceBox.ShowTexts("Typst", texts);
     }
 
+    // (only for what is shown: the note of the box, and which panes are read again. Paths that differ in case only are
+    // taken as the same on every system: at worst a pane is read again, or the note names the file)
     private static bool SamePath(string a, string b) =>
         string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(a)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(b)),
-            OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
+            StringComparison.OrdinalIgnoreCase);
 }

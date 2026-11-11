@@ -102,25 +102,32 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
         var files = new List<string> { compiled };
         foreach (var line in output.Split('\n').Select(l => l.TrimEnd('\r')))
         {
-            if (Located().Match(line) is not { Success: true } located) continue;
-            var where = located.Groups["path"].Value;
-            if (where.StartsWith(@"\\?\", StringComparison.Ordinal)) where = where[4..];
-            try
-            {
-                where = Path.GetFullPath(where, Path.GetDirectoryName(compiled) ?? ".");
-            }
-            catch (Exception e) when (e is ArgumentException or NotSupportedException or PathTooLongException)
-            {
-                continue;
-            }
-
-            if (!files.Contains(where, PathComparer)) files.Add(where);
+            if (Located().Match(line) is { Success: true } located && FullPath(located.Groups["path"].Value, compiled) is { } where &&
+                !files.Contains(where, PathComparer))
+                files.Add(where);
         }
 
         return [.. files.SelectMany(file => Parse(output, file, file, compiled))];
     }
 
-    private static StringComparer PathComparer => OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+    // Typst tells a file of the document by a path from its working directory, which is the folder of the compiled file:
+    // on Linux and macOS relative ("ch/one.typ"), on Windows in full ("\\?\C:\..."). Null for what is not a path
+    private static string? FullPath(string where, string compiled)
+    {
+        if (where.StartsWith(@"\\?\", StringComparison.Ordinal)) where = where[4..];
+        try
+        {
+            return Path.GetFullPath(where, Path.GetDirectoryName(compiled) ?? ".");
+        }
+        catch (Exception e) when (e is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
+    }
+
+    // (the paths Typst tells are those of files it read: in any case of letters they are the same file, unless a file
+    // system that tells case apart has two such files, which then are taken as one)
+    private static StringComparer PathComparer => StringComparer.OrdinalIgnoreCase;
 
     internal static void Stop(Process process)
     {
@@ -144,7 +151,6 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
     /// <param name="compiled">The full path of the file that was compiled (the file, or the main file it is in).</param>
     public static IReadOnlyList<Diagnostic> Parse(string output, string path, string file, string compiled)
     {
-        var comparer = OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
         var result = new List<Diagnostic>();
         foreach (var line in output.Split('\n').Select(l => l.TrimEnd('\r')))
         {
@@ -152,15 +158,12 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
             string severity, message;
             if (Located().Match(line) is { Success: true } located)
             {
-                // (Windows paths come as \\?\C:\...)
-                var where = located.Groups["path"].Value;
-                if (where.StartsWith(@"\\?\", StringComparison.Ordinal)) where = where[4..];
-                if (!comparer.Equals(Path.GetFullPath(where), file)) continue;
+                if (FullPath(located.Groups["path"].Value, compiled) is not { } where || !PathComparer.Equals(where, file)) continue;
                 at = new SourcePosition(int.Parse(located.Groups["line"].Value, System.Globalization.CultureInfo.InvariantCulture),
                     int.Parse(located.Groups["column"].Value, System.Globalization.CultureInfo.InvariantCulture) + 1);
                 (severity, message) = (located.Groups["severity"].Value, located.Groups["message"].Value);
             }
-            else if (Unlocated().Match(line) is { Success: true } unlocated && comparer.Equals(file, compiled))
+            else if (Unlocated().Match(line) is { Success: true } unlocated && PathComparer.Equals(file, compiled))
             {
                 at = new SourcePosition(1, 1);
                 (severity, message) = (unlocated.Groups["severity"].Value, unlocated.Groups["message"].Value);

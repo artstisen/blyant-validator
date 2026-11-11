@@ -340,8 +340,9 @@ checks follow them as the compiler does:
 - **Closed but not opened**: a `]` in the text with no `[`, and a `)`, `}` or `]` in code that closes nothing.
 - **`#` with no code after it** (`C# language`: write `\#`).
 - **References**: an `@reference` to a label that is not in the document, or that is there more than once; the
-  document is the file, the files it includes, and the files that include it (in its folder and the folder above),
-  so a chapter may refer to a label of another. An e-mail address in the text is a reference to Typst: write
+  document is the file, the files it includes, and the files that include it (in its folder and the folder above,
+  also with a path from the root, `#include "/chapters/one.typ"`), so a chapter may refer to a label of another.
+  When two files include a chapter, the one in its own folder is taken first, then by name. An e-mail address in the text is a reference to Typst: write
   `\@`. References are not checked when labels are made by code (`label("…")`), with a bibliography (its keys are
   referred to with `@`), or with a package.
 - **Files**: a file given to `#include`, `#import`, `image()`, `read()`, `json()`, `bibliography()` … that is not

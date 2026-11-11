@@ -68,15 +68,77 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
             }
 
             // (a path from the root of the project: the root is not known here)
-            if (files.Exists == null || file.Path.Length == 0 || file.Path.StartsWith('/') || file.Path.StartsWith('\\')) continue;
-            var full = Resolve(folder, file.Path);
+            if (files.Exists == null || file.Path.Length == 0 || Resolve(folder, file.Path, root: null) is not { } full) continue;
             if (!files.Exists(full))
                 report(file.Offset, Severity.Error, "typst.missing-file", $"The file “{file.Path}” is not there.");
         }
     }
 
-    // A path in a Typst file, from the folder of the file ("\" is read as "/" on every system)
-    private static string Resolve(string folder, string path) => Path.GetFullPath(Path.Combine(folder, path.Replace('\\', '/')));
+    /// <summary>
+    /// A path in a Typst file, from the folder of the file ("\" is read as "/" on every system). A path that starts
+    /// with "/" is from the root of the project: from <paramref name="root"/>, and null when the root is not known (the
+    /// drive is never taken from where the program runs). Null too for a path that cannot be one (a NUL in it)
+    /// </summary>
+    private static string? Resolve(string folder, string path, string? root)
+    {
+        path = path.Replace('\\', '/');
+        if (path.StartsWith('/'))
+        {
+            if (root == null) return null;
+            (folder, path) = (root, path.TrimStart('/'));
+        }
+
+        try
+        {
+            return Path.GetFullPath(path, folder);
+        }
+        catch (Exception e) when (e is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The files a folder of Typst files has, in the same order on every system: the folder of the file first, then the
+    /// folder above, each by name
+    /// </summary>
+    private static IEnumerable<string> Around(string full, TypstFiles files)
+    {
+        var folder = Path.GetDirectoryName(full);
+        var parent = folder == null ? null : Path.GetDirectoryName(folder);
+        return new[] { folder, parent }.OfType<string>()
+            .SelectMany(f => files.TypstFilesIn!(f).Select(Path.GetFullPath).Order(StringComparer.Ordinal))
+            .Distinct(StringComparer.Ordinal).Take(MaxFiles);
+    }
+
+    /// <summary>
+    /// True when another Typst file includes a file: by a path from its own folder, or from its folder as the root of
+    /// the project (as when it is the main file)
+    /// </summary>
+    private static bool Includes(string other, TypstReader otherReader, string full, TypstFiles files)
+    {
+        var otherFolder = Path.GetDirectoryName(other) ?? ".";
+        return otherReader.Paths.Any(p => p.Function == "include" && !p.Path.StartsWith('@') &&
+                                          Resolve(otherFolder, p.Path, otherFolder) is { } included && SamePath(included, full, files));
+    }
+
+    /// <summary>
+    /// True when two full paths are the same file. Paths that differ only in the case of letters are, unless the folder
+    /// has both names (a file system that tells case apart: on Linux, and on some macOS volumes): asked of the folder, not
+    /// of the system
+    /// </summary>
+    internal static bool SamePath(string a, string b, TypstFiles files)
+    {
+        if (string.Equals(a, b, StringComparison.Ordinal)) return true;
+        if (!string.Equals(a, b, StringComparison.OrdinalIgnoreCase)) return false;
+        if (files.TypstFilesIn == null || Path.GetDirectoryName(a) is not { } folder) return true;
+        var names = files.TypstFilesIn(folder).Select(Path.GetFileName).ToHashSet(StringComparer.Ordinal);
+        return !(names.Contains(Path.GetFileName(a)) && names.Contains(Path.GetFileName(b)));
+    }
+
+    // The full paths of the files of a document: the same file in any case of letters is read once (a file system that
+    // tells case apart rarely has two such files, and then a check is left out rather than wrong)
+    private static readonly StringComparer Paths = StringComparer.OrdinalIgnoreCase;
 
     // References (@name) to labels that are not in the document, or that are there more than once
     private static void CheckReferences(string path, TypstReader reader, TypstFiles files, Action<int, Severity, string, string> report)
@@ -119,27 +181,20 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
         var nearby = new HashSet<string>(StringComparer.Ordinal);
         var included = false;
         var full = Path.GetFullPath(path);
-        var readers = new Dictionary<string, TypstReader>(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase)
-        {
-            [full] = reader,
-        };
+        var readers = new Dictionary<string, TypstReader>(Paths) { [full] = reader };
 
         // The files it includes, and the files that include it (in its folder and the folder above)
         if (!Follow(full, reader, files, readers)) return null;
         if (files.TypstFilesIn != null && files.Read != null)
         {
-            var folder = Path.GetDirectoryName(full);
-            var parent = folder == null ? null : Path.GetDirectoryName(folder);
-            foreach (var candidate in new[] { folder, parent }.OfType<string>().SelectMany(files.TypstFilesIn).Distinct().Take(MaxFiles))
+            var folder = Path.GetDirectoryName(full) ?? ".";
+            foreach (var other in Around(full, files))
             {
-                var other = Path.GetFullPath(candidate);
                 if (readers.ContainsKey(other) || files.Read(other) is not { } text) continue;
                 var otherReader = TypstReader.Read(text);
-                var otherFolder = Path.GetDirectoryName(other) ?? ".";
-                if (!otherReader.Paths.Any(p => p.Function == "include" && !p.Path.StartsWith('@') &&
-                                                readers.Comparer.Equals(Resolve(otherFolder, p.Path), full)))
+                if (!Includes(other, otherReader, full, files))
                 {
-                    if (readers.Comparer.Equals(otherFolder, folder ?? "")) nearby.UnionWith(otherReader.Labels.Select(l => l.Name));
+                    if (Paths.Equals(Path.GetDirectoryName(other), folder)) nearby.UnionWith(otherReader.Labels.Select(l => l.Name));
                     continue;
                 }
 
@@ -164,7 +219,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
     public static string MainFile(string path, TypstFiles files)
     {
         var current = Path.GetFullPath(path);
-        var seen = new HashSet<string>(OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase) { current };
+        var seen = new HashSet<string>(Paths) { current };
         while (Includer(current, files) is { } includer && seen.Add(includer)) current = includer;
         return current;
     }
@@ -173,17 +228,10 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
     private static string? Includer(string full, TypstFiles files)
     {
         if (files.TypstFilesIn == null || files.Read == null) return null;
-        var comparer = OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
-        var folder = Path.GetDirectoryName(full);
-        var parent = folder == null ? null : Path.GetDirectoryName(folder);
-        foreach (var candidate in new[] { folder, parent }.OfType<string>().SelectMany(files.TypstFilesIn).Distinct().Take(MaxFiles))
+        foreach (var other in Around(full, files))
         {
-            var other = Path.GetFullPath(candidate);
-            if (comparer.Equals(other, full) || files.Read(other) is not { } text) continue;
-            var otherFolder = Path.GetDirectoryName(other) ?? ".";
-            if (TypstReader.Read(text).Paths.Any(p => p.Function == "include" && !p.Path.StartsWith('@') &&
-                                                       comparer.Equals(Resolve(otherFolder, p.Path), full)))
-                return other;
+            if (SamePath(other, full, files) || files.Read(other) is not { } text) continue;
+            if (Includes(other, TypstReader.Read(text), full, files)) return other;
         }
 
         return null;
@@ -196,8 +244,8 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
         var folder = Path.GetDirectoryName(full) ?? ".";
         foreach (var file in reader.Paths.Where(p => p.Function is "include" or "import"))
         {
-            if (file.Path.StartsWith('@') || file.Path.StartsWith('/') || file.Path.StartsWith('\\')) return false;
-            var other = Resolve(folder, file.Path);
+            // (a package, or a path from the root of the project: its labels are not known)
+            if (file.Path.StartsWith('@') || Resolve(folder, file.Path, root: null) is not { } other) return false;
             if (readers.ContainsKey(other)) continue;
             if (readers.Count >= MaxFiles || files.Read?.Invoke(other) is not { } text) return false;
             var otherReader = TypstReader.Read(text);
