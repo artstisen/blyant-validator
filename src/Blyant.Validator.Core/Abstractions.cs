@@ -12,6 +12,9 @@ public enum DocumentKind
 
     /// <summary>Markdown files (.md, .markdown), and llms.txt and llms-full.txt (https://llmstxt.org/).</summary>
     Markdown,
+
+    /// <summary>Typst files (.typ, https://typst.app/).</summary>
+    Typst,
 }
 
 /// <summary>A document to validate or format.</summary>
@@ -29,6 +32,7 @@ public sealed record SourceDocument(string Path, string Content, DocumentKind Ki
             : System.IO.Path.GetExtension(path).ToLowerInvariant() switch
         {
             ".md" or ".markdown" => DocumentKind.Markdown,
+            ".typ" => DocumentKind.Typst,
             ".html" or ".htm" => DocumentKind.Html,
             ".css" => DocumentKind.Css,
             // (XHTML is XML: checked for well-formedness, not by the rules of HTML's syntax)

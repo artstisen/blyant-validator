@@ -58,6 +58,36 @@ internal static class DocumentIo
         }
     }
 
+    /// <summary>
+    /// What the Typst validator may ask of the files around a Typst file: whether a file is there, the text of a Typst
+    /// file (null when it cannot be read), and the Typst files of a folder
+    /// </summary>
+    public static Typst.TypstFiles TypstFiles { get; } = new(
+        IsFileOrFolder,
+        path =>
+        {
+            try
+            {
+                return IsFile(path) ? Load(path).Content : null;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                return null;
+            }
+        },
+        folder =>
+        {
+            try
+            {
+                var options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive, IgnoreInaccessible = true };
+                return [.. Directory.EnumerateFiles(folder, "*.typ", options).Where(IsFile)];
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                return [];
+            }
+        });
+
     public static async Task<SourceDocument> LoadAsync(string path, CancellationToken ct) =>
         FromBytes(path, await File.ReadAllBytesAsync(path, ct).ConfigureAwait(false));
 

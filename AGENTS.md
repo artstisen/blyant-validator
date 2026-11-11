@@ -106,6 +106,11 @@ purpose: a fix in one is carried to the other by hand, when it matters.
   around it (doctype, title, language) are left out of `HtmlRuleSet.Fragment`. A new rule about the page as a whole
   is left out there too
 - Ignored codes (`--ignore`, `:ignore`) are matched by `IgnoreList`, and rely on the codes being stable
+- Typst (`Blyant.Validator.Typst`) is only checked for what the Typst compiler refuses and that can be told without
+  compiling. A new check is tried with the compiler (`typst compile file.typ --diagnostic-format short`): what it
+  takes must give no error here, and what it refuses with that check's message must be found. Code is never
+  evaluated, and packages are never fetched. The validator reads the files around a file only through the functions
+  it is given (`TypstFiles`)
 - Regular expressions use `[0-9]`, not `\d`: in .NET `\d` matches the digits of every script, which `int.Parse`
   then refuses
 - The checks and formatters walk trees recursively: input nested deeper than `HtmlReader.MaxDepth`,

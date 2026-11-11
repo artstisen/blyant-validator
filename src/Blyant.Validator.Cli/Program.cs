@@ -5,7 +5,7 @@
 var recursive = new OptionSpec("--recursive", "-r",
     "Search directories recursively (folders starting with '.' and node_modules are passed over).");
 
-var validate = new CommandSpec("validate", "Check HTML, CSS, XML (sitemaps, SVG) and Markdown (llms.txt) files.",
+var validate = new CommandSpec("validate", "Check HTML, CSS, XML (sitemaps, feeds, SVG), Markdown (llms.txt) and Typst files.",
 [
     recursive,
     new("--engine", "-e", "Validation engine: 'native' (built in) or 'vnu' (Nu Html Checker, needs Java).",

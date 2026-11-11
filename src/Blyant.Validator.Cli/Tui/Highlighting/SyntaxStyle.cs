@@ -32,7 +32,7 @@ internal enum SyntaxStyle
 }
 
 /// <summary>
-/// The coloring of a file in the peek: HTML (with its CSS and JavaScript) and CSS. Adapted from Blyant's
+/// The coloring of a file in the peek: HTML (with its CSS and JavaScript), CSS, XML, Markdown and Typst. Adapted from Blyant's
 /// SyntaxHighlighter.cs and TextArea.SyntaxColorOf.
 /// </summary>
 internal static class SyntaxHighlighter
@@ -44,6 +44,7 @@ internal static class SyntaxHighlighter
         Css,
         Xml,
         Markdown,
+        Typst,
     }
 
     public static Kind KindOf(string fileName) =>
@@ -53,6 +54,7 @@ internal static class SyntaxHighlighter
             ".css" => Kind.Css,
             ".xml" or ".svg" or ".rss" or ".atom" => Kind.Xml,
             ".md" or ".markdown" => Kind.Markdown,
+            ".typ" => Kind.Typst,
             _ when Path.GetFileName(fileName).ToLowerInvariant() is "llms.txt" or "llms-full.txt" => Kind.Markdown,
             _ => Kind.None,
         };
@@ -78,6 +80,7 @@ internal static class SyntaxHighlighter
         {
             Kind.Html => HtmlHighlighter.Scan(line, state, styles),
             Kind.Xml => HtmlHighlighter.Scan(line, state, styles, xml: true),
+            Kind.Typst => TypstHighlighter.Scan(line, state, styles),
             _ => CssHighlighter.Scan(line, 0, line.Length, state, styles),
         };
         return Array.Exists(styles, style => style != SyntaxStyle.None) ? styles : null;

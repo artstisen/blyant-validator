@@ -4,8 +4,9 @@ BLYANT VALIDATOR
 Version {version}
 
 Validates and formats HTML and CSS files, and validates XML (sitemaps, RSS and
-Atom feeds, SVG) and Markdown (llms.txt), in the terminal. A companion to the
-Blyant editor (https://blyant-editor.com/), and a program of its own too.
+Atom feeds, SVG), Markdown (llms.txt) and Typst, in the terminal. A companion
+to the Blyant editor (https://blyant-editor.com/), and a program of its own
+too.
 
 Run it side by side with your favorite editor, for real-time validation of all
 your files: the file browser watches the folders it shows and checks a file

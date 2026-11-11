@@ -5,7 +5,7 @@ using Blyant.Validator.Vnu;
 namespace Blyant.Validator.Cli.Tui;
 
 /// <summary>
-/// The TUI of Blyant Validator: a file browser with one or two panes that shows the result of each HTML, CSS, XML and Markdown file,
+/// The TUI of Blyant Validator: a file browser with one or two panes that shows the result of each HTML, CSS, XML, Markdown and Typst file,
 /// and a peek of the selected file in the other pane with its problems marked. Adapted from Blyant's file browser
 /// (FileExplorer.cs, MIT License, same author): the panes, keys and drawing follow it.
 /// Drawing is in Browser.Draw.cs, the peek in Browser.Peek.cs, and the commands and formatting in Browser.Commands.cs.
@@ -40,7 +40,7 @@ internal static partial class Browser
     private static Pane OtherPane => Panes[1 - _active];
 
     private static string _message = string.Empty;
-    private static bool _showAll; // All files are listed, not only HTML, CSS, XML and Markdown
+    private static bool _showAll; // All files are listed, not only HTML, CSS, XML, Markdown and Typst
     private static ResultStore _results = null!;
 
     // A count typed in front of a key in the pane with the focus: 5j, 5k, 5gg, 5G (as in Blyant's file browser)
@@ -482,7 +482,7 @@ internal static partial class Browser
         }
     }
 
-    // Read the content of the directory of a pane: directories first, then files (HTML, CSS, XML and Markdown, or all with ":all"),
+    // Read the content of the directory of a pane: directories first, then files (HTML, CSS, XML, Markdown and Typst, or all with ":all"),
     // both sorted by name
     private static bool LoadItems(Pane pane, string? select)
     {

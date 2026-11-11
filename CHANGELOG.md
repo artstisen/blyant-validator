@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Typst (`.typ`): what the Typst compiler refuses and that can be told without compiling: raw text, strings,
+  equations and brackets not closed, `*strong*` and `_emphasis_` not closed before the end of their paragraph,
+  heading, list item or content (`Five * three`), a `]` or a bracket of code that closes nothing, and `#` with no
+  code after it. References to labels that are not in the document or are there twice (the document: the file, the
+  files it includes, and the files that include it), files given to `#include`, `#import`, `image()` … that are not
+  there, and package names of the wrong form. Warnings: `=Heading` without its space, a label twice in a file. The
+  errors were compared with those of the Typst compiler 0.15, on real documents and 300 damaged copies of them:
+  none that the compiler does not find
+- Typst in the TUI: listed with its result, and shown in the peek in Blyant's Typst colors (`TypstHighlighter.cs`,
+  copied from Blyant)
+
 ## 0.5.0 (2026-11-10)
 
 ### Fixed

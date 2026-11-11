@@ -1,16 +1,17 @@
 # Blyant Validator
 
-A cross-platform command-line tool that validates and formats HTML and CSS files, and validates XML files such as sitemaps, and Markdown files such as llms.txt. It's written in
+A cross-platform command-line tool that validates and formats HTML and CSS files, and validates XML files such as
+sitemaps, Markdown files such as llms.txt, and Typst documents. It's written in
 C#/.NET 10 and designed as an optional companion to the [Blyant editor](https://blyant-editor.com/),
 but it works on its own too.
 
 **Run it side by side with your favorite editor, for real-time validation of all your files.** The TUI watches the
-folders it shows and checks a file again the moment it is saved, so the errors and warnings of your HTML, CSS, XML
-and Markdown are always up to date while you work, in any editor. Peek at a file to see each problem in place, and
+folders it shows and checks a file again the moment it is saved, so the errors and warnings of your HTML, CSS, XML,
+Markdown and Typst are always up to date while you work, in any editor. Peek at a file to see each problem in place, and
 format it when you are done.
 
-> **Status: early development (0.5.0).** HTML, CSS, XML and Markdown validation and the HTML, CSS and XML
-> formatters work, and are tried on real sites; more rules will follow.
+> **Status: early development (0.5.0).** HTML, CSS, XML, Markdown and Typst validation and the HTML, CSS and
+> XML formatters work, and are tried on real sites; more rules will follow.
 >
 > Blyant Validator has no dependencies besides .NET.
 
@@ -73,7 +74,7 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 
 ![The files of a site in two panes, with the result of each file](docs/screenshots/file-browser.svg)
 
-- Each HTML, CSS, XML and Markdown file shows its result: `ok`, the number of errors and warnings (`3E 1W`), `...` while it is
+- Each HTML, CSS, XML, Markdown and Typst file shows its result: `ok`, the number of errors and warnings (`3E 1W`), `...` while it is
   checked, or `failed`. Files are checked in the background, and checked again when they change on disk, so the
   list stays up to date while you edit the files in another program.
 - `V` peeks at the selected file: its text in colors, with a mark (`E`, `W`, `i`) in front of the lines with
@@ -128,7 +129,7 @@ site with mistakes on purpose, as Blyant's are.
 | ![A sitemap](docs/screenshots/sitemap.svg) | ![llms.txt](docs/screenshots/llms-txt.svg) |
 | A sitemap, checked by the rules of sitemaps.org | `llms.txt`, checked against the llms.txt format |
 
-Paths can be files or directories. Directories are searched for `.html`, `.htm`, `.xhtml`, `.css`, `.xml`, `.svg`, `.md` and `.markdown` files, and `llms.txt` and `llms-full.txt`;
+Paths can be files or directories. Directories are searched for `.html`, `.htm`, `.xhtml`, `.css`, `.xml`, `.svg`, `.md` and `.markdown` files, `llms.txt` and `llms-full.txt`, and `.typ` files;
 add `--recursive` to include subdirectories (folders whose names start with `.`, such as `.git`, and `node_modules`
 are passed over, and so are links to folders). Names are matched without regard to case, and a file given twice is
 done once.
@@ -222,6 +223,7 @@ property that is reported is a gap in the validator, not in your file: please te
 | Sitemaps | The [sitemap protocol 0.9](https://www.sitemaps.org/protocol.html), with dates in the [W3C Datetime](https://www.w3.org/TR/NOTE-datetime) format. |
 | Feeds | [RSS 2.0](https://www.rssboard.org/rss-specification) (the RSS Advisory Board), with dates as [RFC 822](https://www.rfc-editor.org/rfc/rfc822); [Atom](https://www.rfc-editor.org/rfc/rfc4287) (RFC 4287), with dates as [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339). |
 | Markdown | [CommonMark](https://spec.commonmark.org/), as far as the checks need it, with the heading anchors GitHub makes. |
+| Typst | The [syntax of Typst](https://typst.app/docs/reference/syntax/) as the Typst compiler 0.15 reads it, as far as it can be told without compiling: the errors found were compared with the compiler's, on real documents and on hundreds of damaged copies of them. |
 | llms.txt | The [llms.txt format](https://llmstxt.org/), built in: nothing is fetched. |
 
 ## What is checked
@@ -318,6 +320,33 @@ Code (fenced and indented), code spans and front matter are not checked. Web add
 (optionally) a `> summary` and some text, then `##` sections that are lists of links `- [name](url): notes`.
 Breaking the format is an error; a URL listed twice is a warning. `llms-full.txt` is checked as Markdown, with any
 number of level 1 headings.
+
+### Typst
+
+Typst (`.typ`) is checked for what the Typst compiler refuses, and that can be told without compiling the document.
+Typst has three modes, the text (markup), code (after `#`, and in its brackets) and math (between `$`), and the
+checks follow them as the compiler does:
+
+- **Not closed**: raw text and blocks (`` ` `` and ```` ``` ````), strings, equations (`$`), and brackets of code and
+  content (`#text(red)[Hello`).
+- **Strong and emphasis**: a `*` or `_` not between two letters or digits starts *strong* or _emphasis_ text, which
+  must be closed before the end of its paragraph, heading, list item or content: `Five * three` is an error (write
+  `\*`), `5*3` and `snake_case` are text.
+- **Closed but not opened**: a `]` in the text with no `[`, and a `)`, `}` or `]` in code that closes nothing.
+- **`#` with no code after it** (`C# language`: write `\#`).
+- **References**: an `@reference` to a label that is not in the document, or that is there more than once; the
+  document is the file, the files it includes, and the files that include it (in its folder and the folder above),
+  so a chapter may refer to a label of another. An e-mail address in the text is a reference to Typst: write
+  `\@`. References are not checked when labels are made by code (`label("…")`), with a bibliography (its keys are
+  referred to with `@`), or with a package.
+- **Files**: a file given to `#include`, `#import`, `image()`, `read()`, `json()`, `bibliography()` … that is not
+  there (relative to the file; a path from the root of the project, `/…`, is not checked).
+- **Packages** are checked for their name only (`@preview/name:1.0.0`): nothing is fetched.
+- Warnings: `=Heading` without its space (it is text), and a label in a file more than once.
+
+What code means is the compiler's to tell, and is not checked: an unknown function or variable, the arguments of a
+call, a `set` or `show` rule, fonts. Typst files are not formatted (line breaks and spaces carry meaning in the
+text). In the TUI they are shown in Blyant's Typst colors.
 
 ## Formatting
 
@@ -423,6 +452,7 @@ dotnet publish src/Blyant.Validator.Cli -c Release -r win-x64 --self-contained
 | `src/Blyant.Validator.Css` | CSS tokenizer and parser (`Syntax/`), value grammars (`Values/`, `Data/`), validator and formatter. |
 | `src/Blyant.Validator.Xml` | XML validator: well-formedness and sitemaps. |
 | `src/Blyant.Validator.Markdown` | Markdown reader and validator, and the llms.txt format. |
+| `src/Blyant.Validator.Typst` | Typst reader (markup, code and math) and validator. |
 | `src/Blyant.Validator.Vnu` | Adapter that runs `vnu.jar` and converts its JSON output. |
 | `src/Blyant.Validator.Cli` | The `blyant-validator` program: the commands, and the TUI in `Tui/` (its terminal parts in `Tui/Terminal/` and the highlighters in `Tui/Highlighting/` are adapted from Blyant). |
 | `tests/Blyant.Validator.Tests` | xUnit tests. |
@@ -447,5 +477,7 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] XML: formatting, and RSS/Atom feeds
 - [x] Markdown checks, and the llms.txt format
 - [x] Fragments (HTML for a CMS) and ignored problem codes, per folder in the TUI
+- [x] Typst: what the compiler refuses without compiling, references, files and packages
+- [ ] Typst: an optional `--engine typst` that runs the Typst CLI for all its errors
 - [ ] Comparison test suite against vnu output
 - [x] Release builds for Windows, Linux and macOS (`publish.ps1`)

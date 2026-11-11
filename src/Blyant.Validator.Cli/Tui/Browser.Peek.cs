@@ -392,7 +392,7 @@ internal static partial class Browser
         var document = _peekDocument!;
         var result = _peekSource?.Result;
         IReadOnlyList<string> notes = !ResultStore.IsValidated(document.Path)
-                ? ["Not checked: not HTML, CSS, XML or Markdown"]
+                ? ["Not checked: not HTML, CSS, XML, Markdown or Typst"]
             : result == null ? ["Checking..."]
             : result.Failure != null ? ["Could not be checked: " + result.Failure]
             : document.Diagnostics.Count == 0 ? ["No problems found."]

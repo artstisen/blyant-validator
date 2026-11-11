@@ -3,7 +3,8 @@
 /// <summary>Expands the paths given on the command line into a list of files.</summary>
 internal static class FileCollector
 {
-    private static readonly string[] Patterns = ["*.html", "*.htm", "*.xhtml", "*.css", "*.xml", "*.svg", "*.rss", "*.atom", "*.md", "*.markdown", "llms.txt", "llms-full.txt"];
+    private static readonly string[] Patterns =
+        ["*.html", "*.htm", "*.xhtml", "*.css", "*.xml", "*.svg", "*.rss", "*.atom", "*.md", "*.markdown", "llms.txt", "llms-full.txt", "*.typ"];
 
     /// <param name="missing">How many of the paths do not exist (each told about in <paramref name="errors"/>).</param>
     public static List<string> Collect(IEnumerable<string> paths, bool recursive, TextWriter errors, out int missing)

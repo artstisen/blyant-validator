@@ -4,6 +4,7 @@ using Blyant.Validator.Css;
 using Blyant.Validator.Html;
 using Blyant.Validator.Vnu;
 using Blyant.Validator.Markdown;
+using Blyant.Validator.Typst;
 using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Cli;
@@ -24,8 +25,8 @@ internal static class ValidateCommand
         }
 
         IValidator[] validators = settings.Engine == "vnu"
-            ? [new VnuValidator(new VnuOptions(settings.VnuJar, settings.Java)), new XmlValidator(), Markdown()]
-            : [new HtmlValidator(settings.Fragment), new CssValidator(), new XmlValidator(), Markdown()];
+            ? [new VnuValidator(new VnuOptions(settings.VnuJar, settings.Java)), new XmlValidator(), Markdown(), Typst()]
+            : [new HtmlValidator(settings.Fragment), new CssValidator(), new XmlValidator(), Markdown(), Typst()];
         var ignore = settings.Ignore ?? [];
         if (settings.Fragment && settings.Engine == "vnu")
             Console.Error.WriteLine("blyant-validator: --fragment works with the native engine only; vnu checks HTML files as pages.");
@@ -60,7 +61,7 @@ internal static class ValidateCommand
             var validator = validators.FirstOrDefault(v => v.CanValidate(document.Kind));
             if (validator is null)
             {
-                Console.Error.WriteLine($"blyant-validator: skipping '{file}' (not an HTML, CSS, XML or Markdown file).");
+                Console.Error.WriteLine($"blyant-validator: skipping '{file}' (not an HTML, CSS, XML, Markdown or Typst file).");
                 continue;
             }
 
@@ -90,6 +91,9 @@ internal static class ValidateCommand
 
     // Markdown, with relative links checked against the files on disk
     private static MarkdownValidator Markdown() => new(DocumentIo.IsFileOrFolder);
+
+    // Typst, with the files around a file (included files, images, the files that include it)
+    private static TypstValidator Typst() => new(DocumentIo.TypstFiles);
 
     /// <summary>How the files were checked, when it was not a full check: shown with the results.</summary>
     private sealed record Mode(bool Fragment, IReadOnlyList<string> Ignore, int IgnoredCount)
