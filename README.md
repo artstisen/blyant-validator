@@ -446,8 +446,10 @@ A box asks what to make:
 
 The whole document is made: on a chapter, the main file that includes it. The files are put next to the main file and
 named after it. Typst writes them in a hidden folder there first, and only when the document has no errors are they
-moved into place, each in one step; when that replaces files, it asks first. When the document has errors, nothing is
-written, and the errors are shown. `Esc` stops Typst while it runs. Made HTML is checked as any other HTML file (Typst
+moved into place, each in one step. When files of those names are there, it asks: **R** replace them, **S** save as
+another name (typed in a box, as Save as in Blyant: `print` gives `print.pdf`, or `print-1.png` … for pages; the files
+stay next to the main file, and a name that is there too is asked about again), or **C** cancel. When the document has
+errors, nothing is written, and the errors are shown. `Esc` stops Typst while it runs. Made HTML is checked as any other HTML file (Typst
 gives it a `<title>` when the document sets one: `#set document(title: [...])`). Pages of an earlier, longer version
 (`main-5.png`) are left as they are.
 

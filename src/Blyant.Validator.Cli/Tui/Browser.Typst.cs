@@ -79,12 +79,7 @@ internal static partial class Browser
                 return;
             }
 
-            var existing = export.Existing;
-            if (existing.Count > 0)
-            {
-                var replace = existing.Count == 1 ? $"Replace {Path.GetFileName(existing[0])}?" : $"Replace {existing.Count} files?";
-                if (!ChoiceBox.Confirm("Typst", replace, $"Typst made {Made(export)}.")) return;
-            }
+            if (!ChooseNames(export, format)) return;
 
             IReadOnlyList<string> written;
             try
@@ -103,6 +98,53 @@ internal static partial class Browser
             var warnings = export.Problems.Count;
             _message = $"Made {Made(export)}" + (warnings > 0 ? $" ({warnings} warning{(warnings == 1 ? "" : "s")} of Typst)" : "");
         }
+    }
+
+    // When files of the names are there: replace them, or save as another name (asked, next to the main file, until no
+    // file has the name, or Replace is chosen). False when nothing is to be put in place
+    private static bool ChooseNames(PreparedExport export, TypstFormat format)
+    {
+        var extension = "." + TypstExporter.Extension(format);
+        var problem = string.Empty;
+        while (export.Existing is { Count: > 0 } existing)
+        {
+            Draw(true);
+            ChoiceBox.Forget();
+            // (a folder of the name cannot be replaced)
+            var folder = existing.FirstOrDefault(Directory.Exists);
+            var question = folder != null ? $"There is a folder {Path.GetFileName(folder)}"
+                : existing.Count == 1 ? $"Replace {Path.GetFileName(existing[0])}?" : $"Replace {existing.Count} files?";
+            var note = problem.Length > 0 ? problem
+                : existing.Count == 1 ? $"A file of that name is there. Typst made {Made(export)}."
+                : $"Files of those names are there ({Path.GetFileName(existing[0])} …). Typst made {Made(export)}.";
+            string[] choices = folder != null ? ["Save as another name", "Cancel"] : ["Replace", "Save as another name", "Cancel"];
+            string[] keys = folder != null ? ["S", "C"] : ["R", "S", "C"];
+            var picked = ChoiceBox.Pick("Typst", question, note, choices, keys, 0);
+            if (picked < 0 || choices[picked] == "Cancel") return false;
+            if (choices[picked] == "Replace") return true;
+
+            Draw(true);
+            ChoiceBox.Forget();
+            var pages = format is TypstFormat.Png or TypstFormat.Svg;
+            var stem = Path.GetFileNameWithoutExtension(export.Files[0].Target);
+            if (pages) stem = stem[..stem.LastIndexOf('-')];
+            var name = ChoiceBox.AskText("Save as",
+                $"A new name, in the folder of {Path.GetFileName(export.MainFile)}" + (pages ? $"\nOne {extension[1..].ToUpperInvariant()} per page: the name, -1, -2 …" : string.Empty),
+                "Name:", stem);
+            problem = string.Empty;
+            if (name == null) continue;
+            // (the extension of the format is added: typed too, it is not doubled)
+            if (name.EndsWith(extension, StringComparison.OrdinalIgnoreCase)) name = name[..^extension.Length].TrimEnd();
+            if (FileNames.Problem(name + extension) is { } wrong)
+            {
+                problem = wrong + ". Another name?";
+                continue;
+            }
+
+            export.Rename(name);
+        }
+
+        return true;
     }
 
     private static string Made(PreparedExport export) =>

@@ -18,8 +18,9 @@
   program can go online: Typst downloads the packages a document imports
 - `:typst` in the TUI: makes the Typst document of the selected file into a PDF, PNG or SVG pages, or HTML, with the
   Typst CLI, picked in a box. The files go next to the main file, named after it; they are made in a hidden folder
-  first, and only put in place when the document has no errors (after asking, when they replace files). Otherwise
-  nothing is written, and the errors are shown
+  first, and only put in place when the document has no errors. When files of those names are there, they can be
+  replaced, or saved as another name (typed in a box, as Save as in Blyant). Otherwise nothing is written, and the
+  errors are shown
 - Typst in the TUI: listed with its result, and shown in the peek in Blyant's Typst colors (`TypstHighlighter.cs`,
   copied from Blyant)
 

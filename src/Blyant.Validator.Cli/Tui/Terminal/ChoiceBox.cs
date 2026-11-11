@@ -9,6 +9,7 @@ internal static class ChoiceBox
 {
     private const int MinInner = 40; // The narrowest box (inside the frame)
     private const string ChoiceKeys = "j/k Select | Enter Choose | Esc Cancel";
+    private const string TextKeys = "Enter OK | Esc Cancel";
     private const string AnyKey = "[Press any key to continue]";
 
     // Where the last box is (its frame), until the screen is cleared
@@ -84,6 +85,66 @@ internal static class ChoiceBox
                 if (keys[i] == typed) return i;
             }
         }
+    }
+
+    /// <summary>
+    /// Ask for a text (a name) in a box: a line telling what to do, and a field to type in. Adapted from Blyant's
+    /// ChoiceBox.AskText (where the field is Blyant's editor; here a LineEdit)
+    /// </summary>
+    /// <param name="caption">The title of the box</param>
+    /// <param name="prompt">What to do, above the field (a "\n" in it starts a new line)</param>
+    /// <param name="label">In front of the field ("Name:")</param>
+    /// <param name="text">The text the field starts with (the cursor is placed at its end)</param>
+    /// <returns>The text typed (trimmed), or null if canceled or empty</returns>
+    internal static string? AskText(string caption, string prompt, string label, string text)
+    {
+        var (fieldTop, fieldLeft, fieldWidth) = DrawField(caption, prompt, label);
+        var field = new LineEdit(text);
+        try
+        {
+            Tools.ShowCursor();
+            while (true)
+            {
+                var (shown, column) = field.View(fieldWidth);
+                Tools.SetCursor(fieldTop, fieldLeft);
+                ConsoleColors.SetColors(ConsoleColors.ColorPreset.CommandLineInverted);
+                Console.Write(shown + new string(' ', Math.Max(0, fieldWidth - TextMetrics.WidthOf(shown))));
+                Tools.SetCursor(fieldTop, fieldLeft + column);
+                var key = Console.ReadKey(true);
+                if (key.Key == ConsoleKey.Escape) return null;
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    var typed = field.Text.Trim();
+                    return typed.Length == 0 ? null : typed;
+                }
+
+                field.Handle(key);
+            }
+        }
+        finally
+        {
+            ConsoleColors.SetColors(ConsoleColors.ColorPreset.Normal);
+            Tools.HideCursor();
+        }
+    }
+
+    // A box with a line telling what to do (a "\n" in it starts a new line) and a label for a field. Returns where the
+    // field is. Adapted from Blyant's ChoiceBox.DrawField
+    private static (int Top, int Left, int Width) DrawField(string caption, string prompt, string label)
+    {
+        var parts = prompt.Split('\n');
+        var inner = Math.Clamp(Math.Max(parts.Max(TextMetrics.WidthOf) + 4, 64), 10, Screen.LineWidth - 6);
+        var promptLines = parts.SelectMany(part => Wrap(part, inner - 4)).ToList();
+        // A blank row, the prompt, a blank row, the field and a blank row
+        var fieldRow = promptLines.Count + 2;
+        var (top, left, width, _) = DrawFrame(caption, inner, fieldRow + 2);
+        WriteText(top, left, [], promptLines, width);
+        Tools.SetCursor(top + 1 + fieldRow, left + 3);
+        Console.Write(label);
+        WriteHints(TextKeys);
+        // The field takes the rest of the row
+        var fieldLeft = left + 3 + TextMetrics.WidthOf(label) + 1;
+        return (top + 1 + fieldRow, fieldLeft, Math.Max(4, left + width - fieldLeft - 1));
     }
 
     /// <summary>

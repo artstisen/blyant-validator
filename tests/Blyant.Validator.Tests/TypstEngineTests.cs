@@ -193,7 +193,16 @@ public sealed class TypstEngineTests : IDisposable
             Assert.Equal("main.html", Path.GetFileName(Assert.Single(html.Files).Target));
         }
 
-        // (nothing committed: nothing left)
+        using (var renamed = await TypstExporter.PrepareAsync(typst, main, TypstFormat.Png))
+        {
+            renamed.Rename("print");
+            Assert.Empty(renamed.Existing);
+            Assert.Equal(["print-1.png", "print-2.png"], renamed.Commit().Select(Path.GetFileName));
+        }
+
+        File.Delete(Path.Combine(_dir, "print-1.png"));
+        File.Delete(Path.Combine(_dir, "print-2.png"));
+        // (nothing else committed: nothing left)
         Assert.Equal([main], Directory.GetFileSystemEntries(_dir));
     }
 }

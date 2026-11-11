@@ -46,10 +46,21 @@ public sealed class PreparedExport : IDisposable
     public bool Succeeded => Files.Count > 0 && !Problems.Any(p => p.Severity == Severity.Error);
 
     /// <summary>The files made (in the hidden folder), and where each goes.</summary>
-    public IReadOnlyList<(string Made, string Target)> Files { get; }
+    public IReadOnlyList<(string Made, string Target)> Files { get; private set; }
 
-    /// <summary>The files that would be replaced.</summary>
-    public IReadOnlyList<string> Existing => [.. Files.Select(f => f.Target).Where(File.Exists)];
+    /// <summary>
+    /// Give the files another name: "print" makes "main.pdf" into "print.pdf", and "main-1.png" into "print-1.png".
+    /// They stay next to the main file.
+    /// </summary>
+    public void Rename(string name)
+    {
+        var stem = Path.GetFileNameWithoutExtension(MainFile);
+        var folder = Path.GetDirectoryName(MainFile) ?? ".";
+        Files = [.. Files.Select(f => (f.Made, Path.Combine(folder, name + Path.GetFileName(f.Made)[stem.Length..])))];
+    }
+
+    /// <summary>The files that would be replaced (a folder of the name is told too: it cannot be replaced).</summary>
+    public IReadOnlyList<string> Existing => [.. Files.Select(f => f.Target).Where(t => File.Exists(t) || Directory.Exists(t))];
 
     /// <summary>Put the files in place, each in one step; returns where they went.</summary>
     public IReadOnlyList<string> Commit()
