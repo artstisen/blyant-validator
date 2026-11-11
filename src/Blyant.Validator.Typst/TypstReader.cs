@@ -787,12 +787,13 @@ public sealed class TypstReader
         if (placed) _inCode--;
     }
 
-    // Code to its closing bracket (closer "(" or "{", opened at "open"), or a statement (closer '\n')
+    // Code to its closing bracket (opener "(" or "{", opened at "open"), or a statement (opener '\n': it ends at the end
+    // of its line, a ";" or the "]" of its content, and has no closing bracket)
     private void Code(char opener, int open)
     {
         if (!Enter()) return;
         var statement = opener == '\n';
-        var closer = opener switch { '(' => ')', '{' => '}', _ => '\n' };
+        var closer = opener switch { '(' => ')', '{' => '}', _ => '\0' };
         while (_pos < _s.Length)
         {
             var c = _s[_pos];
@@ -852,8 +853,9 @@ public sealed class TypstReader
                         return;
                     }
 
+                    // (in a statement, "]" ended it above: here only ")" and "}")
                     Error(_pos, "typst.unexpected-close", statement
-                        ? $"Unexpected “{c}”: there is no “{Opening(c)}” to close."
+                        ? $"Unexpected “{c}”: there is no “{(c == ')' ? '(' : '{')}” to close."
                         : $"Unexpected “{c}”: “{opener}” is closed with “{closer}”.");
                     _pos++;
                     break;
@@ -886,8 +888,6 @@ public sealed class TypstReader
             _pos--;
         }
     }
-
-    private static char Opening(char close) => close switch { ')' => '(', '}' => '{', _ => '[' };
 
     #endregion
 }

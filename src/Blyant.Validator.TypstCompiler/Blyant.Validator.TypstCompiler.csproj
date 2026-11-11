@@ -5,4 +5,8 @@
     <ProjectReference Include="..\Blyant.Validator.Typst\Blyant.Validator.Typst.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Blyant.Validator.Tests" />
+  </ItemGroup>
+
 </Project>

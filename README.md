@@ -559,5 +559,6 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] Fragments (HTML for a CMS) and ignored problem codes, per folder in the TUI
 - [x] Typst: what the compiler refuses without compiling, references, files and packages
 - [x] Typst: an optional `--engine typst` that runs the Typst CLI for all its errors
+- [x] TUI: `:typst` makes a Typst document into PDF, PNG, SVG or HTML; `O` opens a file in your own editor
 - [ ] Comparison test suite against vnu output
 - [x] Release builds for Windows, Linux and macOS (`publish.ps1`)

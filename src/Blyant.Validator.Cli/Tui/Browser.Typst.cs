@@ -72,6 +72,13 @@ internal static partial class Browser
 
         using (export)
         {
+            if (!export.Succeeded && !export.Problems.Any(p => p.Severity == Severity.Error))
+            {
+                // (Typst ended well, but made no file)
+                _message = "Not made: Typst made no file";
+                return;
+            }
+
             if (!export.Succeeded)
             {
                 ShowTypstProblems(export, main);
@@ -81,22 +88,27 @@ internal static partial class Browser
 
             if (!ChooseNames(export, format)) return;
 
-            IReadOnlyList<string> written;
+            string? failed = null;
             try
             {
-                written = export.Commit();
+                export.Commit();
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                _message = "Not put in place: " + e.Message;
-                return;
+                // (a file open in another program, as a PDF in a viewer on Windows: the files before it are in place)
+                failed = e.Message;
             }
 
+            var written = export.Placed;
             foreach (var pane in Panes.Where(p => p.Directory.Length > 0 && SamePath(p.Directory, Path.GetDirectoryName(main) ?? string.Empty))) Reload(pane);
             // (made HTML is checked, as any other)
             foreach (var path in written.Where(p => ResultStore.IsValidated(p))) _results.Refresh(path);
             var warnings = export.Problems.Count;
-            _message = $"Made {Made(export)}" + (warnings > 0 ? $" ({warnings} warning{(warnings == 1 ? "" : "s")} of Typst)" : "");
+            _message = failed == null
+                ? $"Made {Made(export)}" + (warnings > 0 ? $" ({warnings} warning{(warnings == 1 ? "" : "s")} of Typst)" : "")
+                : written.Count == 0
+                    ? "Not put in place: " + failed
+                    : $"Put in place: {written.Count} of {export.Files.Count} files. Not {Path.GetFileName(export.Files[written.Count].Target)}: {failed}";
         }
     }
 

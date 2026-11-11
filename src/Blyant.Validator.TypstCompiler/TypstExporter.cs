@@ -62,12 +62,58 @@ public sealed class PreparedExport : IDisposable
     /// <summary>The files that would be replaced (a folder of the name is told too: it cannot be replaced).</summary>
     public IReadOnlyList<string> Existing => [.. Files.Select(f => f.Target).Where(t => File.Exists(t) || Directory.Exists(t))];
 
-    /// <summary>Put the files in place, each in one step; returns where they went.</summary>
+    /// <summary>The files put in place by <see cref="Commit"/> so far (all of them, when it did not fail).</summary>
+    public IReadOnlyList<string> Placed => _placed;
+
+    private readonly List<string> _placed = [];
+
+    /// <summary>
+    /// Put the files in place, each in one step, as formatting writes a file (DocumentIo.SafeWriteAllText): a link is
+    /// followed to the file it leads to, and a file that is replaced keeps its attributes (Windows) or permissions
+    /// (Linux, macOS). Returns where they went. When one cannot be put in place, an IOException tells why, and
+    /// <see cref="Placed"/> the files that were.
+    /// </summary>
     public IReadOnlyList<string> Commit()
     {
         if (!Succeeded) throw new InvalidOperationException("The document was not made.");
-        foreach (var (made, target) in Files) File.Move(made, target, overwrite: true);
-        return [.. Files.Select(f => f.Target)];
+        foreach (var (made, target) in Files)
+        {
+            Place(made, target);
+            _placed.Add(target);
+        }
+
+        return _placed;
+    }
+
+    private static void Place(string made, string target)
+    {
+        var real = target;
+        if (File.Exists(target) && File.ResolveLinkTarget(target, returnFinalTarget: true) is { } linked)
+            real = Path.GetFullPath(linked.FullName);
+        var source = made;
+        if (!string.Equals(real, target, StringComparison.Ordinal))
+        {
+            // (the file a link leads to can be on another disk: copied next to it first, so it is replaced in one step)
+            source = Path.Combine(Path.GetDirectoryName(real) ?? ".", $".bv-{Guid.NewGuid():N}.tmp");
+            File.Copy(made, source);
+        }
+
+        try
+        {
+            if (File.Exists(real))
+            {
+                if (OperatingSystem.IsWindows())
+                    File.SetAttributes(source, File.GetAttributes(real) & ~FileAttributes.ReadOnly);
+                else
+                    File.SetUnixFileMode(source, File.GetUnixFileMode(real));
+            }
+
+            File.Move(source, real, overwrite: true);
+        }
+        finally
+        {
+            if (!ReferenceEquals(source, made) && File.Exists(source)) File.Delete(source);
+        }
     }
 
     public void Dispose()

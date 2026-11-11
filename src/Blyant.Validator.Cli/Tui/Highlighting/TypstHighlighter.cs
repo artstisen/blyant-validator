@@ -16,10 +16,10 @@ namespace Blyant.Validator.Cli.Tui.Highlighting;
 /// </summary>
 internal static class TypstHighlighter
 {
-    // The state: the open brackets, one bit each from the outermost (1: content [..], 0: code (..) or {..}), how
-    // many there are, and the blocks the line ends inside
+    // The state: the open brackets, one bit each from the outermost (1: content [..], 0: code (..) or {..}; bits 0-22),
+    // how many there are (5 bits above them, 23-27), and the blocks the line ends inside (bits 28-30)
     private const int MaxDepth = 23;
-    private const int DepthShift = 23;
+    private const int DepthShift = MaxDepth;
     private const int DepthMask = 0x1F;
     private const int InComment = 1 << 28;
     private const int InRaw = 1 << 29;

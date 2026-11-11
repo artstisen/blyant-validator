@@ -125,6 +125,73 @@ public sealed class TypstEngineTests : IDisposable
         Assert.Empty(await engine.ValidateAsync(DocumentIo.Load(main)));
     }
 
+    // An export made by hand (as Typst makes it, in a hidden folder next to the main file), for the tests of putting it
+    // in place that do not need Typst
+    private PreparedExport Made(params (string Name, string Text)[] files)
+    {
+        var folder = Path.Combine(_dir, ".bv-typst-test");
+        Directory.CreateDirectory(folder);
+        foreach (var (name, text) in files) File.WriteAllText(Path.Combine(folder, name), text);
+        return new PreparedExport(folder, Path.Combine(_dir, "main.typ"), [], [.. files.Select(f => Path.Combine(folder, f.Name))]);
+    }
+
+    [Fact]
+    public void FilesThatCannotBePutInPlace_AreTold_WithThoseThatWere()
+    {
+        // (main-2.png is a folder: it cannot be replaced)
+        Directory.CreateDirectory(Path.Combine(_dir, "main-2.png"));
+        using var export = Made(("main-1.png", "one"), ("main-2.png", "two"));
+        Assert.ThrowsAny<Exception>(() => export.Commit());
+        Assert.Equal([Path.Combine(_dir, "main-1.png")], export.Placed);
+        Assert.Equal("one", File.ReadAllText(Path.Combine(_dir, "main-1.png")));
+    }
+
+    [LinksFact]
+    public void ALink_IsFollowed_ToTheFileItLeadsTo()
+    {
+        var output = Path.Combine(_dir, "out");
+        Directory.CreateDirectory(output);
+        var real = Path.Combine(output, "book.pdf");
+        File.WriteAllText(real, "old");
+        var link = Path.Combine(_dir, "main.pdf");
+        File.CreateSymbolicLink(link, real);
+
+        using (var export = Made(("main.pdf", "new")))
+            export.Commit();
+
+        Assert.NotNull(new FileInfo(link).LinkTarget);
+        Assert.Equal("new", File.ReadAllText(real));
+        Assert.Empty(Directory.GetFiles(output, ".bv-*"));
+    }
+
+    [UnixFact]
+    public void AReplacedFile_KeepsItsPermissions()
+    {
+        var pdf = Path.Combine(_dir, "main.pdf");
+        File.WriteAllText(pdf, "old");
+        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(pdf, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+
+        using (var export = Made(("main.pdf", "new")))
+            export.Commit();
+
+        Assert.Equal("new", File.ReadAllText(pdf));
+        if (!OperatingSystem.IsWindows()) Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(pdf));
+    }
+
+    [WindowsFact]
+    public void AReplacedFile_KeepsItsAttributes()
+    {
+        var pdf = Path.Combine(_dir, "main.pdf");
+        File.WriteAllText(pdf, "old");
+        File.SetAttributes(pdf, File.GetAttributes(pdf) | FileAttributes.Hidden);
+
+        using (var export = Made(("main.pdf", "new")))
+            export.Commit();
+
+        Assert.Equal("new", File.ReadAllText(pdf));
+        Assert.True(File.GetAttributes(pdf).HasFlag(FileAttributes.Hidden));
+    }
+
     [Theory]
     [InlineData(TypstFormat.Pdf, "book.pdf")]
     [InlineData(TypstFormat.Png, "book-{p}.png")]
