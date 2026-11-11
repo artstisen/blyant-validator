@@ -3,6 +3,8 @@
 ## 0.6.0 (2026-11-11)
 
 ### Added
+- `SHA256SUMS.txt` with the releases: the SHA-256 of each archive, made by `publish.ps1`, so a download can be checked
+  (`sha256sum -c`, `shasum -a 256 -c`, `Get-FileHash`; README.md tells how)
 - Typst (`.typ`): what the Typst compiler refuses and that can be told without compiling: raw text, strings,
   equations and brackets not closed, `*strong*` and `_emphasis_` not closed before the end of their paragraph,
   heading, list item or content (`Five * three`), a `]` or a bracket of code that closes nothing, and `#` with no

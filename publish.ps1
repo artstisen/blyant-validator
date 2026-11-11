@@ -13,6 +13,7 @@
 # read-me for the downloaded program, with the credits and the notices of the licences (the .NET runtime is in the
 # program file), and the address of the repository on GitHub (from the Git remote "origin"). It has LF line endings
 # in the versions for Linux and macOS, CRLF in the others.
+# SHA256SUMS.txt in "publish/release" has the SHA-256 of each archive of the version, for the release too.
 # The tests are run first (nothing is published when one fails), and the version must be the same in the places it
 # is told: Version in Directory.Build.props, and the status line of README.md.
 # The archives of a version that is published again are replaced, also those of an earlier version.
@@ -164,6 +165,25 @@ foreach ($platform in $Platforms) {
     [System.IO.File]::WriteAllText((Join-Path $folder "README.txt"), $readmeText.Replace("`n", $newline),
         [System.Text.UTF8Encoding]::new($false))
     New-ReleaseArchive $platform $folder
+}
+
+# SHA256SUMS.txt: the SHA-256 of each archive of this version in publish/release (also of versions published before
+# with this one), so a download can be checked: "sha256sum -c SHA256SUMS.txt" reads it (shasum -a 256 -c on macOS).
+# One line per archive, "<hash>  <name>", by name, with LF line endings. It is read back and checked against the
+# archives before anything is told as done
+$sumsFile = Join-Path $release "SHA256SUMS.txt"
+$archives = @(Get-ChildItem $release -File | Where-Object { $_.Name -like "$folderName-$version-*" } | Sort-Object Name -CaseSensitive)
+$sums = foreach ($archive in $archives) { "$((Get-FileHash $archive.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($archive.Name)" }
+[System.IO.File]::WriteAllText($sumsFile, (($sums -join "`n") + "`n"), [System.Text.UTF8Encoding]::new($false))
+foreach ($line in (Get-Content $sumsFile)) {
+    $hash, $name = $line -split "  ", 2
+    if ((Get-FileHash (Join-Path $release $name) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $hash) {
+        throw "SHA256SUMS.txt does not match $name"
+    }
+}
+$others = @(Get-ChildItem $release -File | Where-Object { $_.Name -like "$folderName-*" -and $_.Name -notlike "$folderName-$version-*" })
+if ($others.Count -gt 0) {
+    Write-Warning "publish/release also has archives of another version (not in SHA256SUMS.txt, not to be released): $($others.Name -join ', ')"
 }
 
 Get-ChildItem $release -File |

@@ -54,6 +54,14 @@ and the licence. The program is a single file with the .NET runtime in it: nothi
 - **Portable**: with the [.NET 10 runtime](https://dotnet.microsoft.com/download) installed, run
   `dotnet blyant-validator.dll` in the unzipped folder.
 
+To check that a download is whole and unchanged, download `SHA256SUMS.txt` from the release too, into the same folder,
+and compare the SHA-256 of the archive with its line there:
+
+- **Linux**: `sha256sum -c SHA256SUMS.txt --ignore-missing` (it says `OK` for the archive)
+- **macOS**: `shasum -a 256 -c SHA256SUMS.txt --ignore-missing`
+- **Windows** (PowerShell): `(Get-FileHash BlyantValidator-0.6.0-win-x64.zip).Hash` gives the hash, to compare with
+  the line of the archive in `SHA256SUMS.txt` (in any case of letters)
+
 The settings of the TUI are kept in a folder `data` next to the program, or, if that folder cannot be written to, in
 `Blyant Validator/data` in your application data (see [The TUI](#the-tui)).
 

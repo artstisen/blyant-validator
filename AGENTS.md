@@ -181,7 +181,8 @@ GitHub workflow `Build and test` builds and tests it on all three systems.
 - `publish.ps1` builds the release versions in `publish` (not in Git), as Blyant's: it runs the tests first, and packs
   each version for the releases page in `publish/release`, with `README.txt` and `LICENSE` next to the program (the
   licences must go with every copy). The address of the repository for `README.txt` is taken from the Git remote
-  `origin` (or `-Repository`)
+  `origin` (or `-Repository`). It also writes `SHA256SUMS.txt` there, the SHA-256 of each archive of the version
+  (checked against them), which is uploaded with the archives
 - `README.txt` of the releases is made from `docs/release/README.txt`: a short read-me for the program as it is
   downloaded, in plain text of at most 79 columns, with no images or links to the files of the repository (`publish.ps1`
   stops on a Markdown link or image, or an unknown `{placeholder}`). It tells the commands, the keys of the file browser,
