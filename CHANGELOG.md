@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (2026-11-11)
 
 ### Added
 - Typst (`.typ`): what the Typst compiler refuses and that can be told without compiling: raw text, strings,
