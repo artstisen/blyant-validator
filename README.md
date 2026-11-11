@@ -339,12 +339,16 @@ checks follow them as the compiler does:
   `\*`), `5*3` and `snake_case` are text.
 - **Closed but not opened**: a `]` in the text with no `[`, and a `)`, `}` or `]` in code that closes nothing.
 - **`#` with no code after it** (`C# language`: write `\#`).
-- **References**: an `@reference` to a label that is not in the document, or that is there more than once; the
-  document is the file, the files it includes, and the files that include it (in its folder and the folder above,
-  also with a path from the root, `#include "/chapters/one.typ"`), so a chapter may refer to a label of another.
-  When two files include a chapter, the one in its own folder is taken first, then by name. An e-mail address in the text is a reference to Typst: write
-  `\@`. References are not checked when labels are made by code (`label("…")`), with a bibliography (its keys are
-  referred to with `@`), or with a package.
+- **References**: an `@reference` to a label that is not in the document, or that is there more than once. The
+  document of a chapter is that of its main file: the file that includes it, and the file that includes that …
+  (looked for in its folder and the three folders above it, also with a path from the root,
+  `#include "/chapters/one.typ"`), with all the files the main file includes. So a chapter may refer to a label of
+  another. When two main files include a chapter (a book and a handout), each is a document of its own; the main file
+  of `:typst` and `--engine typst` is the first, from its own folder up, by name. A label in code that may place it
+  any number of times (the body of an `#if`, `#for` or `#let`) is there, but is not counted as more than once, and
+  neither are the labels of imported files. An e-mail address in the text is a reference to Typst: write `\@`.
+  References are not checked when labels are made by code (`label("…")`), with a bibliography (its keys are referred
+  to with `@`), with a package, or when a file is included by code (`include c` in a loop, `"ch-" + n + ".typ"`).
 - **Files**: a file given to `#include`, `#import`, `image()`, `read()`, `json()`, `bibliography()` … that is not
   there (relative to the file; a path from the root of the project, `/…`, is not checked).
 - **Packages** are checked for their name only (`@preview/name:1.0.0`): nothing is fetched.
@@ -425,8 +429,8 @@ CLI itself:
    `PATH` (or set `BLYANT_TYPST`). In the TUI: `:engine typst`. With the Nu Html Checker too: `--engine vnu,typst`.
 
 Each Typst file is compiled with `typst compile`, and the PDF is thrown away: no file is written. A chapter is
-compiled as part of its document: when another file includes it (looked for in its folder and the folder above, and
-upwards from there), the main file is compiled, and the errors and warnings in the chapter are kept, so a chapter
+compiled as part of its document: when another file includes it (looked for in its folder and the three folders
+above, and upwards from there), the main file is compiled, and the errors and warnings in the chapter are kept, so a chapter
 may refer to the labels of the others. A chapter that no file around it includes is compiled on its own, as
 `typst compile` would. As the compiler, the engine stops at the first error of the code (after all the errors of the
 syntax). It is run for each file, so it is slower than the native checks.

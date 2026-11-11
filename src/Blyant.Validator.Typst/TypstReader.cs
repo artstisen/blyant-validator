@@ -1,11 +1,15 @@
-﻿namespace Blyant.Validator.Typst;
+﻿using System.Text;
+
+namespace Blyant.Validator.Typst;
 
 /// <summary>A mistake in the structure of a Typst file, at an offset of the text.</summary>
 public sealed record TypstProblem(int Offset, string Code, string Message, bool IsError = true);
 
 /// <summary>A label (&lt;name&gt;) or a reference (@name) in the markup, at an offset of the text.</summary>
 /// <param name="InWord">For a reference: it follows a letter or digit (as in an e-mail address).</param>
-public sealed record TypstName(string Name, int Offset, bool InWord = false);
+/// <param name="InCode">For a label: it is in content that code places any number of times (the body of an #if, #for
+/// or #while, of a #let or a #show rule), so it is there, but may be there once, never, or many times.</param>
+public sealed record TypstName(string Name, int Offset, bool InWord = false, bool InCode = false);
 
 /// <summary>A path given to Typst in the file: #include, #import, image(), read(), bibliography() ...</summary>
 public sealed record TypstPath(string Path, int Offset, string Function);
@@ -49,6 +53,7 @@ public sealed class TypstReader
     private int _pos;
     private int _depth;
     private bool _tooDeep;
+    private int _inCode; // Inside the body of an #if, #for, #while, #let or #show: labels there are not counted
 
     public List<TypstProblem> Problems { get; } = [];
     public List<TypstName> Labels { get; } = [];
@@ -60,6 +65,12 @@ public sealed class TypstReader
     /// are referred to with @), cite, ref, query
     /// </summary>
     public bool HasDynamicLabels { get; private set; }
+
+    /// <summary>
+    /// True when the file includes or imports a file whose path is made by code (include c, include "ch-" + n), which
+    /// the reading cannot follow: the files of its document are not known
+    /// </summary>
+    public bool HasDynamicIncludes { get; private set; }
 
     private TypstReader(string text) => _s = text;
 
@@ -79,6 +90,27 @@ public sealed class TypstReader
     private static bool IsIdentPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '-';
 
     private static bool IsLabelChar(char c) => char.IsLetterOrDigit(c) || c is '_' or '-' or '.' or ':';
+
+    /// <summary>
+    /// The character at an offset (a letter outside the BMP is two chars) is a letter or digit of a word, as the Typst
+    /// compiler tells it for "*" and "_" between two (5*3, snake_case): not the letters of Chinese, Japanese and Korean,
+    /// where words are not separated by blanks
+    /// </summary>
+    private bool IsWordChar(int start, bool before)
+    {
+        var i = start;
+        if (before && i >= 1 && char.IsLowSurrogate(At(i)) && char.IsHighSurrogate(At(i - 1))) i--;
+        if (i < 0 || i >= _s.Length || !Rune.TryGetRuneAt(_s, i, out var rune)) return false;
+        return Rune.IsLetterOrDigit(rune) && !IsCjk(rune.Value);
+    }
+
+    // Han, Hiragana, Katakana and Hangul (the scripts Typst's lexer leaves out of words)
+    private static bool IsCjk(int c) =>
+        c is >= 0x2E80 and <= 0x2FDF or 0x3005 or 0x3007 or >= 0x3021 and <= 0x3029 or >= 0x3038 and <= 0x303B
+            or >= 0x3040 and <= 0x30FF or >= 0x31F0 and <= 0x31FF or >= 0x3400 and <= 0x4DBF or >= 0x4E00 and <= 0x9FFF
+            or >= 0xF900 and <= 0xFAFF or >= 0xFF66 and <= 0xFF9F or >= 0x20000 and <= 0x3FFFF
+            or >= 0x1100 and <= 0x11FF or >= 0x3130 and <= 0x318F or >= 0xA960 and <= 0xA97F or >= 0xAC00 and <= 0xD7FF
+            or >= 0xFFA0 and <= 0xFFDC;
 
     // Brackets, content and code nested deeper than MaxDepth: told once, and the rest of the file is not read
     private bool Enter()
@@ -139,14 +171,14 @@ public sealed class TypstReader
             {
                 case '\n' or '\r':
                     _pos += c == '\r' && At(_pos + 1) == '\n' ? 2 : 1;
-                    // A heading ends with its line; a paragraph or list item with a blank line, or a line that
-                    // starts a heading or a list item
-                    if (heading || NextLineEndsBlock()) EndBlock();
+                    // A heading ends with its line, unless strong text or emphasis in it goes on to the next; a
+                    // paragraph or list item with a blank line, or a line that starts a heading or a list item
+                    if (heading && strong < 0 && emphasis < 0 || NextLineEndsBlock()) EndBlock();
                     lineStart = true;
                     break;
                 case '\\':
-                    // An escape (\*, \u{1f600}), or a line break before the end of a line
-                    _pos += 2;
+                    // An escape (\*, \u{1f600}); before the end of a line, a line break (the line ends as any other)
+                    _pos += At(_pos + 1) is '\n' or '\r' ? 1 : 2;
                     break;
                 case '/' when At(_pos + 1) == '/':
                     LineComment();
@@ -165,7 +197,7 @@ public sealed class TypstReader
                     break;
                 case '*' or '_':
                     // A mark between two letters or digits is text (5*3, snake_case); else it opens or closes
-                    if (char.IsLetterOrDigit(At(_pos - 1)) && char.IsLetterOrDigit(At(_pos + 1)))
+                    if (IsWordChar(_pos - 1, before: true) && IsWordChar(_pos + 1, before: false))
                     {
                         _pos++;
                         break;
@@ -219,8 +251,10 @@ public sealed class TypstReader
         _depth--;
     }
 
+    // (when the file is too deep it is not read to its end: what is open then is not told)
     private void UnclosedDelimiter(int at)
     {
+        if (_tooDeep) return;
         var mark = _s[at];
         Error(at, "typst.unclosed-delimiter", mark == '*'
             ? "“*” starts strong text that is never closed (before the end of its paragraph, heading, list item or content). Write \\* for an asterisk."
@@ -229,6 +263,7 @@ public sealed class TypstReader
 
     private void UnclosedBracket(int at, char open)
     {
+        if (_tooDeep) return;
         var close = open switch { '(' => ')', '{' => '}', _ => ']' };
         Error(at, "typst.unclosed-delimiter", $"“{open}” is never closed (missing “{close}”).");
     }
@@ -304,7 +339,7 @@ public sealed class TypstReader
         var end = _pos + 1;
         while (IsLabelChar(At(end))) end++;
         if (end == _pos + 1 || At(end) != '>') return false;
-        Labels.Add(new TypstName(_s[(_pos + 1)..end], _pos));
+        Labels.Add(new TypstName(_s[(_pos + 1)..end], _pos, InCode: _inCode > 0));
         _pos = end + 1;
         return true;
     }
@@ -425,8 +460,22 @@ public sealed class TypstReader
         {
             if (_s[_pos] == '\\' && _pos + 1 < _s.Length)
             {
-                text.Append(_s[_pos + 1] switch { 'n' => '\n', 't' => '\t', var other => other });
+                var escaped = _s[_pos + 1];
                 _pos += 2;
+                if (escaped == 'u' && At(_pos) == '{')
+                {
+                    // \u{1f600}: a character by its number
+                    var close = _s.IndexOf('}', _pos);
+                    if (close > _pos && int.TryParse(_s.AsSpan(_pos + 1, close - _pos - 1), System.Globalization.NumberStyles.AllowHexSpecifier,
+                            System.Globalization.CultureInfo.InvariantCulture, out var number) && Rune.IsValid(number))
+                    {
+                        text.Append(char.ConvertFromUtf32(number));
+                        _pos = close + 1;
+                        continue;
+                    }
+                }
+
+                text.Append(escaped switch { 'n' => '\n', 't' => '\t', 'r' => '\r', var other => other });
                 continue;
             }
 
@@ -481,7 +530,8 @@ public sealed class TypstReader
             }
         }
 
-        Error(start, "typst.unclosed-delimiter", "“$” starts an equation that is never closed (missing “$”). Write \\$ for a dollar sign.");
+        if (!_tooDeep)
+            Error(start, "typst.unclosed-delimiter", "“$” starts an equation that is never closed (missing “$”). Write \\$ for a dollar sign.");
         _depth--;
     }
 
@@ -581,6 +631,19 @@ public sealed class TypstReader
     // "else" with another body or #if (on the same line, or the next)
     private void Conditional()
     {
+        _inCode++;
+        try
+        {
+            ConditionalBodies();
+        }
+        finally
+        {
+            _inCode--;
+        }
+    }
+
+    private void ConditionalBodies()
+    {
         while (_pos < _s.Length)
         {
             var c = _s[_pos];
@@ -678,17 +741,32 @@ public sealed class TypstReader
         Code('(', open);
     }
 
-    // A string right ahead (after blanks) as the path of a file, for a function or for import and include
+    /// <summary>
+    /// A string right ahead (after blanks) as the path of a file, for a function or for import and include: only a
+    /// string on its own, not one that code adds to ("fig-" + n + ".png"). For import and include, a path that is not
+    /// such a string is made by code, and cannot be followed (<see cref="HasDynamicIncludes"/>)
+    /// </summary>
     private void NotePath(string function)
     {
         var i = _pos;
         while (At(i) is ' ' or '\t') i++;
-        if (At(i) != '"') return;
-        var save = _pos;
-        _pos = i;
-        QuotedString(out var path);
+        var path = At(i) == '"' ? StringOnItsOwn(i) : null;
         if (path != null) Paths.Add(new TypstPath(path, i, function));
+        else if (function is "import" or "include") HasDynamicIncludes = true;
+    }
+
+    // The value of the string at an offset when no code follows it (an operator, a field or a call): else null
+    private string? StringOnItsOwn(int at)
+    {
+        var save = _pos;
+        _pos = at;
+        QuotedString(out var path);
+        var after = _pos;
         _pos = save;
+        while (At(after) is ' ' or '\t') after++;
+        var operation = At(after) is '+' or '*' or '.' or '(' or '[' or '=' or '<' or '>' or '!' or '-' ||
+                        At(after) == '/' && At(after + 1) is not ('/' or '*');
+        return operation ? null : path;
     }
 
     private string Identifier()
@@ -703,7 +781,10 @@ public sealed class TypstReader
     private void Statement(string keyword)
     {
         if (keyword is "import" or "include") NotePath(keyword);
+        var placed = keyword is "let" or "show" or "set";
+        if (placed) _inCode++;
         Code('\n', _pos);
+        if (placed) _inCode--;
     }
 
     // Code to its closing bracket (closer "(" or "{", opened at "open"), or a statement (closer '\n')

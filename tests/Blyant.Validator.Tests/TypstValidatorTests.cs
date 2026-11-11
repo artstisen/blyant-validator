@@ -54,9 +54,16 @@ public class TypstValidatorTests
     [InlineData("#let f = x => [*a*]\n#emph[_a_] #strong[*b*]\n")]
     [InlineData("#\"a//b\" and #{ \"}\" }\n")]
     [InlineData("Text \\\n next\n")]
+    [InlineData("= Title \\\nText *a\nb*\n")]
+    [InlineData("= Title *a\nb* and _c\nd_\n")]
+    [InlineData("这是*粗体*。 これは_強調_です。 한국어*굵게*.\n")]
+    [InlineData("#image(\"fig-\" + str(1) + \".png\") #image(\"a.png\", width: 50%)\n")]
     public void WhatTypstCompiles_HasNoErrors(string text)
     {
         Assert.Empty(Errors(text));
+        // (with the line endings of Windows, and of old Macs)
+        Assert.Empty(Errors(text.Replace("\n", "\r\n")));
+        Assert.Empty(Errors(text.Replace("\n", "\r")));
     }
 
     [Theory]
@@ -82,6 +89,34 @@ public class TypstValidatorTests
     public void WhatTypstRefuses_IsAnError(string text, string code)
     {
         Assert.Contains(code, Errors(text));
+        Assert.Contains(code, Errors(text.Replace("\n", "\r\n")));
+        Assert.Contains(code, Errors(text.Replace("\n", "\r")));
+    }
+
+    [Fact]
+    public void AMarkBetweenLettersOfWords_IsText_AlsoOutsideTheFirstPlane()
+    {
+        // (U+1D400, a letter of two chars, on both sides)
+        Assert.Empty(Errors("\U0001D400*\U0001D400\n"));
+        Assert.Contains("typst.unclosed-delimiter", Errors("这是*粗体\n"));
+    }
+
+    [Fact]
+    public void LabelsInCodeThatPlacesThem_AreThere_ButNotCounted()
+    {
+        Assert.Empty(Check("#if true [= A <intro>] else [= B <intro>]\nSee @intro.\n"));
+        Assert.Empty(Check("#let title = [= Intro <intro>]\n#title\nSee @intro.\n"));
+        // (in a #for it is there as many times as the loop runs, which is not known without running it: when that is
+        // more than once the compiler tells, and this check does not)
+        Assert.Empty(Check("#for i in range(2) [= Part <p>]\nSee @p.\n"));
+    }
+
+    [Fact]
+    public void AnEscapedCharacter_InAPath_IsDecoded()
+    {
+        var asked = new List<string>();
+        Check("#image(\"\\u{61}.png\")\n", new TypstFiles(p => { asked.Add(p); return true; }));
+        Assert.Equal(Path.GetFullPath("a.png"), Assert.Single(asked));
     }
 
     [Fact]
@@ -200,7 +235,8 @@ public class TypstValidatorTests
     public void DeepNesting_IsReported_NotOverflowed()
     {
         var text = string.Concat(Enumerable.Repeat("#box[", 5000));
-        Assert.Contains("typst.too-deep", Errors(text));
+        Assert.Equal("typst.too-deep", Assert.Single(Errors(text)));
+        Assert.Equal("typst.too-deep", Assert.Single(Errors(string.Concat(Enumerable.Repeat("#box[", 300)) + "x" + new string(']', 300))));
     }
 
     // A folder of files given as texts: the folders listed in the order given (not sorted), as a file system may
@@ -265,6 +301,60 @@ public class TypstValidatorTests
         // (a file system that tells case apart, with both files: One.typ is another file)
         texts[Path.Combine(folder, "One.typ")] = "= Other\n";
         Assert.Equal(one, TypstValidator.MainFile(one, FilesOf(texts)));
+    }
+
+    [Fact]
+    public void AFileIncludedByCode_LeavesTheReferencesUnchecked()
+    {
+        var folder = Path.GetFullPath("loop");
+        var main = Path.Combine(folder, "main.typ");
+        var one = Path.Combine(folder, "ch", "one.typ");
+        var texts = new Dictionary<string, string>
+        {
+            [main] = "= Intro <intro>\n#for c in (\"ch/one.typ\",) { include c }\nSee @one.\n",
+            [one] = "= One <one>\nSee @intro.\n",
+        };
+
+        Assert.Empty(TypstValidator.Validate(one, texts[one], FilesOf(texts)));
+        Assert.Empty(TypstValidator.Validate(main, texts[main], FilesOf(texts)));
+    }
+
+    [Fact]
+    public void TheDocument_IsThatOfTheMainFile_TwoFoldersUp()
+    {
+        var folder = Path.GetFullPath("deep");
+        var main = Path.Combine(folder, "main.typ");
+        var part = Path.Combine(folder, "parts", "part.typ");
+        var one = Path.Combine(folder, "parts", "p1", "one.typ");
+        var texts = new Dictionary<string, string>
+        {
+            [main] = "= Intro <intro>\n#include \"parts/part.typ\"\n",
+            [part] = "#include \"p1/one.typ\"\n",
+            [one] = "See @intro and @gone.\n",
+        };
+
+        var d = Assert.Single(TypstValidator.Validate(one, texts[one], FilesOf(texts)));
+        Assert.Contains("gone", d.Message, StringComparison.Ordinal);
+        Assert.Equal(main, TypstValidator.MainFile(one, FilesOf(texts)));
+    }
+
+    [Fact]
+    public void TwoMainFiles_AreTwoDocuments_AndImportedLabelsAreNotPlaced()
+    {
+        var folder = Path.GetFullPath("mains");
+        var book = Path.Combine(folder, "book.typ");
+        var handout = Path.Combine(folder, "handout.typ");
+        var one = Path.Combine(folder, "one.typ");
+        var template = Path.Combine(folder, "tpl.typ");
+        var texts = new Dictionary<string, string>
+        {
+            [book] = "#import \"tpl.typ\": *\n= Title <t>\n#include \"one.typ\"\n",
+            [handout] = "= Title <t>\n#include \"one.typ\"\n",
+            [one] = "See @t and @demo.\n",
+            [template] = "= Demo <t>\n#let x = 1\n= Shown <demo>\n",
+        };
+
+        Assert.Empty(TypstValidator.Validate(one, texts[one], FilesOf(texts)));
     }
 
     [Fact]

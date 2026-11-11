@@ -16,8 +16,9 @@ public sealed record TypstFiles(
 /// <summary>
 /// Native Typst validator: what the Typst compiler refuses and that can be told without compiling (see
 /// <see cref="TypstReader"/>), references to labels that are not in the document, files that are not there, and
-/// package names that are not valid. The document of a file is the file, the files it includes or imports, and the
-/// files that include it (looked for in its folder and the folder above): a chapter may refer to a label of another.
+/// package names that are not valid. The document of a file is that of its main file (the file that includes it, and
+/// the file that includes that …, looked for in its folder and the folders above), with all the files it includes or
+/// imports: a chapter may refer to a label of another.
 /// Code is not evaluated, and nothing is fetched: a package is only checked for its form.
 /// </summary>
 public sealed partial class TypstValidator(TypstFiles? files = null) : IValidator
@@ -98,28 +99,20 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
         }
     }
 
+    // How many folders the files that include a file are looked for in: its own and the folders above it
+    private const int Levels = 4;
+
     /// <summary>
-    /// The files a folder of Typst files has, in the same order on every system: the folder of the file first, then the
-    /// folder above, each by name
+    /// The Typst files around a file, in the same order on every system: those of its folder first, then of each folder
+    /// above it (up to <see cref="Levels"/> folders), each by name
     /// </summary>
     private static IEnumerable<string> Around(string full, TypstFiles files)
     {
-        var folder = Path.GetDirectoryName(full);
-        var parent = folder == null ? null : Path.GetDirectoryName(folder);
-        return new[] { folder, parent }.OfType<string>()
-            .SelectMany(f => files.TypstFilesIn!(f).Select(Path.GetFullPath).Order(StringComparer.Ordinal))
+        var folders = new List<string>();
+        for (var folder = Path.GetDirectoryName(full); folder != null && folders.Count < Levels; folder = Path.GetDirectoryName(folder))
+            folders.Add(folder);
+        return folders.SelectMany(f => files.TypstFilesIn!(f).Select(Path.GetFullPath).Order(StringComparer.Ordinal))
             .Distinct(StringComparer.Ordinal).Take(MaxFiles);
-    }
-
-    /// <summary>
-    /// True when another Typst file includes a file: by a path from its own folder, or from its folder as the root of
-    /// the project (as when it is the main file)
-    /// </summary>
-    private static bool Includes(string other, TypstReader otherReader, string full, TypstFiles files)
-    {
-        var otherFolder = Path.GetDirectoryName(other) ?? ".";
-        return otherReader.Paths.Any(p => p.Function == "include" && !p.Path.StartsWith('@') &&
-                                          Resolve(otherFolder, p.Path, otherFolder) is { } included && SamePath(included, full, files));
     }
 
     /// <summary>
@@ -143,7 +136,8 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
     // References (@name) to labels that are not in the document, or that are there more than once
     private static void CheckReferences(string path, TypstReader reader, TypstFiles files, Action<int, Severity, string, string> report)
     {
-        foreach (var twice in reader.Labels.GroupBy(l => l.Name, StringComparer.Ordinal).Where(g => g.Count() > 1))
+        // (a label in code that places it any number of times, #if or #let, is not counted)
+        foreach (var twice in reader.Labels.Where(l => !l.InCode).GroupBy(l => l.Name, StringComparer.Ordinal).Where(g => g.Count() > 1))
         {
             foreach (var label in twice.Skip(1))
                 report(label.Offset, Severity.Warning, "typst.duplicate-label",
@@ -153,13 +147,13 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
         if (reader.References.Count == 0) return;
 
         // The labels of the whole document. When it cannot be known (labels made from strings, a bibliography whose
-        // keys are referred to with @, a package, or files that cannot be read), the references are not checked
-        if (Document(path, reader, files) is not var (document, nearby)) return;
+        // keys are referred to with @, a package, files included by code, or files that cannot be read), the references
+        // are not checked
+        if (Document(Path.GetFullPath(path), reader, files) is not { } document) return;
         foreach (var reference in reader.References)
         {
-            var count = document.GetValueOrDefault(reference.Name);
-            // (a file that no file around it includes may be put in its document elsewhere, with the files beside it)
-            if (count == 0 && nearby.Contains(reference.Name)) continue;
+            var count = document.Counted.GetValueOrDefault(reference.Name);
+            if (count == 0 && document.Present.Contains(reference.Name)) continue;
             if (count == 0)
             {
                 report(reference.Offset, Severity.Error, "typst.unknown-reference", reference.InWord
@@ -174,86 +168,150 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
         }
     }
 
-    // The labels of the document a file is in, with how many times each is there, and (when no file around it
-    // includes it) the labels of the Typst files beside it; null when the labels cannot be known
-    private static (Dictionary<string, int> Labels, HashSet<string> Nearby)? Document(string path, TypstReader reader, TypstFiles files)
+    /// <summary>
+    /// The labels of the document of a file. Counted: how many times each is placed in it, in the main file the file is
+    /// in that has the most (two main files, a book and a handout, each have it once). Present: the labels that are in
+    /// it but are not counted (in code that places them any number of times, in imported files, whose content is not
+    /// placed as it is), and when no file includes the file, the labels of the Typst files beside it (it may be put in
+    /// its document elsewhere, with them).
+    /// </summary>
+    private sealed record Labels(Dictionary<string, int> Counted, HashSet<string> Present);
+
+    // The labels of the document a file is in, or null when they cannot be known
+    private static Labels? Document(string full, TypstReader reader, TypstFiles files)
     {
-        var nearby = new HashSet<string>(StringComparer.Ordinal);
-        var included = false;
-        var full = Path.GetFullPath(path);
-        var readers = new Dictionary<string, TypstReader>(Paths) { [full] = reader };
+        var parsed = new ParsedFiles(files);
+        parsed.Add(full, reader);
+        if (Includers(full, parsed) is not { } includers) return null;
 
-        // The files it includes, and the files that include it (in its folder and the folder above)
-        if (!Follow(full, reader, files, readers)) return null;
-        if (files.TypstFilesIn != null && files.Read != null)
+        var counted = new Dictionary<string, int>(StringComparer.Ordinal);
+        var present = new HashSet<string>(StringComparer.Ordinal);
+        if (includers.Count == 0)
         {
-            var folder = Path.GetDirectoryName(full) ?? ".";
-            foreach (var other in Around(full, files))
+            // The file is its own document; the files beside it may be in the same document elsewhere
+            if (Tally(full, parsed, counted, present) == false) return null;
+            var folder = Path.GetDirectoryName(full);
+            foreach (var other in files.TypstFilesIn == null || folder == null ? [] : files.TypstFilesIn(folder))
             {
-                if (readers.ContainsKey(other) || files.Read(other) is not { } text) continue;
-                var otherReader = TypstReader.Read(text);
-                if (!Includes(other, otherReader, full, files))
-                {
-                    if (Paths.Equals(Path.GetDirectoryName(other), folder)) nearby.UnionWith(otherReader.Labels.Select(l => l.Name));
-                    continue;
-                }
+                if (parsed.Get(Path.GetFullPath(other)) is { } beside) present.UnionWith(beside.Labels.Select(l => l.Name));
+            }
 
-                included = true;
-                readers[other] = otherReader;
-                if (!Follow(other, otherReader, files, readers)) return null;
+            return new Labels(counted, present);
+        }
+
+        // Each main file the file is in (through the files that include it, and the files that include those)
+        var mains = new HashSet<string>(Paths);
+        foreach (var includer in includers)
+        {
+            if (Top(includer, parsed) is not { } main) return null;
+            if (mains.Add(main) && !Tally(main, parsed, counted, present)) return null;
+        }
+
+        return new Labels(counted, present);
+    }
+
+    // Count the labels of the document of a main file into those found so far (keeping the highest count of each);
+    // false when its files cannot all be known
+    private static bool Tally(string main, ParsedFiles parsed, Dictionary<string, int> counted, HashSet<string> present)
+    {
+        var document = new Dictionary<string, bool>(Paths); // The files of the document, and whether one is imported
+        // (a path from the root is from the folder of the main file: the root Typst takes when none is given)
+        if (!Follow(main, imported: false, Path.GetDirectoryName(main) ?? ".", parsed, document)) return false;
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var (file, imported) in document)
+        {
+            var reader = parsed.Get(file)!;
+            if (reader.HasDynamicLabels || reader.HasDynamicIncludes) return false;
+            foreach (var label in reader.Labels)
+            {
+                present.Add(label.Name);
+                if (!imported && !label.InCode) counts[label.Name] = counts.GetValueOrDefault(label.Name) + 1;
             }
         }
 
-        if (readers.Values.Any(r => r.HasDynamicLabels)) return null;
-        var labels = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var label in readers.Values.SelectMany(r => r.Labels))
-            labels[label.Name] = labels.GetValueOrDefault(label.Name) + 1;
-        if (included) nearby.Clear();
-        return (labels, nearby);
+        foreach (var (name, count) in counts) counted[name] = Math.Max(count, counted.GetValueOrDefault(name));
+        return true;
+    }
+
+    // Add a file of a document and the files it includes or imports, and theirs; false when one cannot be read, a
+    // package is imported (its labels are not known), or there are too many
+    private static bool Follow(string full, bool imported, string root, ParsedFiles parsed, Dictionary<string, bool> document)
+    {
+        if (document.TryGetValue(full, out var before))
+        {
+            // (a file both included and imported is placed)
+            if (before && !imported) document[full] = false;
+            return true;
+        }
+
+        if (document.Count >= MaxFiles || parsed.Get(full) is not { } reader) return false;
+        document[full] = imported;
+        var folder = Path.GetDirectoryName(full) ?? ".";
+        foreach (var file in reader.Paths.Where(p => p.Function is "include" or "import"))
+        {
+            if (file.Path.StartsWith('@') || Resolve(folder, file.Path, root) is not { } other) return false;
+            if (!Follow(other, imported || file.Function == "import", root, parsed, document)) return false;
+        }
+
+        return true;
     }
 
     /// <summary>
     /// The main file of the document a file is in: the file that includes it, and the file that includes that … (looked
-    /// for in the folder of each and the folder above); the file itself when no file includes it
+    /// for in the folder of each and the folders above); the file itself when no file includes it
     /// </summary>
-    public static string MainFile(string path, TypstFiles files)
+    public static string MainFile(string path, TypstFiles files) => Top(Path.GetFullPath(path), new ParsedFiles(files)) ?? Path.GetFullPath(path);
+
+    // The top of the files that include a file (the first of them at each step), or null when a file around it includes
+    // files by code (which may be this one)
+    private static string? Top(string full, ParsedFiles parsed)
     {
-        var current = Path.GetFullPath(path);
-        var seen = new HashSet<string>(Paths) { current };
-        while (Includer(current, files) is { } includer && seen.Add(includer)) current = includer;
-        return current;
+        var seen = new HashSet<string>(Paths) { full };
+        var current = full;
+        while (true)
+        {
+            if (Includers(current, parsed) is not { } includers) return null;
+            if (includers.Count == 0 || !seen.Add(includers[0])) return current;
+            current = includers[0];
+        }
     }
 
-    // A Typst file in the folder of a file or the folder above that includes it, or null
-    private static string? Includer(string full, TypstFiles files)
+    // The Typst files around a file that include it, in the order of Around; null when one of them includes files by
+    // code (it may include this one)
+    private static List<string>? Includers(string full, ParsedFiles parsed)
     {
-        if (files.TypstFilesIn == null || files.Read == null) return null;
+        var files = parsed.Files;
+        if (files.TypstFilesIn == null || files.Read == null) return [];
+        var result = new List<string>();
         foreach (var other in Around(full, files))
         {
-            if (SamePath(other, full, files) || files.Read(other) is not { } text) continue;
-            if (Includes(other, TypstReader.Read(text), full, files)) return other;
+            if (SamePath(other, full, files) || parsed.Get(other) is not { } reader) continue;
+            if (reader.HasDynamicIncludes) return null;
+            var folder = Path.GetDirectoryName(other) ?? ".";
+            // (by a path from its folder, or from its folder as the root of the project, as when it is the main file)
+            if (reader.Paths.Any(p => p.Function == "include" && !p.Path.StartsWith('@') &&
+                                      Resolve(folder, p.Path, folder) is { } included && SamePath(included, full, files)))
+                result.Add(other);
         }
 
-        return null;
+        return result;
     }
 
-    // Read the Typst files a file includes or imports, and theirs; false when one cannot be read, or a package is
-    // imported (its labels are not known)
-    private static bool Follow(string full, TypstReader reader, TypstFiles files, Dictionary<string, TypstReader> readers)
+    // The Typst files read for one check, each read and parsed once
+    private sealed class ParsedFiles(TypstFiles files)
     {
-        var folder = Path.GetDirectoryName(full) ?? ".";
-        foreach (var file in reader.Paths.Where(p => p.Function is "include" or "import"))
-        {
-            // (a package, or a path from the root of the project: its labels are not known)
-            if (file.Path.StartsWith('@') || Resolve(folder, file.Path, root: null) is not { } other) return false;
-            if (readers.ContainsKey(other)) continue;
-            if (readers.Count >= MaxFiles || files.Read?.Invoke(other) is not { } text) return false;
-            var otherReader = TypstReader.Read(text);
-            readers[other] = otherReader;
-            if (!Follow(other, otherReader, files, readers)) return false;
-        }
+        private readonly Dictionary<string, TypstReader?> _readers = new(Paths);
 
-        return true;
+        public TypstFiles Files => files;
+
+        public void Add(string full, TypstReader reader) => _readers[full] = reader;
+
+        public TypstReader? Get(string full)
+        {
+            if (_readers.TryGetValue(full, out var reader)) return reader;
+            if (_readers.Count >= MaxFiles * 2) return null;
+            return _readers[full] = files.Read?.Invoke(full) is { } text ? TypstReader.Read(text) : null;
+        }
     }
 
     // @namespace/name:1.2.3
