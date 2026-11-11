@@ -115,6 +115,7 @@ internal static partial class Browser
 
         _dualPane = settings.BrowseDual;
         FileNumbers = settings.FileNumbers;
+        Editor = EditorCommand.Parse(settings.Editor);
         _active = settings.BrowsePane;
         Panes[0].Directory = Existing(settings.BrowseDirectory1);
         Panes[1].Directory = Existing(settings.BrowseDirectory2);
@@ -152,6 +153,7 @@ internal static partial class Browser
         // (while peeking two panes are shown for the peek: what was set before it is kept)
         settings.BrowseDual = _peeking ? _peekWasDual : _dualPane;
         settings.FileNumbers = FileNumbers;
+        settings.Editor = Editor?.Text ?? string.Empty;
         return settings.Save();
     }
 
@@ -356,6 +358,10 @@ internal static partial class Browser
             else if (key.Key == ConsoleKey.F)
             {
                 FormatFiles();
+            }
+            else if (key.Key == ConsoleKey.O)
+            {
+                EditFile(1);
             }
             else if (key.Key == ConsoleKey.Spacebar)
             {

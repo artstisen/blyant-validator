@@ -31,6 +31,9 @@ internal sealed class Settings
     /// <summary>The rows of the panes are numbered (:number), as in Blyant ("filenumbers").</summary>
     public bool FileNumbers { get; set; }
 
+    /// <summary>The editor files are opened in (:editor): a program and its arguments, or empty.</summary>
+    public string Editor { get; set; } = string.Empty;
+
     /// <summary>The folders whose files are not fully checked (:fragment, :ignore).</summary>
     public FolderRules Checks { get; set; } = new();
 
@@ -103,6 +106,7 @@ internal sealed class Settings
         settings.BrowsePane = Get("browsepane") == "2" ? 1 : 0;
         settings.BrowseDual = !Get("browsedual").Equals("false", StringComparison.OrdinalIgnoreCase);
         settings.FileNumbers = Get("filenumbers").Equals("true", StringComparison.OrdinalIgnoreCase);
+        settings.Editor = Get("editor");
         settings.Checks = FolderRules.Read(values);
         return settings;
     }
@@ -145,6 +149,8 @@ internal sealed class Settings
         text.Append("browsedual=").Append(BrowseDual ? "true" : "false").Append('\n');
         // The rows of the panes are numbered
         text.Append("filenumbers=").Append(FileNumbers ? "true" : "false").Append('\n');
+        // The editor O opens files in: a program and its arguments ({file}, {line}), or empty
+        text.Append("editor=").Append(Editor).Append('\n');
         text.Append('\n');
         text.Append("; CHECKS\n");
         // Folders (and their subfolders) whose HTML files are fragments, and the problem codes ignored in them

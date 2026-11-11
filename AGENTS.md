@@ -59,7 +59,10 @@ purpose: a fix in one is carried to the other by hand, when it matters.
 - When a key or command is added or changed, update `Browser.CommandTable`, `RunCommand`, `HelpRows`, the key
   hints, `README.md` and `CHANGELOG.md` together. `TuiTests.Commands_AreHandledAndInTheHelp` checks the commands
 - The engines run on a background thread (`ResultStore`); everything that draws runs on the main thread. The
-  TUI never starts other programs, except Java for `:engine vnu`, and the Typst CLI for `:engine typst` and `:typst`
+  TUI never starts other programs, except Java for `:engine vnu`, the Typst CLI for `:engine typst` and `:typst`,
+  and the editor the user set (`:editor`, `EditorCommand`) when `O` is pressed. A program is started directly, with
+  its arguments as a list (`ArgumentList`), never through a shell or `UseShellExecute`: a file name must never be
+  read as a command. The editor is only the one in the settings, never taken from a file
 - Files are only written by formatting, after asking, the settings file (`Settings.cs`), when the TUI closes, both
   with `DocumentIo.SafeWriteAllText`, and the files made by `:typst`, only when asked. Typst writes those in a hidden
   folder next to the document (`TypstExporter`), and they are moved into place, each in one step, only when the

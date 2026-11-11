@@ -16,6 +16,11 @@
   (its main file is found as for the references), and its own errors and warnings are kept. `--typst <path>` (or
   `BLYANT_TYPST`) tells where `typst` is. Engines can be given together: `--engine vnu,typst`. With this engine the
   program can go online: Typst downloads the packages a document imports
+- `O` in the TUI (and `:edit`): opens the selected file in your own editor, set with `:editor` and kept in the
+  settings (`editor=`): a program and its arguments, with `{file}` and `{line}` (`nvim +{line}`). In the peek, at the
+  line of the cursor or of the problem selected. An editor in the terminal gets the terminal until it is closed; a
+  Windows program with windows of its own is not waited for. Started directly, never through a shell (a `.cmd` or
+  `.bat` is refused)
 - `:typst` in the TUI: makes the Typst document of the selected file into a PDF, PNG or SVG pages, or HTML, with the
   Typst CLI, picked in a box. The files go next to the main file, named after it; they are made in a hidden folder
   first, and only put in place when the document has no errors. When files of those names are there, they can be

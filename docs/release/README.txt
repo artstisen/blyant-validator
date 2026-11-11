@@ -57,6 +57,7 @@ while it is checked. The window must be at least 80 columns and 24 rows.
     P             The list of the problems of the file
     Tab           The other pane, or into the peek (n/N: next problem there)
     F             Format the file (or the marked files), after asking
+    O             Open the file in your editor (set it with :editor nvim)
     /             Only list the names containing a text
     :             A command: :cd, :fragment, :ignore, :number, :path ...
                   :typst makes a Typst document into PDF, PNG, SVG or HTML

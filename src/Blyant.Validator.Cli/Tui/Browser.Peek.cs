@@ -78,7 +78,8 @@ internal static partial class Browser
         key.Key is ConsoleKey.J or ConsoleKey.K or ConsoleKey.DownArrow or ConsoleKey.UpArrow or ConsoleKey.PageDown
             or ConsoleKey.PageUp or ConsoleKey.Home or ConsoleKey.End or ConsoleKey.H or ConsoleKey.L
             or ConsoleKey.LeftArrow or ConsoleKey.RightArrow or ConsoleKey.Enter or ConsoleKey.Backspace or ConsoleKey.Tab
-            or ConsoleKey.Escape or ConsoleKey.V or ConsoleKey.P or ConsoleKey.Spacebar or ConsoleKey.R or ConsoleKey.F ||
+            or ConsoleKey.Escape or ConsoleKey.V or ConsoleKey.P or ConsoleKey.Spacebar or ConsoleKey.R or ConsoleKey.F
+            or ConsoleKey.O ||
         key.KeyChar is 'g' or 'G' or '-' or ':' or '/' or '?' ||
         Keyboard.IsControl(key, ConsoleKey.D) || Keyboard.IsControl(key, ConsoleKey.F) ||
         Keyboard.IsControl(key, ConsoleKey.U) || Keyboard.IsControl(key, ConsoleKey.B);
@@ -534,9 +535,18 @@ internal static partial class Browser
                     if (problem != null) _peekCommand = "ignore " + problem.Code;
                 }
 
+                if (_peekCommand != null && CommandPrompt.Name(_peekCommand) == "edit" && CommandPrompt.Argument(_peekCommand).Length == 0)
+                    _peekCommand = "edit " + PeekLine(document);
                 if (_peekCommand != null) return;
                 RedrawInPeek();
                 continue;
+            }
+
+            if (key.Key == ConsoleKey.O)
+            {
+                // The file in the editor, at the line of the cursor or of the problem selected: run from the list
+                _peekCommand = "edit " + PeekLine(document);
+                return;
             }
 
             if (key.Key == ConsoleKey.I)
@@ -550,6 +560,12 @@ internal static partial class Browser
             else message = TextKey(document, key);
         }
     }
+
+    // The line of the peek an editor opens the file at: of the problem selected, or of the cursor
+    private static int PeekLine(PeekDocument document) =>
+        _peekMode == PeekMode.Problems && document.Diagnostics.ElementAtOrDefault(_problemSelected) is { } problem
+            ? problem.Start.Line
+            : _peekCursor + 1;
 
     // All is drawn again while the focus stays in the peek (the window was resized, or a box covered the panes)
     private static void RedrawInPeek()

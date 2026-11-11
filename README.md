@@ -88,6 +88,8 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 - As in Vim, `n`/`N` follow what you looked for last: after a `/` search they go to the matches, and `]`/`[` (which
   always go to problems) make them go to the problems again.
 - `F` formats the selected file, or the files marked with `Space`, after asking.
+- `O` opens the selected file in your own editor (Blyant, Vim, Neovim, VS Code …), set once with `:editor`; in the
+  peek, at the line of the cursor or of the problem selected (see [Opening files in your editor](#opening-files-in-your-editor-o)).
 - `:typst` makes the Typst document of the selected file into a PDF, PNG or SVG pages, or HTML, with the Typst CLI
   (see [Making files with Typst](#making-files-with-typst-typst)).
 - `T` shows one pane or two, `/` filters the list, `:` opens the command line (`:cd`, `:engine vnu`, `:engine typst`, `:all` to
@@ -430,7 +432,33 @@ syntax). It is run for each file, so it is slower than the native checks.
 
 Typst downloads the packages a document imports (`@preview/…`) the first time it compiles it: with `--engine typst`
 the program can go online, which the native checks never do. The TUI starts no other programs unless `:engine vnu` or
-`:engine typst` is chosen, or `:typst` is used.
+`:engine typst` is chosen, `:typst` is used, or a file is opened in your editor (`O`).
+
+### Opening files in your editor (`O`)
+
+The TUI checks files; you change them in an editor of your own. Set it once with `:editor`, followed by the program
+and its arguments (a path with blanks in double quotes); it is kept in the settings (`editor=` in `settings.ini`):
+
+| `:editor …` | Opens |
+|---|---|
+| `nvim +{line}` | Neovim, at the line |
+| `vim +{line}` | Vim, at the line |
+| `"C:\Program Files\Blyant\Blyant.exe"` | Blyant |
+| `"C:\Program Files\Microsoft VS Code\Code.exe" --goto {file}:{line}` | VS Code, at the line |
+
+`{file}` is the file and `{line}` the line; without `{file}` the file is added as the last argument. `O` (or
+`:edit`) opens the selected file. In the peek (`Tab` into it) the line is that of the cursor, or of the problem
+selected in the problems; in the list it is line 1. `:editor` alone tells the editor, and `:editor none` takes it
+away.
+
+An editor in the terminal (Vim, Neovim, Blyant, nano) gets the terminal: the TUI waits until it is closed, and then
+draws itself again, with the result of the file checked anew. A program with windows of its own (on Windows: Notepad,
+VS Code) is started and not waited for; the result of the file follows when you save it. With `--wait` (VS Code) it
+would be waited for: leave that out.
+
+The editor is started directly, never through a shell, so a file name is never read as a command. On Windows a `.cmd`
+or `.bat` is refused for that reason (they can only be run with `cmd.exe`): `code` on `PATH` is `code.cmd`, so give
+the `Code.exe` of VS Code instead. The program is only the one you set yourself, and only started when you press `O`.
 
 ### Making files with Typst (`:typst`)
 

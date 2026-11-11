@@ -7,8 +7,8 @@ namespace Blyant.Validator.Cli.Tui;
 internal static partial class Browser
 {
     private const string Caption = "Files";
-    private const string BrowserKeys = "j/k Select | V Peek | P Problems | F Format | / Filter | ? Help | q Quit";
-    private const string BrowserDualKeys = "Tab Pane | V Peek | P Problems | F Format | / Filter | ? Help | q Quit";
+    private const string BrowserKeys = "j/k Select | V Peek | P Problems | F Format | O Edit | / Filter | ? Help | q Quit";
+    private const string BrowserDualKeys = "Tab Pane | V Peek | P Problems | F Format | O Edit | / Filter | ? Help | q Quit";
     private const string PeekingKeys = "j/k Next file | Tab Into peek | P Problems/Text | V Esc End peek";
     private const string MarkedKeys = "Space Mark | F Format marked | Esc Unmark | ? Help";
 

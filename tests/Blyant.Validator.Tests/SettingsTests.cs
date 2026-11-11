@@ -22,6 +22,7 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal(0, settings.BrowsePane);
         Assert.True(settings.BrowseDual);
         Assert.False(settings.FileNumbers);
+        Assert.Equal(string.Empty, settings.Editor);
     }
 
     [Fact]
@@ -36,6 +37,7 @@ public sealed class SettingsTests : IDisposable
             BrowsePane = 1,
             BrowseDual = false,
             FileNumbers = true,
+            Editor = "\"C:\\Program Files\\Neovim\\bin\\nvim.exe\" +{line} {file}",
         };
         Assert.Null(written.Save());
 
@@ -52,6 +54,7 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal(1, read.BrowsePane);
         Assert.False(read.BrowseDual);
         Assert.True(read.FileNumbers);
+        Assert.Equal(written.Editor, read.Editor);
     }
 
     [Fact]

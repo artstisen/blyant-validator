@@ -20,7 +20,7 @@ internal static partial class Browser
     /// When a command is added, renamed or removed, change this table, RunCommand and HelpRows together
     /// </summary>
     internal static readonly CommandTable CommandTable = new(
-        ["all", "cd", "engine", "format", "fragment", "help", "home", "ignore", "name", "nonumber", "number", "panes",
+        ["all", "cd", "edit", "editor", "engine", "format", "fragment", "help", "home", "ignore", "name", "nonumber", "number", "panes",
             "path", "peek", "problems", "quit", "refresh", "typst", "unignore"],
         ["q", "h", "exit", "close"],
         new Dictionary<string, string[]> { ["engine"] = [.. Engines.Names] });
@@ -106,6 +106,13 @@ internal static partial class Browser
                 // The numbers of the rows of the panes on or off (kept in the settings), as in Blyant
                 FileNumbers = name == "number";
                 _message = FileNumbers ? "Line numbers on" : "Line numbers off";
+                break;
+            case "edit":
+                // (a line given: from the peek, the line of the cursor or of the problem selected)
+                EditFile(int.TryParse(argument, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var line) ? line : 1);
+                break;
+            case "editor":
+                SetEditor(argument);
                 break;
             case "typst":
                 ExportTypst();
@@ -325,6 +332,7 @@ internal static partial class Browser
         new("V", "Peek on or off: the selected file in the other pane, with its problems marked"),
         new("P", "The problems of the selected file in the other pane (P again: off)"),
         new("F", "Format the selected file, or the marked files, after asking"),
+        new("O", "Open the selected file in your editor (set it with :editor)"),
         new("Space", "Mark a file (or unmark it), to format several"),
         new("/text", "Only list the names containing a text"),
         new("r", "Read the directory again, and check its files again"),
@@ -354,6 +362,8 @@ internal static partial class Browser
         new(":panes :peek", "As T and V"),
         new(":problems", "As P"),
         new(":format", "As F"),
+        new(":editor command", "Set the editor O opens files in: a program and its arguments ({file}, {line}); none: no editor"),
+        new(":edit", "As O"),
         new(":engine name", "native (built in), vnu (the Nu Html Checker, needs Java), typst (the Typst CLI), vnu,typst"),
         new(":path", "The full path of the selected file or directory to the clipboard (OSC 52)"),
         new(":name", "The name of the selected file or directory to the clipboard"),
