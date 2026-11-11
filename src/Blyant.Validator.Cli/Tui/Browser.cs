@@ -74,6 +74,7 @@ internal static partial class Browser
 
         var settings = Settings.Load();
         _results = new ResultStore(engines, vnu, settings.Checks, typst);
+        _typst = typst;
         Keyboard.Idle = Idle;
         string? notSaved;
         try

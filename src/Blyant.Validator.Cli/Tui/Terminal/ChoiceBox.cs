@@ -30,7 +30,7 @@ internal static class ChoiceBox
     /// Pick one of a few choices. The key of each choice is shown in front of it and picks it at once
     /// </summary>
     /// <returns>The number of the choice, or -1 if the box was closed with Esc</returns>
-    private static int Pick(string caption, string question, string note, IReadOnlyList<string> choices,
+    internal static int Pick(string caption, string question, string note, IReadOnlyList<string> choices,
         IReadOnlyList<string> keys, int selected)
     {
         var keyWidth = keys.Max(TextMetrics.WidthOf);

@@ -21,7 +21,7 @@ internal static partial class Browser
     /// </summary>
     internal static readonly CommandTable CommandTable = new(
         ["all", "cd", "engine", "format", "fragment", "help", "home", "ignore", "name", "nonumber", "number", "panes",
-            "path", "peek", "problems", "quit", "refresh", "unignore"],
+            "path", "peek", "problems", "quit", "refresh", "typst", "unignore"],
         ["q", "h", "exit", "close"],
         new Dictionary<string, string[]> { ["engine"] = [.. Engines.Names] });
 
@@ -106,6 +106,9 @@ internal static partial class Browser
                 // The numbers of the rows of the panes on or off (kept in the settings), as in Blyant
                 FileNumbers = name == "number";
                 _message = FileNumbers ? "Line numbers on" : "Line numbers off";
+                break;
+            case "typst":
+                ExportTypst();
                 break;
             case "ignore":
                 Ignore(argument);
@@ -355,6 +358,7 @@ internal static partial class Browser
         new(":path", "The full path of the selected file or directory to the clipboard (OSC 52)"),
         new(":name", "The name of the selected file or directory to the clipboard"),
         new(":all", "List all files, or only HTML, CSS, XML, Markdown and Typst"),
+        new(":typst", "Make the Typst document of the selected file into PDF, PNG, SVG or HTML, with the Typst CLI"),
         new(":number :nonumber", "Number the rows of the panes, or not"),
         HelpRow.Heading("Not a full check (for the folder shown and its subfolders)"),
         new(":fragment", "HTML files are fragments (the content of a <body>, for a CMS), or full pages again"),

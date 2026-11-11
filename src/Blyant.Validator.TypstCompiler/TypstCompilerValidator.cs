@@ -92,7 +92,37 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
         }
     }
 
-    private static void Stop(Process process)
+    /// <summary>
+    /// All the problems in the output of <c>typst compile --diagnostic-format short</c> of a document, in whichever of
+    /// its files they are (each told with its full path); the problems of the document as a whole are told on the
+    /// compiled file.
+    /// </summary>
+    public static IReadOnlyList<Diagnostic> ParseAll(string output, string compiled)
+    {
+        var files = new List<string> { compiled };
+        foreach (var line in output.Split('\n').Select(l => l.TrimEnd('\r')))
+        {
+            if (Located().Match(line) is not { Success: true } located) continue;
+            var where = located.Groups["path"].Value;
+            if (where.StartsWith(@"\\?\", StringComparison.Ordinal)) where = where[4..];
+            try
+            {
+                where = Path.GetFullPath(where, Path.GetDirectoryName(compiled) ?? ".");
+            }
+            catch (Exception e) when (e is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                continue;
+            }
+
+            if (!files.Contains(where, PathComparer)) files.Add(where);
+        }
+
+        return [.. files.SelectMany(file => Parse(output, file, file, compiled))];
+    }
+
+    private static StringComparer PathComparer => OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+
+    internal static void Stop(Process process)
     {
         try
         {

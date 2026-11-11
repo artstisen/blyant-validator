@@ -88,6 +88,8 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 - As in Vim, `n`/`N` follow what you looked for last: after a `/` search they go to the matches, and `]`/`[` (which
   always go to problems) make them go to the problems again.
 - `F` formats the selected file, or the files marked with `Space`, after asking.
+- `:typst` makes the Typst document of the selected file into a PDF, PNG or SVG pages, or HTML, with the Typst CLI
+  (see [Making files with Typst](#making-files-with-typst-typst)).
 - `T` shows one pane or two, `/` filters the list, `:` opens the command line (`:cd`, `:engine vnu`, `:engine typst`, `:all` to
   list all files …, with `Tab` completion), and `?` shows all keys. `q` or `Esc` quits, after asking (as in
   Blyant); Ctrl+C quits at once.
@@ -428,7 +430,26 @@ syntax). It is run for each file, so it is slower than the native checks.
 
 Typst downloads the packages a document imports (`@preview/…`) the first time it compiles it: with `--engine typst`
 the program can go online, which the native checks never do. The TUI starts no other programs unless `:engine vnu` or
-`:engine typst` is chosen.
+`:engine typst` is chosen, or `:typst` is used.
+
+### Making files with Typst (`:typst`)
+
+In the TUI, `:typst` makes the document of the selected Typst file with the Typst CLI (found as for `--engine typst`).
+A box asks what to make:
+
+| Key | Makes | Named |
+|---|---|---|
+| `P` | PDF | `main.pdf` |
+| `N` | PNG, one image per page | `main-1.png`, `main-2.png` … |
+| `S` | SVG, one image per page | `main-1.svg`, `main-2.svg` … |
+| `H` | HTML (Typst's HTML export, which Typst still calls experimental) | `main.html` |
+
+The whole document is made: on a chapter, the main file that includes it. The files are put next to the main file and
+named after it. Typst writes them in a hidden folder there first, and only when the document has no errors are they
+moved into place, each in one step; when that replaces files, it asks first. When the document has errors, nothing is
+written, and the errors are shown. `Esc` stops Typst while it runs. Made HTML is checked as any other HTML file (Typst
+gives it a `<title>` when the document sets one: `#set document(title: [...])`). Pages of an earlier, longer version
+(`main-5.png`) are left as they are.
 
 ## Building
 

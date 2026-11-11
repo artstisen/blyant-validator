@@ -59,9 +59,11 @@ purpose: a fix in one is carried to the other by hand, when it matters.
 - When a key or command is added or changed, update `Browser.CommandTable`, `RunCommand`, `HelpRows`, the key
   hints, `README.md` and `CHANGELOG.md` together. `TuiTests.Commands_AreHandledAndInTheHelp` checks the commands
 - The engines run on a background thread (`ResultStore`); everything that draws runs on the main thread. The
-  TUI never starts other programs, except Java for `:engine vnu` and the Typst CLI for `:engine typst`
-- Files are only written by formatting, after asking, and the settings file (`Settings.cs`), when the TUI closes.
-  Both with `DocumentIo.SafeWriteAllText`
+  TUI never starts other programs, except Java for `:engine vnu`, and the Typst CLI for `:engine typst` and `:typst`
+- Files are only written by formatting, after asking, the settings file (`Settings.cs`), when the TUI closes, both
+  with `DocumentIo.SafeWriteAllText`, and the files made by `:typst`, only when asked. Typst writes those in a hidden
+  folder next to the document (`TypstExporter`), and they are moved into place, each in one step, only when the
+  document has no errors, after asking when they replace files
 - The settings file is `settings.ini` in the data directory, in Blyant's format (`[SETTINGS]` and `name=value` read
   by name). A new setting is read and written by name in `Settings.cs`, and tested in `SettingsTests`
 - The icon (`BlyantValidator.ico` and `.svg`) is drawn by `tools/icon.py`: change the script, not the files

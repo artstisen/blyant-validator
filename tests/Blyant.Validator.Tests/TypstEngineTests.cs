@@ -108,6 +108,94 @@ public sealed class TypstEngineTests : IDisposable
         Assert.Equal(("typst.compiler-error", 3), (d.Code, d.Start.Line));
         Assert.Empty(await engine.ValidateAsync(DocumentIo.Load(main)));
     }
+
+    [Theory]
+    [InlineData(TypstFormat.Pdf, "book.pdf")]
+    [InlineData(TypstFormat.Png, "book-{p}.png")]
+    [InlineData(TypstFormat.Svg, "book-{p}.svg")]
+    [InlineData(TypstFormat.Html, "book.html")]
+    public void TheOutput_IsNamedAfterTheMainFile(TypstFormat format, string name)
+    {
+        Assert.Equal(name, TypstExporter.OutputName(Path.Combine(_dir, "book.typ"), format));
+    }
+
+    [Fact]
+    public async Task AnExportThatCannotBeStarted_LeavesNothing()
+    {
+        var main = Path.Combine(_dir, "main.typ");
+        File.WriteAllText(main, "= A\n");
+        await Assert.ThrowsAsync<TypstNotAvailableException>(() =>
+            TypstExporter.PrepareAsync(new TypstCompilerOptions(Path.Combine(_dir, "no-typst")), main, TypstFormat.Pdf));
+        Assert.Equal([main], Directory.GetFileSystemEntries(_dir));
+    }
+
+    [TypstFact]
+    public async Task AnExport_IsOnlyPutInPlaceWhenCommitted()
+    {
+        var main = Path.Combine(_dir, "main.typ");
+        var pdf = Path.Combine(_dir, "main.pdf");
+        Directory.CreateDirectory(Path.Combine(_dir, "ch"));
+        File.WriteAllText(main, "= Main\n#include \"ch/one.typ\"\n");
+        File.WriteAllText(Path.Combine(_dir, "ch", "one.typ"), "== One\n");
+        File.WriteAllText(pdf, "old");
+
+        using (var export = await TypstExporter.PrepareAsync(new TypstCompilerOptions(), main, TypstFormat.Pdf))
+        {
+            Assert.True(export.Succeeded);
+            Assert.Equal("old", File.ReadAllText(pdf));
+            Assert.Equal(pdf, Assert.Single(export.Existing), ignoreCase: !OperatingSystem.IsLinux());
+            export.Commit();
+        }
+
+        Assert.StartsWith("%PDF", File.ReadAllText(pdf), StringComparison.Ordinal);
+        Assert.Equal(3, Directory.GetFileSystemEntries(_dir).Length);
+    }
+
+    [TypstFact]
+    public async Task ADocumentWithErrors_IsNotMade_AndItsErrorsAreTold()
+    {
+        var main = Path.Combine(_dir, "main.typ");
+        var chapter = Path.Combine(_dir, "ch", "one.typ");
+        var pdf = Path.Combine(_dir, "main.pdf");
+        Directory.CreateDirectory(Path.Combine(_dir, "ch"));
+        File.WriteAllText(main, "= Main\n#include \"ch/one.typ\"\n");
+        File.WriteAllText(chapter, "== One\n#text(size: \"big\")[x]\n");
+        File.WriteAllText(pdf, "old");
+
+        using (var export = await TypstExporter.PrepareAsync(new TypstCompilerOptions(), main, TypstFormat.Pdf))
+        {
+            Assert.False(export.Succeeded);
+            Assert.Empty(export.Files);
+            var d = Assert.Single(export.Problems);
+            Assert.Equal(chapter, d.File, ignoreCase: !OperatingSystem.IsLinux());
+            Assert.Equal(("typst.compiler-error", 2), (d.Code, d.Start.Line));
+            Assert.Throws<InvalidOperationException>(() => export.Commit());
+        }
+
+        Assert.Equal("old", File.ReadAllText(pdf));
+        Assert.Equal(3, Directory.GetFileSystemEntries(_dir).Length);
+    }
+
+    [TypstFact]
+    public async Task Images_AreMadeOnePerPage_AndHtmlWithItsFeature()
+    {
+        var main = Path.Combine(_dir, "main.typ");
+        File.WriteAllText(main, "= One\n#pagebreak()\n= Two\n");
+        var typst = new TypstCompilerOptions();
+
+        using (var png = await TypstExporter.PrepareAsync(typst, main, TypstFormat.Png))
+            Assert.Equal(["main-1.png", "main-2.png"], png.Files.Select(f => Path.GetFileName(f.Target)));
+        using (var svg = await TypstExporter.PrepareAsync(typst, main, TypstFormat.Svg))
+            Assert.Equal(["main-1.svg", "main-2.svg"], svg.Files.Select(f => Path.GetFileName(f.Target)));
+        using (var html = await TypstExporter.PrepareAsync(typst, main, TypstFormat.Html))
+        {
+            Assert.True(html.Succeeded);
+            Assert.Equal("main.html", Path.GetFileName(Assert.Single(html.Files).Target));
+        }
+
+        // (nothing committed: nothing left)
+        Assert.Equal([main], Directory.GetFileSystemEntries(_dir));
+    }
 }
 
 /// <summary>A test that runs the Typst CLI: where it is not installed it is shown as skipped (not as passed)</summary>
