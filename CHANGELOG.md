@@ -2,6 +2,12 @@
 
 ## 0.6.1 (unreleased)
 
+### Added
+- HTML: text that looks like an end tag without its `<` (`fast fragt</a>/li>`, `<li>Normal/li>`) is a warning,
+  `html.text-looks-like-end-tag`. It is valid HTML (an `</li>` may be left out), so browsers show `/li>` on the page,
+  and the file was "ok". Only the names of HTML elements count (one of one letter not right after a letter or digit,
+  as in `a/b>`), not in a web address, and not in code (`<pre>`, `<code>`)
+
 ## 0.6.0 (2026-11-11)
 
 ### Added

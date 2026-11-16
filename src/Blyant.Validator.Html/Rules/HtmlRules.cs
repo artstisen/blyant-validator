@@ -23,6 +23,7 @@ public static class HtmlRuleSet
         new AttributeRule(),
         new ContentModelRule(),
         new InputRule(),
+        new TextRule(),
     ];
 
     /// <summary>

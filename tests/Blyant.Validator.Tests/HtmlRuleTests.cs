@@ -142,6 +142,40 @@ public class HtmlRuleTests
         Assert.Equal("The “center” element is obsolete. Use CSS instead.", d.Message);
     }
 
+    [Theory]
+    [InlineData("<ul>\n<li>Fast <a href=\"/f/\">fragt</a>/li>\n<li>b</li>\n</ul>", "/li>")]
+    [InlineData("<ul><li>Normal/li>\n<li>b</li></ul>", "/li>")]
+    [InlineData("<p>Text /p>", "/p>")]
+    [InlineData("<p><strong>Bold/strong> text</p>", "/strong>")]
+    [InlineData("<p><strong>Bold /strong> text</p>", "/strong>")]
+    [InlineData("<p>A &amp;/p> B</p>", "/p>")]
+    [InlineData("<ul><li>a /LI>\n<li>b</li></ul>", "/LI>")]
+    public async Task TextThatLooksLikeAnEndTag_IsAWarning(string body, string text)
+    {
+        var d = Assert.Single(await InBody(body), d => d.Code == "html.text-looks-like-end-tag");
+        Assert.Equal(Severity.Warning, d.Severity);
+        Assert.Contains(text, d.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("<p>and/or, km/h, 5/10, a/b> c, 1/p> and TCP/IP> are words, not end tags</p>")]
+    [InlineData("<p>See https://example.com/p> or https://example.com/docs/li> and www.example.dk/strong></p>")]
+    [InlineData("<p>Write /li&gt; and &lt;/li&gt; as text, or /notanelement></p>")]
+    [InlineData("<pre>if (a /b> 0) x = 1 /p>;</pre><code>/li></code><p><kbd>/p></kbd></p>")]
+    [InlineData("<svg viewBox=\"0 0 1 1\"><text>/g></text></svg>")]
+    public async Task TextThatOnlyLooksLikeTagsInPart_IsNotTold(string body)
+    {
+        Assert.DoesNotContain(await InBody(body), d => d.Code == "html.text-looks-like-end-tag");
+    }
+
+    [Fact]
+    public async Task ATextLikeAnEndTag_IsFoundInFragmentsToo()
+    {
+        var fragment = await new HtmlValidator(fragment: true).ValidateAsync(
+            new SourceDocument("t.html", "<ul><li>a</a>/li><li>b</li></ul>", DocumentKind.Html));
+        Assert.Contains(fragment, d => d.Code == "html.text-looks-like-end-tag");
+    }
+
     [Fact]
     public async Task AttributeProblem_PointsAtTheAttribute()
     {

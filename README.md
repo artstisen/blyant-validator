@@ -268,6 +268,10 @@ property that is reported is a gap in the validator, not in your file: please te
   CDATA and `<?…?>` in HTML, bad character references (`&#xZZ;`, `&#0;`, `&copy` without `;`), and
   the end of the file inside a tag, comment or element. End tags that HTML lets you leave out (`</li>`,
   `</p>`, `</td>` …) are not reported.
+- **An end tag without its `<`** (a warning): `fast fragt</a>/li>` and `<li>Normal/li>` are valid HTML, as `</li>`
+  may be left out, and browsers show `/li>` on the page. Only the names of HTML elements count (`/notanelement>` and
+  `TCP/IP>` do not), a name of one letter not right after a letter or digit (`a/b>`); not in a web address
+  (`https://example.com/p>`), not in `<pre>`, `<code>`, `<kbd>`, `<samp>` and `<var>`, and not written as `/li&gt;`.
 - **Elements and attributes**: unknown elements (custom elements with a `-` are allowed) and unknown
   attributes (`data-*`, `aria-*` and event handlers are allowed); wrong values of boolean attributes
   (`disabled="false"`), of attributes with a set of values (`type`, `method`, `loading`, `dir` …), of numbers
