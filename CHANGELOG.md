@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.1 (unreleased)
+## 0.6.1 (2026-11-16)
 
 ### Added
 - HTML: text that looks like an end tag without its `<` (`fast fragt</a>/li>`, `<li>Normal/li>`) is a warning,
