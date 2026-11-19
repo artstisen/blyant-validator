@@ -131,14 +131,15 @@ purpose: a fix in one is carried to the other by hand, when it matters.
   how current the validator is). When the rules or data are brought up to date with newer standards
   (`HtmlSpec.cs`, `Css/Data/properties.txt` and `types.txt`, the rules of XML, Markdown and llms.txt), change that
   month in the same change; when a standard is added or another one is followed, change the table too
-- Fragment mode (`--fragment`, `:fragment`) checks HTML as the content of a `<body>`: the rules about the page
-  around it (doctype, title, language) are left out of `HtmlRuleSet.Fragment`. A new rule about the page as a whole
-  is left out there too (or asks `context.Options.Fragment`, as the rules of the character encoding and of links do)
+- Fragment mode (`--fragment`, `:fragment`) checks HTML as the content of a `<body>`: each rule about the page around
+  it (doctype, title, language, character encoding, links) asks `context.Options.Fragment` and leaves a fragment
+  alone. A new rule about the page as a whole does so too
 - Hints that are not errors of HTML (accessibility, of the kind Lighthouse and axe give) are info, in
   `HtmlRuleSet.Accessibility`, run only when asked for (`--accessibility`, `:accessibility`), with codes that start with
   `html.a11y.`. A rule of HTML itself, or a warning of the Nu Html Checker, does not go there
-- Checks of files around a file (relative links) go through a function the engine is given (`HtmlCheckOptions.Exists`,
-  as `MarkdownValidator`): the engine never touches the file system
+- Checks of files around a file (relative links) go through functions the engine is given (`HtmlCheckOptions.Exists`
+  and `NamesIn`, as `MarkdownValidator`): the engine never touches the file system. The case of a name is compared
+  with the name on the disk, so a link that only works where names are not case-sensitive is told on every system
 - Ignored codes (`--ignore`, `:ignore`) are matched by `IgnoreList`, and rely on the codes being stable
 - The engines that run other programs (`Blyant.Validator.Vnu`, `Blyant.Validator.TypstCompiler`) are chosen, never
   used by default: `--engine` and `:engine` (`Engines`). They stop the program they run when it takes too long or the

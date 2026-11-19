@@ -199,7 +199,7 @@ internal sealed class ResultStore : IDisposable
                 DocumentKind.Typst => new TypstValidator(DocumentIo.TypstFiles),
                 _ when engines.Vnu => new VnuValidator(_vnu),
                 DocumentKind.Css => new CssValidator(),
-                _ => new HtmlValidator(new HtmlCheckOptions(fragment, _accessibility, DocumentIo.IsFileOrFolder)),
+                _ => new HtmlValidator(DocumentIo.HtmlOptions(fragment, _accessibility)),
             };
             var found = await validator.ValidateAsync(document, ct).ConfigureAwait(false);
             var diagnostics = IgnoreList.Apply(found, rules.Ignore);

@@ -59,6 +59,27 @@ internal static class DocumentIo
     }
 
     /// <summary>
+    /// The names of the files and folders in a folder, as they are written on the disk (for the case of the names in a
+    /// link); none when the folder cannot be read
+    /// </summary>
+    public static IReadOnlyList<string> NamesIn(string folder)
+    {
+        try
+        {
+            var options = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = 0 };
+            return [.. Directory.EnumerateFileSystemEntries(folder, "*", options).Select(Path.GetFileName).OfType<string>()];
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>The options of the HTML checks, with the files around a file looked up on the disk.</summary>
+    public static Html.HtmlCheckOptions HtmlOptions(bool fragment, bool accessibility) =>
+        new(fragment, accessibility, IsFileOrFolder, NamesIn);
+
+    /// <summary>
     /// What the Typst validator may ask of the files around a Typst file: whether a file is there, the text of a Typst
     /// file (null when it cannot be read), and the Typst files of a folder
     /// </summary>

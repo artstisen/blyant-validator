@@ -43,7 +43,7 @@ public sealed class AnchorRule : IHtmlRule
 /// the site ("/css/site.css": the root is not known), not in a fragment (its links are those of the published page),
 /// nor in a page with &lt;base href&gt;.
 /// </summary>
-public sealed class FileLinkRule : IHtmlRule
+public sealed partial class FileLinkRule : IHtmlRule
 {
     private static readonly (string Element, string Attribute)[] Targets =
     [
@@ -57,6 +57,8 @@ public sealed class FileLinkRule : IHtmlRule
         if (context.Options.Exists is not { } exists || context.Options.Fragment) return;
         if (context.Find("base")?.HasAttribute("href") == true) return;
         var folder = Path.GetDirectoryName(Path.GetFullPath(context.Document.Path)) ?? ".";
+        // (the names of each folder, asked once for the page)
+        var names = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         foreach (var element in context.Root.Descendants().Where(e => !e.IsForeign))
         {
             foreach (var (name, attributeName) in Targets)
@@ -73,10 +75,55 @@ public sealed class FileLinkRule : IHtmlRule
                     continue;
                 }
 
-                if (!exists(full))
+                if (context.Options.NamesIn is { } namesIn && CaseOf(file, folder, namesIn, names) is { } written)
+                    context.Report(attribute.ValueContentStart, Severity.Warning, "html.file-case",
+                        $"The file is written “{written}”, not “{file}”: a server that tells case apart (Linux) does not find it.");
+                else if (!exists(full))
                     context.Report(attribute.ValueContentStart, Severity.Warning, "html.missing-file", $"The file “{file}” is not there.");
             }
         }
+    }
+}
+
+public sealed partial class FileLinkRule
+{
+    /// <summary>
+    /// The path of a link as the files are written, when a name of it differs from the name of the file or folder only
+    /// in case ("Images/Logo.png" for images/logo.png); null when the names are the same, or a name is not found (then
+    /// the file is missing, or cannot be looked at). Only the names of the link are compared, not the folders above
+    /// the page
+    /// </summary>
+    internal static string? CaseOf(string file, string folder, Func<string, IReadOnlyList<string>> namesIn,
+        Dictionary<string, IReadOnlyList<string>> cache)
+    {
+        var current = folder;
+        var written = new List<string>();
+        var differs = false;
+        foreach (var name in file.Split('/'))
+        {
+            if (name is "" or ".")
+            {
+                written.Add(name);
+                continue;
+            }
+
+            if (name == "..")
+            {
+                written.Add(name);
+                current = Path.GetDirectoryName(current) ?? current;
+                continue;
+            }
+
+            if (!cache.TryGetValue(current, out var names)) cache[current] = names = namesIn(current);
+            var match = names.FirstOrDefault(n => string.Equals(n, name, StringComparison.Ordinal)) ??
+                        names.FirstOrDefault(n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase));
+            if (match == null) return null;
+            differs |= match != name;
+            written.Add(match);
+            current = Path.Combine(current, match);
+        }
+
+        return differs ? string.Join('/', written) : null;
     }
 }
 

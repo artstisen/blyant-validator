@@ -10,7 +10,7 @@ internal static partial class Browser
     internal static IReadOnlyList<(string Text, ConsoleColors.ColorPreset Colors)> AboutTexts() =>
     [
         ($"{Menu.ApplicationName} {CommandLine.Version}", ConsoleColors.ColorPreset.HeaderColor),
-        ("Validates and formats HTML and CSS files, and validates XML, Markdown and Typst, in the terminal. " +
+        ("Validates and formats HTML, CSS and XML files, and validates Markdown and Typst, in the terminal. " +
          "A companion to the Blyant editor (https://blyant-editor.com/).", ConsoleColors.ColorPreset.Normal),
         (string.Empty, ConsoleColors.ColorPreset.Normal),
         (CommandLine.Copyright, ConsoleColors.ColorPreset.Normal),

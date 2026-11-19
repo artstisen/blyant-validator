@@ -225,6 +225,73 @@ public class HtmlMistakeTests
         Assert.DoesNotContain("html.text-looks-like-start-tag", await InBody("<p>\nli>Two</link></p>"));
     }
 
+    [Fact]
+    public async Task ALinkInOtherCase_IsTold_WithTheNameAsWritten()
+    {
+        // (a folder with images/logo.png, given as functions: the same on every system)
+        var folder = Path.GetDirectoryName(Path.GetFullPath("t.html"))!;
+        var images = Path.Combine(folder, "images");
+        IReadOnlyList<string> NamesIn(string f) => f == folder ? ["images", "t.html"] : f == images ? ["logo.png"] : [];
+        var options = new HtmlCheckOptions(Exists: _ => true, NamesIn: NamesIn);
+
+        var d = Assert.Single(await Check(Head + "<img src=\"Images/Logo.png\" alt=\"x\">" + Tail, options));
+        Assert.Equal(("html.file-case", Severity.Warning), (d.Code, d.Severity));
+        Assert.Contains("“images/logo.png”", d.Message, StringComparison.Ordinal);
+        Assert.Empty(await Check(Head + "<img src=\"images/logo.png\" alt=\"x\"><img src=\"./images/../images/logo.png\" alt=\"y\">" + Tail, options));
+    }
+
+    [Fact]
+    public async Task ALinkInOtherCase_IsTold_OnEverySystem()
+    {
+        // (on the disk: on Windows and macOS the file is found in any case, on Linux not; the warning is the same)
+        var folder = Path.Combine(Path.GetTempPath(), "blyant-validator-case-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(folder, "images"));
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(folder, "images", "logo.png"), "");
+            var page = Path.Combine(folder, "index.html");
+            var html = Head + "<img src=\"Images/Logo.png\" alt=\"x\"><img src=\"images/logo.png\" alt=\"y\"><img src=\"images/gone.png\" alt=\"z\">" + Tail;
+            var found = await new HtmlValidator(Blyant.Validator.Cli.DocumentIo.HtmlOptions(fragment: false, accessibility: false))
+                .ValidateAsync(new SourceDocument(page, html, DocumentKind.Html));
+            Assert.Equal(["html.file-case", "html.missing-file"], found.Select(f => f.Code));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [UnixFact]
+    public async Task TwoNamesThatDifferInCase_AreTwoFiles_WhereTheFileSystemTellsThemApart()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "blyant-validator-case-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(folder, "logo.png"), "a");
+            await File.WriteAllTextAsync(Path.Combine(folder, "Logo.png"), "b");
+            // (a volume of macOS that does not tell case apart has one file: there is nothing to test)
+            if (Directory.GetFiles(folder).Length < 2) return;
+            var html = Head + "<img src=\"Logo.png\" alt=\"x\"><img src=\"logo.png\" alt=\"y\">" + Tail;
+            var found = await new HtmlValidator(Blyant.Validator.Cli.DocumentIo.HtmlOptions(fragment: false, accessibility: false))
+                .ValidateAsync(new SourceDocument(Path.Combine(folder, "index.html"), html, DocumentKind.Html));
+            Assert.Empty(found);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task AFragment_IsTheSame_WithTheRulesGivenAsAList()
+    {
+        // (each rule asks whether the file is a fragment: the list of rules does not decide it)
+        var fragment = await new HtmlValidator(Blyant.Validator.Html.Rules.HtmlRuleSet.Default, new HtmlCheckOptions(Fragment: true))
+            .ValidateAsync(new SourceDocument("t.html", "<title>T</title><p>Text</p>", DocumentKind.Html));
+        Assert.Equal(["html.fragment-page-part"], fragment.Select(d => d.Code));
+    }
+
     // ---- Group 3: warnings of the Nu Html Checker
 
     [Theory]

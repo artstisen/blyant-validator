@@ -12,8 +12,15 @@ public interface IHtmlRule
 /// <summary>The rules enabled by default. New rules are added here.</summary>
 public static class HtmlRuleSet
 {
+    /// <summary>
+    /// The rules of HTML, for a page and for a fragment (the content of a &lt;body&gt;, inserted in a page made
+    /// elsewhere): a rule about the page as a whole (the title, the language, the character encoding, links) asks
+    /// <see cref="HtmlCheckOptions.Fragment"/> and leaves a fragment alone, and <see cref="FragmentRule"/> only checks
+    /// a fragment.
+    /// </summary>
     public static IReadOnlyList<IHtmlRule> Default { get; } =
     [
+        new FragmentRule(),
         new RequireTitleRule(),
         new RequireLangRule(),
         new ImgAltRule(),
@@ -43,13 +50,6 @@ public static class HtmlRuleSet
     /// </summary>
     public static IReadOnlyList<IHtmlRule> Accessibility { get; } =
         [new NameRule(), new LabelRule(), new HeadingOrderRule(), new FrameTitleRule(), new ViewportRule()];
-
-    /// <summary>
-    /// The rules for a fragment (the content of a &lt;body&gt;, inserted in a page made elsewhere): those of a page,
-    /// without the title and the language of the page, and with <see cref="FragmentRule"/>.
-    /// </summary>
-    public static IReadOnlyList<IHtmlRule> Fragment { get; } =
-        [new FragmentRule(), .. Default.Where(r => r is not (RequireTitleRule or RequireLangRule))];
 }
 
 /// <summary>
@@ -61,6 +61,7 @@ public sealed class FragmentRule : IHtmlRule
 {
     public void Check(HtmlRuleContext context)
     {
+        if (!context.Options.Fragment) return;
         foreach (var node in context.Root.Children)
         {
             if (node is Parsing.HVerbatim { IsDoctype: true })
@@ -89,6 +90,7 @@ public sealed class RequireTitleRule : IHtmlRule
 {
     public void Check(HtmlRuleContext context)
     {
+        if (context.Options.Fragment) return;
         var title = context.Find("title");
         if (title is null)
             context.Report(context.Find("head") ?? context.Find("html"), Severity.Error, "html.head-missing-title",
@@ -103,6 +105,7 @@ public sealed class RequireLangRule : IHtmlRule
 {
     public void Check(HtmlRuleContext context)
     {
+        if (context.Options.Fragment) return;
         var root = context.Find("html");
         if (string.IsNullOrWhiteSpace(root?.GetAttribute("lang")?.Value))
             context.Report(root, Severity.Warning, "html.missing-lang",

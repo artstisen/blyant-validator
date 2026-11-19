@@ -14,12 +14,16 @@
 - HTML warnings for typos and broken links: an unquoted value before `/>` (`html.unquoted-slash`), a `>` too many
   (`html.stray-bracket`), a start tag without its `<` (`html.text-looks-like-start-tag`), links within the page to an
   `id` that is not there (`html.broken-anchor`), and relative links, images, scripts and style sheets to files that
-  are not there (`html.missing-file`)
+  are not there (`html.missing-file`), or are written in another case (`html.file-case`: a Linux server does not find
+  them; told on every system)
 - HTML warnings of the Nu Html Checker: a role an element has anyway (`html.redundant-role`), and a `<section>` or
   `<article>` without a heading (`html.section-no-heading`)
 - Accessibility hints for HTML, as info, with `--accessibility` (and `:accessibility` in the TUI, kept in the
   settings): links and buttons without text, form fields without a label, heading levels that skip, frames without a
-  title, pages without a viewport (`html.a11y.*`). The summary counts info, and the JSON output tells `accessibility`
+  title, pages without a viewport (`html.a11y.*`). The JSON output tells `accessibility`, and `--engine vnu` says
+  that it gives no hints
+- The summary of `validate` and the title of the peek count info when there is any (`…, 2 info`): the hints, and
+  also the info of CSS (`css.vendor-extension`) and of vnu, which was not counted before
 - Fragment mode also leaves out the character encoding, links within the page and links to files
 
 ### Changed

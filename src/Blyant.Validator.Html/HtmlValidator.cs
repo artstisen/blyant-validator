@@ -13,7 +13,11 @@ namespace Blyant.Validator.Html;
 /// links and buttons without text, form fields without a label, heading levels that skip …</param>
 /// <param name="Exists">Whether a file or folder is there, for relative links and images (the program gives
 /// DocumentIo.IsFileOrFolder); null: they are not checked. The checks themselves never touch the file system.</param>
-public sealed record HtmlCheckOptions(bool Fragment = false, bool Accessibility = false, Func<string, bool>? Exists = null);
+/// <param name="NamesIn">The names of the files and folders in a folder, as they are written (the program gives
+/// DocumentIo.NamesIn): a link whose name differs from the file only in case is told on every system, as a server that
+/// tells case apart (Linux) does not find it. Null: case is not checked.</param>
+public sealed record HtmlCheckOptions(
+    bool Fragment = false, bool Accessibility = false, Func<string, bool>? Exists = null, Func<string, IReadOnlyList<string>>? NamesIn = null);
 
 /// <summary>
 /// Native HTML validator. Reads the document with <see cref="HtmlReader"/> (which reports parse errors)
@@ -30,15 +34,16 @@ public sealed class HtmlValidator : IValidator
     public HtmlValidator(bool fragment) : this(new HtmlCheckOptions(fragment)) { }
 
     public HtmlValidator(HtmlCheckOptions options)
+        : this([.. HtmlRuleSet.Default, .. options.Accessibility ? HtmlRuleSet.Accessibility : []], options)
     {
-        _options = options;
-        _rules = [.. options.Fragment ? HtmlRuleSet.Fragment : HtmlRuleSet.Default, .. options.Accessibility ? HtmlRuleSet.Accessibility : []];
     }
 
-    public HtmlValidator(IReadOnlyList<IHtmlRule> rules)
+    /// <param name="rules">The rules to run.</param>
+    /// <param name="options">What they are asked to do: each rule asks for itself whether the file is a fragment.</param>
+    public HtmlValidator(IReadOnlyList<IHtmlRule> rules, HtmlCheckOptions? options = null)
     {
         _rules = rules;
-        _options = new HtmlCheckOptions();
+        _options = options ?? new HtmlCheckOptions();
     }
 
     public string Engine => "native";

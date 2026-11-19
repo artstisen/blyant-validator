@@ -22,7 +22,8 @@ var validate = new CommandSpec("validate", "Check HTML, CSS, XML (sitemaps, feed
     new("--accessibility", null, "Also give the accessibility hints for HTML, as info: links and buttons without text, form " +
         "fields without a label, heading levels that skip, frames without a title, pages without a viewport."),
     new("--fragment", null, "Check HTML files as fragments: the content of a <body>, for a page made elsewhere (a CMS). " +
-        "The doctype, title and language of the page are not checked."),
+        "The doctype, title, language and character encoding of the page are not checked, nor links within the page " +
+        "and to files."),
     new("--ignore", "-i", "Ignore problems with these codes (comma-separated; 'css.*' ignores all codes starting with 'css.'). " +
         "Can be given more than once.", OptionKind.Text, ValueName: "<codes>", Repeatable: true),
 ], "<paths>", "Files or directories to check.");

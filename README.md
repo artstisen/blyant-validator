@@ -283,8 +283,9 @@ property that is reported is a gap in the validator, not in your file: please te
 - **Typos and broken links** (warnings): an unquoted value right before `/>` (`<img src=a.png alt=x/>` makes the alt
   text `x/`), a `>` too many after a tag (`</p>>`), a start tag without its `<` (`li>Two</li>`), links within the page
   to an `id` that is not there (`href="#intro"`; `#` and `#top` go to the top), and relative links, images, scripts
-  and style sheets to files that are not there. Paths from the root of the site (`/css/site.css`) and web addresses
-  are not checked, nor anything in a page with `<base href>`.
+  and style sheets to files that are not there, or are written in another case (`Images/Logo.png` for
+  `images/logo.png`: Windows and macOS find it, a Linux server does not; told on every system). Paths from the root
+  of the site (`/css/site.css`) and web addresses are not checked, nor anything in a page with `<base href>`.
 - **Warnings of the Nu Html Checker**: a role an element has anyway (`<button role="button">`,
   `<nav role="navigation">`; `role="list"` on a list is left alone, a known fix for Safari), and a `<section>` or
   `<article>` without a heading.

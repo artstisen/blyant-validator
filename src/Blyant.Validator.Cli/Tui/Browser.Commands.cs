@@ -39,9 +39,9 @@ internal static partial class Browser
             case "accessibility":
                 // The accessibility hints of HTML files on or off (kept in the settings)
                 _results.Accessibility = !_results.Accessibility;
-                _message = _results.Accessibility
-                    ? "Accessibility hints on: shown as info (i) in the peek"
-                    : "Accessibility hints off";
+                _message = !_results.Accessibility ? "Accessibility hints off"
+                    : _results.Engines.Vnu ? "Accessibility hints on: with :engine native (vnu gives none)"
+                    : "Accessibility hints on: shown as info (i) in the peek";
                 break;
             case "h" or "help":
                 HelpViewer.Show(HelpRows);
@@ -361,7 +361,7 @@ internal static partial class Browser
         new("] [", "Next and previous problem (n N: problems again)"),
         new("h/l 0", "Scroll left and right, back to the start"),
         new("/text", "Search (n and N then go to the matches)"),
-        new("I", "Full text of the problems on the line, or selected"),
+        new("I", "Full text of the line's problems, or the selected one"),
         new("P", "The problems of the file, or the text again"),
         new("Enter", "In the problems: show the problem in the file"),
         new("Tab Esc q", "Back to the list"),
@@ -381,10 +381,10 @@ internal static partial class Browser
         new(":all", "All files, or only HTML, CSS, XML, Markdown, Typst"),
         new(":typst", "Make the Typst document into PDF, PNG, SVG or HTML"),
         new(":number :nonumber", "Number the rows of the panes, or not"),
+        new(":accessibility", "Accessibility hints for HTML (info), on or off"),
         HelpRow.Heading("Not a full check (for the folder shown and the subfolders)"),
         new(":fragment", "HTML files are fragments (for a CMS), or pages again"),
-        new(":accessibility", "Accessibility hints for HTML (info), on or off"),
-        new(":ignore code", "Ignore problems with a code (css.*); none: selected"),
+        new(":ignore code", "Ignore a code (css.*); no code: the selected problem"),
         new(":unignore code", "Stop ignoring a code; no code: every ignored code"),
         new("FRAGMENT IGNORE", "The badges above a folder that is not fully checked"),
         new(":refresh", "As r"),

@@ -31,7 +31,7 @@ internal static class ValidateCommand
         [
             .. engines.Vnu
                 ? (IValidator[])[new VnuValidator(new VnuOptions(settings.VnuJar, settings.Java))]
-                : [new HtmlValidator(new HtmlCheckOptions(settings.Fragment, settings.Accessibility, DocumentIo.IsFileOrFolder)), new CssValidator()],
+                : [new HtmlValidator(DocumentIo.HtmlOptions(settings.Fragment, settings.Accessibility)), new CssValidator()],
             new XmlValidator(),
             Markdown(),
             engines.Typst ? new TypstCompilerValidator(new TypstCompilerOptions(settings.Typst), DocumentIo.TypstFiles) : Typst(),
@@ -39,6 +39,8 @@ internal static class ValidateCommand
         var ignore = settings.Ignore ?? [];
         if (settings.Fragment && engines.Vnu)
             Console.Error.WriteLine("blyant-validator: --fragment works with the native engine only; vnu checks HTML files as pages.");
+        if (settings.Accessibility && engines.Vnu)
+            Console.Error.WriteLine("blyant-validator: --accessibility works with the native engine only; vnu gives no accessibility hints.");
 
         var all = new List<Diagnostic>();
         var checkedCount = 0;
