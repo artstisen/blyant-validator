@@ -33,7 +33,9 @@ public sealed partial class CharsetRule : IHtmlRule
         if (bytes + (context.Document.HasUtf8Bom ? 3 : 0) > MaxBytes)
             context.Report(first, Severity.Error, "html.charset-late",
                 $"The character encoding is declared after the first {MaxBytes} bytes of the file: move <meta charset> to the start of the “head”.");
-        if (!charset!.Trim().Equals("utf-8", StringComparison.OrdinalIgnoreCase) && !charset.Trim().Equals("utf8", StringComparison.OrdinalIgnoreCase))
+        // (a template fills in the charset when the page is made)
+        if (!charset!.Trim().Equals("utf-8", StringComparison.OrdinalIgnoreCase) && !charset.Trim().Equals("utf8", StringComparison.OrdinalIgnoreCase) &&
+            !Templates.IsTemplate(charset))
             context.Report(first, Severity.Error, "html.charset-mismatch",
                 $"The character encoding is declared as “{charset.Trim()}”, but the file is UTF-8: declare <meta charset=\"utf-8\">.");
         foreach (var (meta, _) in declarations.Skip(1))
@@ -79,13 +81,19 @@ public sealed partial class LangRule : IHtmlRule
                     !attribute.Name.Equals("xml:lang", StringComparison.OrdinalIgnoreCase))
                     continue;
                 var value = attribute.Value.Trim();
-                if (value.Length == 0 || LanguageTag().IsMatch(value)) continue;
+                if (value.Length == 0 || Templates.IsTemplate(value) || LanguageTag().IsMatch(value) || Irregular.Contains(value)) continue;
                 context.Report(attribute.ValueContentStart, Severity.Error, "html.bad-lang", value.Contains('_') && LanguageTag().IsMatch(value.Replace('_', '-'))
                     ? $"“{value}” is not a language tag: write “{value.Replace('_', '-')}”, with a hyphen."
                     : $"“{value}” is not a language tag: use a code such as “en”, “da” or “en-US”.");
             }
         }
     }
+
+    // The old registered tags that do not have the form of a language tag (deprecated, but valid: the IANA registry)
+    private static readonly HashSet<string> Irregular = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "en-GB-oed", "sgn-BE-FR", "sgn-BE-NL", "sgn-CH-DE",
+    };
 
     // language (2 or 3 letters, and extended subtags), script, region, variants, extensions, private use; or private
     // use alone (x-…), or the old tags that start with "i-"
@@ -113,7 +121,8 @@ public sealed class EmptyUrlRule : IHtmlRule
         {
             foreach (var (name, attributeName) in NonEmpty)
             {
-                if (element.Lower != name || element.GetAttribute(attributeName) is not { RawValue: not null } attribute) continue;
+                // (src= with nothing after it is told by the reader: an attribute value missing)
+                if (element.Lower != name || element.GetAttribute(attributeName) is not { RawValue: { Length: > 0 } } attribute) continue;
                 if (attribute.Value.Trim().Length == 0)
                     context.Report(attribute.Start, Severity.Error, "html.empty-url",
                         $"The “{attributeName}” of “{name}” is empty: give the URL, or leave out the attribute.");

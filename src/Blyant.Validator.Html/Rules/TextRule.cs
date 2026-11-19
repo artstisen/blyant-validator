@@ -40,10 +40,11 @@ public sealed partial class TextRule : IHtmlRule
 
                 CheckStartTagWithoutBracket(element, i, text, context);
 
-                // "</p>>": a ">" right after a tag
-                if (text.Raw.StartsWith('>') && text.Start > 0 && context.Document.Content[text.Start - 1] == '>')
+                // "</p>>": a ">" right after an end tag (after a start tag it is text: a breadcrumb <span>></span>)
+                if (text.Raw.StartsWith('>') && i > 0 && element.Children[i - 1] is HStrayEndTag or HElement { EndTag: not null } &&
+                    context.Document.Content[text.Start - 1] == '>')
                     context.Report(text.Start, Severity.Warning, "html.stray-bracket",
-                        "A “>” right after a tag is shown as text: is it one too many? Write “&gt;” to show it.");
+                        "A “>” right after an end tag is shown as text: is it one too many? Write “&gt;” to show it.");
             }
             else if (node is HElement child && !child.IsForeign && !Code.Contains(child.Lower))
             {
@@ -52,23 +53,30 @@ public sealed partial class TextRule : IHtmlRule
         }
     }
 
-    // "li>Two</li>": a start tag without its "<", told when its end tag follows the text (a stray end tag, or the end
-    // of the element of that name the text ends), so a CSS selector in the text (ul>li) is not
+    // "li>Two</li>": a start tag without its "<", told when it starts a line (or the text, right after a tag) and its
+    // end tag follows the text (a stray end tag, or the end of the element of that name the text ends). So a CSS
+    // selector in the text (ul>li, "the selector li>a") is not
     private static void CheckStartTagWithoutBracket(HElement parent, int index, HText text, HtmlRuleContext context)
     {
         foreach (Match match in StartTagWithoutBracket().Matches(text.Raw))
         {
             var name = match.Groups["name"].Value;
             if (!HtmlSpec.Elements.ContainsKey(name) || IsInAWebAddress(text.Raw, match.Index)) continue;
-            var endTag = "</" + name;
+            var lineStart = text.Raw.LastIndexOf('\n', Math.Max(0, match.Index - 1)) + 1;
+            if (match.Index > 0 && !string.IsNullOrWhiteSpace(text.Raw[lineStart..match.Index])) continue;
             var closed = index + 1 < parent.Children.Count
-                ? parent.Children[index + 1] is HStrayEndTag stray && stray.Raw.StartsWith(endTag, StringComparison.OrdinalIgnoreCase)
+                ? parent.Children[index + 1] is HStrayEndTag stray && IsEndTagOf(stray.Raw, name)
                 : parent.EndTag != null && parent.Lower.Equals(name, StringComparison.OrdinalIgnoreCase);
             if (!closed) continue;
             context.Report(text.Start + match.Index, Severity.Warning, "html.text-looks-like-start-tag",
                 $"“{name}>” in the text looks like a start tag without its “<”: browsers show it as text. Write “<{name}>”.");
         }
     }
+
+    // "</li>" or "</li >" for li, not "</link>"
+    private static bool IsEndTagOf(string endTag, string name) =>
+        endTag.StartsWith("</" + name, StringComparison.OrdinalIgnoreCase) && endTag.Length > name.Length + 2 &&
+        endTag[name.Length + 2] is '>' or ' ' or '\t' or '\n' or '\r' or '\f' or '/';
 
     // A name of one letter right after a letter or digit is most likely a word with a slash (a/b>, 1/p>); a longer
     // name is the end tag ("Normal/li>")

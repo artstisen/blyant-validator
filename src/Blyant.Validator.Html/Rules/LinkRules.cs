@@ -6,8 +6,9 @@ namespace Blyant.Validator.Html.Rules;
 
 /// <summary>
 /// Links within the page (href="#intro") to an id that is not there: a warning, as the link goes nowhere. "#" and
-/// "#top" go to the top of the page without an id. Not in a fragment (the page around it may have the id), nor in a
-/// page with &lt;base href&gt; (where "#intro" goes to the base).
+/// "#top" go to the top of the page without an id. Not the routes of a web app ("#/about", "#!/home") or text
+/// fragments ("#:~:text=…"), which are not ids. Not in a fragment (the page around it may have the id), nor in a page
+/// with &lt;base href&gt; (where "#intro" goes to the base).
 /// </summary>
 public sealed class AnchorRule : IHtmlRule
 {
@@ -18,15 +19,17 @@ public sealed class AnchorRule : IHtmlRule
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var element in all)
         {
-            if (element.GetAttribute("id") is { } id) ids.Add(id.Value);
-            if (element.Lower == "a" && element.GetAttribute("name") is { } name) ids.Add(name.Value);
+            if (element.GetAttribute("id") is { } id) ids.Add(Links.Decode(id.Value));
+            if (element.Lower == "a" && element.GetAttribute("name") is { } name) ids.Add(Links.Decode(name.Value));
         }
 
         foreach (var link in all.Where(e => e.Lower is "a" or "area" && !e.IsForeign))
         {
             if (link.GetAttribute("href") is not { } href || !href.Value.StartsWith('#')) continue;
-            var target = href.Value[1..];
-            if (target.Length == 0 || target.Equals("top", StringComparison.OrdinalIgnoreCase) || Links.IsTemplate(target)) continue;
+            var target = Links.Decode(href.Value[1..]);
+            if (target.Length == 0 || target.Equals("top", StringComparison.OrdinalIgnoreCase) || Templates.IsTemplate(target) ||
+                target[0] is '/' or '!' || target.Contains(":~:", StringComparison.Ordinal))
+                continue;
             if (ids.Contains(target) || ids.Contains(Links.Unescape(target))) continue;
             context.Report(href.ValueContentStart, Severity.Warning, "html.broken-anchor",
                 $"There is no element with id “{target}” in this page: the link goes nowhere.");
@@ -79,17 +82,25 @@ public sealed class FileLinkRule : IHtmlRule
 
 /// <summary>
 /// An unquoted value right before "/&gt;" of a void element: &lt;img src=a.png alt=x/&gt; makes the alt text "x/", as
-/// the "/" is read as part of the value. A warning: put a space before "/&gt;", or quote the value.
+/// the "/" is read as part of the value. A warning: put a space before "/&gt;", or quote the value. Not a link or a web
+/// address, where a "/" at the end is normal (a minified &lt;link href=https://example.com/&gt;).
 /// </summary>
 public sealed class UnquotedSlashRule : IHtmlRule
 {
+    // Attributes whose value is a link, which may end with "/"
+    private static readonly HashSet<string> LinkAttributes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "href", "action", "formaction", "cite", "content", "data", "manifest",
+    };
+
     public void Check(HtmlRuleContext context)
     {
         foreach (var element in context.Root.Descendants().Where(e => e.IsVoid && !e.IsForeign && !e.SelfClosing))
         {
             if (element.Attributes is not [.., { RawValue: { Length: > 1 } raw } last] || raw[0] is '"' or '\'' || !raw.EndsWith('/')) continue;
+            if (raw.Contains("://", StringComparison.Ordinal) || LinkAttributes.Contains(last.Name)) continue;
             context.Report(last.Start, Severity.Warning, "html.unquoted-slash",
-                $"The value of “{last.Name}” is “{raw}”: the “/” of “/>” is read as part of it. Put a space before “/>”, or quote the value.");
+                $"The value of “{last.Name}” is “{raw}”: the “/” of “/>” is read as part of the value. Put a space before “/>”, or quote the value.");
         }
     }
 }
@@ -100,18 +111,16 @@ internal static partial class Links
     /// <summary>The path of a relative link to a file, without its query and fragment, decoded; null for other links.</summary>
     public static string? RelativeFile(string value)
     {
-        value = value.Trim();
-        if (value.Length == 0 || value[0] is '/' or '\\' or '#' or '?' || Scheme().IsMatch(value) || IsTemplate(value)) return null;
+        // (character references are decoded first, as browsers do: "Caf&eacute;.html", "a&#35;b.html")
+        value = Decode(value).Trim();
+        if (value.Length == 0 || value[0] is '/' or '\\' or '#' or '?' || Scheme().IsMatch(value) || Templates.IsTemplate(value)) return null;
         // (a "\" is read as "/", as browsers do: on Linux and macOS it would be a part of the name)
         var file = Unescape(value.Split('#', '?')[0].Replace('\\', '/'));
         return file.Length == 0 || file.Contains('\0') ? null : file;
     }
 
-    /// <summary>A value made by a template (Jekyll, Hugo, PHP …), which is not a link yet.</summary>
-    public static bool IsTemplate(string value) =>
-        value.Contains("{{", StringComparison.Ordinal) || value.Contains("{%", StringComparison.Ordinal) ||
-        value.Contains("<?", StringComparison.Ordinal) || value.Contains("<%", StringComparison.Ordinal) ||
-        value.Contains("${", StringComparison.Ordinal);
+    /// <summary>A value with its character references decoded (&amp;amp;, &amp;eacute;, &amp;#32;), as browsers read it.</summary>
+    public static string Decode(string value) => value.Contains('&') ? System.Net.WebUtility.HtmlDecode(value) : value;
 
     public static string Unescape(string text)
     {

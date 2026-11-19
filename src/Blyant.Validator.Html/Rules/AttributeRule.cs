@@ -111,7 +111,7 @@ public sealed partial class AttributeRule : IHtmlRule
         else if (HtmlSpec.UrlAttributes.Contains(el + "." + name))
         {
             var url = value.Trim(' ', '\t', '\n', '\r', '\f');
-            if (!url.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase))
+            if (!url.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase) && !Templates.IsTemplate(url))
             {
                 if (url.Any(IsSpace)) problem = ": Illegal character in URL: space is not allowed. Use “%20” instead.";
                 else if (url.Contains('\\')) problem = ": Backslash (“\\”) used as path segment delimiter. Use “/” instead.";

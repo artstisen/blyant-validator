@@ -161,6 +161,70 @@ public class HtmlMistakeTests
         Assert.DoesNotContain("html.missing-file", await Codes(body, options with { Fragment = true }));
     }
 
+    // ---- Real-world markup that must give none of the new errors or warnings (found in the review of 0.6.2)
+
+    private static readonly string[] NewCodes =
+    [
+        "html.bad-lang", "html.charset-mismatch", "html.empty-url", "html.stray-bracket", "html.text-looks-like-start-tag",
+        "html.broken-anchor", "html.missing-file", "html.unquoted-slash", "html.bad-value",
+    ];
+
+    [Theory]
+    // Templates: Jekyll, Hugo, Jinja, PHP, Create React App, Thymeleaf, Template Toolkit
+    [InlineData("<!DOCTYPE html><html lang=\"{{ site.lang }}\"><head><meta charset=\"{{ .Site.Charset }}\"><title>T</title></head><body>" +
+                "<p lang=\"<?= $l ?>\">x</p><a href=\"{{ url }}\">u</a><link rel=\"icon\" href=\"%PUBLIC_URL%/favicon.ico\">" +
+                "<a href=\"@{/path}\">t</a><a href=\"[% link %]\">k</a><a href=\"{url}\">s</a><a href=\"#{anchor}\">r</a></body></html>")]
+    // A ">" as text after a start tag: breadcrumbs, pagination, a quoted reply
+    [InlineData(Head + "<nav><a href=\"/\">Home</a> <span>></span> <a href=\"/a/\">A</a></nav><p><a href=\"?p=2\">></a></p><p>> quoted</p><table><tr><td>></td></tr></table>" + Tail)]
+    // Anchors that are not ids: the routes of a web app, text fragments
+    [InlineData(Head + "<a href=\"#/about\">About</a><a href=\"#!/home\">Home</a><a href=\"#:~:text=foo\">Foo</a>" + Tail)]
+    // A "/" at the end of an unquoted link (a minified page)
+    [InlineData("<!DOCTYPE html><html lang=en><head><meta charset=utf-8><title>T</title><link rel=canonical href=https://example.com/></head><body><input value=http://x.com/ aria-label=x><a href=/docs/>Docs</a></body></html>")]
+    // Text that only looks like a start tag: a CSS selector in a list item, and a longer end tag
+    [InlineData(Head + "<ul><li>The selector li>a picks links</li></ul>" + Tail)]
+    // The old registered language tags
+    [InlineData(Head + "<p lang=\"en-GB-oed\">x</p><p lang=\"sgn-BE-FR\">y</p><p lang=\"zh-min-nan\">z</p><p lang=\"art-lojban\">w</p>" + Tail)]
+    public async Task RealWorldMarkup_GetsNoneOfTheNewProblems(string html)
+    {
+        Assert.DoesNotContain(await Codes(html), NewCodes.Contains);
+    }
+
+    [Fact]
+    public async Task CharacterReferences_InALink_AreDecoded()
+    {
+        var asked = new List<string>();
+        var options = new HtmlCheckOptions(Exists: path => { asked.Add(path); return true; });
+        await Check(Head + "<a href=\"sub/Caf&eacute;.html\">c</a><a href=\"R&amp;D.html\">r</a><a href=\"my&#32;page.html\">m</a>" +
+                    "<h2 id=\"caf&eacute;\">x</h2><a href=\"#caf&eacute;\">x</a>" + Tail, options);
+        Assert.Equal([Path.GetFullPath(Path.Combine("sub", "Café.html")), Path.GetFullPath("R&D.html"), Path.GetFullPath("my page.html")], asked);
+        Assert.DoesNotContain("html.broken-anchor", await InBody("<h2 id=\"caf&eacute;\">x</h2><a href=\"#caf%C3%A9\">x</a><a href=\"#caf&eacute;\">y</a>"));
+    }
+
+    [Fact]
+    public async Task AnEmptyUnquotedValue_IsToldOnce()
+    {
+        var codes = await InBody("<img src= alt=\"x\"><img alt=\"y\" src=>");
+        Assert.Single(codes, c => c == "html.parse.missing-attribute-value");
+        Assert.DoesNotContain("html.empty-url", codes);
+    }
+
+    [Theory]
+    [InlineData("<p>Text</p>> more", "html.stray-bracket")]
+    [InlineData("<ul><li>One</li>\n  li>Two</li></ul>", "html.text-looks-like-start-tag")]
+    [InlineData("<ul>\n<li>One\nli>Two</li>\n</ul>", "html.text-looks-like-start-tag")]
+    [InlineData("<img src=\"a.png\" alt=x/>", "html.unquoted-slash")]
+    [InlineData("<a href=\"#nowhere\">x</a>", "html.broken-anchor")]
+    public async Task TheMistakes_AreStillFound(string body, string code)
+    {
+        Assert.Contains(code, await InBody(body));
+    }
+
+    [Fact]
+    public async Task ALongerEndTag_IsNotTheEndTagOfAStartTagWithoutBracket()
+    {
+        Assert.DoesNotContain("html.text-looks-like-start-tag", await InBody("<p>\nli>Two</link></p>"));
+    }
+
     // ---- Group 3: warnings of the Nu Html Checker
 
     [Theory]
