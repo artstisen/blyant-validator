@@ -5,7 +5,7 @@ namespace Blyant.Validator.Tests;
 
 public class HtmlParseErrorTests
 {
-    private const string Head = "<!DOCTYPE html><html lang=\"en\"><head><title>T</title></head><body>";
+    private const string Head = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body>";
     private const string Tail = "</body></html>";
 
     private static async Task<IReadOnlyList<Diagnostic>> Validate(string html) =>
@@ -60,8 +60,8 @@ public class HtmlParseErrorTests
     }
 
     [Theory]
-    [InlineData("<html><head><title>T</title></head></html>", "html.parse.missing-doctype")]
-    [InlineData("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"><html lang=\"en\"><head><title>T</title></head></html>", "html.parse.obsolete-doctype")]
+    [InlineData("<html><head><meta charset=\"utf-8\"><title>T</title></head></html>", "html.parse.missing-doctype")]
+    [InlineData("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head></html>", "html.parse.obsolete-doctype")]
     [InlineData(Head + "<!DOCTYPE html>" + Tail, "html.parse.stray-doctype")]
     [InlineData(Head + "<div><span>", "html.parse.eof-in-element")]
     [InlineData(Head + "<script>x", "html.parse.eof-in-element")]
@@ -77,7 +77,7 @@ public class HtmlParseErrorTests
     [InlineData("<!DOCTYPE html SYSTEM \"about:legacy-compat\">")]
     public async Task ModernDoctypes_AreAccepted(string doctype)
     {
-        var result = await Validate(doctype + "<html lang=\"en\"><head><title>T</title></head><body></body></html>");
+        var result = await Validate(doctype + "<html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body></body></html>");
         Assert.Empty(result);
     }
 

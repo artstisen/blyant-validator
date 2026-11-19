@@ -19,6 +19,8 @@ var validate = new CommandSpec("validate", "Check HTML, CSS, XML (sitemaps, feed
         OptionKind.Text, ValueName: "<path>"),
     new("--typst", null, "Path to the typst executable (default: BLYANT_TYPST environment variable, then PATH).",
         OptionKind.Text, ValueName: "<path>"),
+    new("--accessibility", null, "Also give the accessibility hints for HTML, as info: links and buttons without text, form " +
+        "fields without a label, heading levels that skip, frames without a title, pages without a viewport."),
     new("--fragment", null, "Check HTML files as fragments: the content of a <body>, for a page made elsewhere (a CMS). " +
         "The doctype, title and language of the page are not checked."),
     new("--ignore", "-i", "Ignore problems with these codes (comma-separated; 'css.*' ignores all codes starting with 'css.'). " +
@@ -168,7 +170,8 @@ try
             parsed.Text("--java"),
             parsed.Flag("--fragment"),
             ignore,
-            parsed.Text("--typst")), cancel.Token),
+            parsed.Text("--typst"),
+            parsed.Flag("--accessibility")), cancel.Token),
         "format" => await FormatCommand.RunAsync(new FormatCommand.Settings(
             [.. parsed.Arguments],
             parsed.Flag("--recursive"),

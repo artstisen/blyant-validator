@@ -24,7 +24,25 @@ public static class HtmlRuleSet
         new ContentModelRule(),
         new InputRule(),
         new TextRule(),
+        new CharsetRule(),
+        new TitleCountRule(),
+        new LangRule(),
+        new EmptyUrlRule(),
+        new ScriptSourceRule(),
+        new AnchorRule(),
+        new FileLinkRule(),
+        new UnquotedSlashRule(),
+        new RedundantRoleRule(),
+        new SectionHeadingRule(),
     ];
+
+    /// <summary>
+    /// The accessibility hints, as info, added when they are asked for (<see cref="HtmlCheckOptions.Accessibility"/>):
+    /// links and buttons without text, form fields without a label, heading levels that skip, frames without a title, a
+    /// page without a viewport
+    /// </summary>
+    public static IReadOnlyList<IHtmlRule> Accessibility { get; } =
+        [new NameRule(), new LabelRule(), new HeadingOrderRule(), new FrameTitleRule(), new ViewportRule()];
 
     /// <summary>
     /// The rules for a fragment (the content of a &lt;body&gt;, inserted in a page made elsewhere): those of a page,

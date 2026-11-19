@@ -116,6 +116,7 @@ internal static partial class Browser
         _dualPane = settings.BrowseDual;
         FileNumbers = settings.FileNumbers;
         Editor = EditorCommand.Parse(settings.Editor);
+        _results.Accessibility = settings.Accessibility;
         _active = settings.BrowsePane;
         Panes[0].Directory = Existing(settings.BrowseDirectory1);
         Panes[1].Directory = Existing(settings.BrowseDirectory2);
@@ -154,6 +155,7 @@ internal static partial class Browser
         settings.BrowseDual = _peeking ? _peekWasDual : _dualPane;
         settings.FileNumbers = FileNumbers;
         settings.Editor = Editor?.Text ?? string.Empty;
+        settings.Accessibility = _results.Accessibility;
         return settings.Save();
     }
 

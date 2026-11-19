@@ -61,6 +61,7 @@ while it is checked. The window must be at least 80 columns and 24 rows.
     /             Only list the names containing a text
     :             A command: :cd, :fragment, :ignore, :number, :path ...
                   :about tells the version, the copyright and the licence
+                  :accessibility turns accessibility hints for HTML on or off
                   :typst makes a Typst document into PDF, PNG, SVG or HTML
     ?             All the keys and commands
     q, Esc        Quit, after asking
@@ -75,6 +76,7 @@ THE COMMAND LINE
     validate -r, --recursive     Folders and their subfolders
              -o, --output json   Results for editors and scripts
              --fragment          HTML for a page made elsewhere (a CMS)
+             --accessibility     Also accessibility hints for HTML (info)
              -i, --ignore <codes>  Leave out problems by their code (css.*)
              -e, --engine vnu    The Nu Html Checker (needs Java and vnu.jar)
              -e, --engine typst  The Typst compiler for Typst files (needs

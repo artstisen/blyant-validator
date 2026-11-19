@@ -8,7 +8,7 @@ public class EmbeddedCssTests
     private static async Task<IReadOnlyList<Diagnostic>> Validate(string html) =>
         await new HtmlValidator().ValidateAsync(new SourceDocument("t.html", html.ReplaceLineEndings("\n"), DocumentKind.Html));
 
-    private const string Top = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<title>T</title>\n";
+    private const string Top = "<!DOCTYPE html>\n<html lang=\"en\">\n<head><meta charset=\"utf-8\">\n<title>T</title>\n";
 
     [Fact]
     public async Task StyleElement_IsValidated_AtItsPlaceInTheFile()

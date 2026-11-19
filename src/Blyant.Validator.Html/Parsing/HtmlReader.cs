@@ -62,6 +62,10 @@ public sealed class HtmlReader
     private readonly List<HElement> _stack = [];
     private readonly List<HtmlParseError> _errors = [];
     private readonly HashSet<string> _seenStructural = new(Ci);
+
+    // After </body> or </html>: content there is moved into the body by browsers, and is told once
+    private bool _afterBody;
+    private bool _toldAfterBody;
     private bool _seenDoctype;
     private bool _seenContent;
     private int _pos;
@@ -102,6 +106,7 @@ public sealed class HtmlReader
         {
             if (_s[_pos] == '<' && IsMarkupStart(_pos))
             {
+                if (char.IsAsciiLetter(_s[_pos + 1])) AfterBody(_pos);
                 ReadMarkup();
                 continue;
             }
@@ -132,6 +137,7 @@ public sealed class HtmlReader
         var firstSolid = text.AsSpan().IndexOfAnyExcept(" \t\n\r\f");
         if (firstSolid >= 0)
         {
+            AfterBody(start + firstSolid);
             NoteContent(start + firstSolid, "Non-space characters found without seeing a doctype first. Expected “<!DOCTYPE html>”.");
             if (Current.Lower is "table" or "tbody" or "thead" or "tfoot" or "tr")
                 Error(start + firstSolid, "text-in-table", "Misplaced non-space characters inside a table.");
@@ -277,6 +283,7 @@ public sealed class HtmlReader
         for (var k = _stack.Count - 1; k > 0; k--)
         {
             if (_stack[k].Lower != lower) continue;
+            if (lower is "body" or "html" && !_stack[k].IsForeign) _afterBody = true;
             PopTo(k, start, $"End tag “{name}” seen, but there were open elements.");
             var element = _stack[k];
             element.EndTag = raw;
@@ -374,6 +381,8 @@ public sealed class HtmlReader
                 SkipWhitespace();
                 valueStart = _pos;
                 value = ReadAttributeValue(valueStart);
+                if (value.Length == 0)
+                    Error(attrStart, "missing-attribute-value", $"Attribute value missing: “{attrName}=” has no value. Write {attrName}=\"…\", or leave out the “=”.");
                 CheckCharacterReferences(value, valueStart, attribute: true);
             }
             else
@@ -437,6 +446,16 @@ public sealed class HtmlReader
         if (bad >= 0)
             Error(start + bad, "bad-unquoted-value", $"“{value[bad]}” in an unquoted attribute value. Probable cause: Missing quotes around the value.");
         return value;
+    }
+
+    // A start tag or text after </body> or </html> (a script added after the page, a second page pasted in): browsers
+    // put it in the body, but it is a parse error
+    private void AfterBody(int at)
+    {
+        if (!_afterBody || _toldAfterBody) return;
+        _toldAfterBody = true;
+        Error(at, "content-after-body",
+            "Content after the end of the “body” (or “html”): browsers move it into the body. Move it before “</body>”.");
     }
 
     private bool SkipWhitespace()

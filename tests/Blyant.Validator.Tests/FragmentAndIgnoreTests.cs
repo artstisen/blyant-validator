@@ -153,7 +153,7 @@ public sealed class FragmentAndIgnoreTests : IDisposable
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
         var page = store.Get(path)!;
         Assert.False(page.Fragment);
-        Assert.Equal(3, page.Errors); // The doctype, the title, and the CSS
+        Assert.Equal(4, page.Errors); // The doctype, the title, the character encoding and the CSS
 
         store.SetRules(_dir, new CheckRules(true, ["css.unknown-property"]));
         Assert.Null(store.Get(path));

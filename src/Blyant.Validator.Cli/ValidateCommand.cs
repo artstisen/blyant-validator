@@ -14,7 +14,7 @@ internal static class ValidateCommand
 {
     public sealed record Settings(
         string[] Paths, bool Recursive, Engines Engines, string Output, string? VnuJar, string? Java,
-        bool Fragment = false, IReadOnlyList<string>? Ignore = null, string? Typst = null);
+        bool Fragment = false, IReadOnlyList<string>? Ignore = null, string? Typst = null, bool Accessibility = false);
 
     public static async Task<int> RunAsync(Settings settings, CancellationToken ct)
     {
@@ -31,7 +31,7 @@ internal static class ValidateCommand
         [
             .. engines.Vnu
                 ? (IValidator[])[new VnuValidator(new VnuOptions(settings.VnuJar, settings.Java))]
-                : [new HtmlValidator(settings.Fragment), new CssValidator()],
+                : [new HtmlValidator(new HtmlCheckOptions(settings.Fragment, settings.Accessibility, DocumentIo.IsFileOrFolder)), new CssValidator()],
             new XmlValidator(),
             Markdown(),
             engines.Typst ? new TypstCompilerValidator(new TypstCompilerOptions(settings.Typst), DocumentIo.TypstFiles) : Typst(),
@@ -89,7 +89,7 @@ internal static class ValidateCommand
             }
         }
 
-        var mode = new Mode(settings.Fragment && !engines.Vnu, ignore, ignoredCount);
+        var mode = new Mode(settings.Fragment && !engines.Vnu, ignore, ignoredCount, settings.Accessibility && !engines.Vnu);
         if (settings.Output == "json") WriteJson(all, mode, Console.Out);
         else WriteText(all, checkedCount, mode, Console.Out);
 
@@ -105,7 +105,7 @@ internal static class ValidateCommand
     private static TypstValidator Typst() => new(DocumentIo.TypstFiles);
 
     /// <summary>How the files were checked, when it was not a full check: shown with the results.</summary>
-    private sealed record Mode(bool Fragment, IReadOnlyList<string> Ignore, int IgnoredCount)
+    private sealed record Mode(bool Fragment, IReadOnlyList<string> Ignore, int IgnoredCount, bool Accessibility = false)
     {
         public string Note
         {
@@ -131,7 +131,9 @@ internal static class ValidateCommand
 
         var errors = diagnostics.Count(d => d.Severity == Severity.Error);
         var warnings = diagnostics.Count(d => d.Severity == Severity.Warning);
-        output.WriteLine($"{fileCount} file(s) checked: {errors} error(s), {warnings} warning(s).{mode.Note}");
+        var infos = diagnostics.Count(d => d.Severity == Severity.Info);
+        // (info, such as the accessibility hints, is counted when there is any)
+        output.WriteLine($"{fileCount} file(s) checked: {errors} error(s), {warnings} warning(s){(infos > 0 ? $", {infos} info" : "")}.{mode.Note}");
     }
 
     /// <summary>Machine-readable output for editors such as Blyant.</summary>
@@ -163,6 +165,7 @@ internal static class ValidateCommand
             foreach (var entry in mode.Ignore) json.WriteStringValue(entry);
             json.WriteEndArray();
             json.WriteNumber("ignored", mode.IgnoredCount);
+            json.WriteBoolean("accessibility", mode.Accessibility);
             json.WriteEndObject();
         }
         output.WriteLine(System.Text.Encoding.UTF8.GetString(stream.ToArray()));

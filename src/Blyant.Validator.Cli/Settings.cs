@@ -34,6 +34,9 @@ internal sealed class Settings
     /// <summary>The editor files are opened in (:editor): a program and its arguments, or empty.</summary>
     public string Editor { get; set; } = string.Empty;
 
+    /// <summary>The accessibility hints of HTML files are given, as info (:accessibility).</summary>
+    public bool Accessibility { get; set; }
+
     /// <summary>The folders whose files are not fully checked (:fragment, :ignore).</summary>
     public FolderRules Checks { get; set; } = new();
 
@@ -107,6 +110,7 @@ internal sealed class Settings
         settings.BrowseDual = !Get("browsedual").Equals("false", StringComparison.OrdinalIgnoreCase);
         settings.FileNumbers = Get("filenumbers").Equals("true", StringComparison.OrdinalIgnoreCase);
         settings.Editor = Get("editor");
+        settings.Accessibility = Get("accessibility").Equals("true", StringComparison.OrdinalIgnoreCase);
         settings.Checks = FolderRules.Read(values);
         return settings;
     }
@@ -153,6 +157,8 @@ internal sealed class Settings
         text.Append("editor=").Append(Editor).Append('\n');
         text.Append('\n');
         text.Append("; CHECKS\n");
+        // The accessibility hints of HTML files (info)
+        text.Append("accessibility=").Append(Accessibility ? "true" : "false").Append('\n');
         // Folders (and their subfolders) whose HTML files are fragments, and the problem codes ignored in them
         foreach (var line in Checks.Lines()) text.Append(line).Append('\n');
         return text.ToString();

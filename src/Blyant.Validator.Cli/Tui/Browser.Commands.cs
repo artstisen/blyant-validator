@@ -20,7 +20,7 @@ internal static partial class Browser
     /// When a command is added, renamed or removed, change this table, RunCommand and HelpRows together
     /// </summary>
     internal static readonly CommandTable CommandTable = new(
-        ["about", "all", "cd", "edit", "editor", "engine", "format", "fragment", "help", "home", "ignore", "name", "nonumber", "number", "panes",
+        ["about", "accessibility", "all", "cd", "edit", "editor", "engine", "format", "fragment", "help", "home", "ignore", "name", "nonumber", "number", "panes",
             "path", "peek", "problems", "quit", "refresh", "typst", "unignore"],
         ["q", "h", "exit", "close"],
         new Dictionary<string, string[]> { ["engine"] = [.. Engines.Names] });
@@ -35,6 +35,13 @@ internal static partial class Browser
                 return CommandResult.Quit;
             case "about":
                 ShowAbout();
+                break;
+            case "accessibility":
+                // The accessibility hints of HTML files on or off (kept in the settings)
+                _results.Accessibility = !_results.Accessibility;
+                _message = _results.Accessibility
+                    ? "Accessibility hints on: shown as info (i) in the peek"
+                    : "Accessibility hints off";
                 break;
             case "h" or "help":
                 HelpViewer.Show(HelpRows);
@@ -376,6 +383,7 @@ internal static partial class Browser
         new(":number :nonumber", "Number the rows of the panes, or not"),
         HelpRow.Heading("Not a full check (for the folder shown and the subfolders)"),
         new(":fragment", "HTML files are fragments (for a CMS), or pages again"),
+        new(":accessibility", "Accessibility hints for HTML (info), on or off"),
         new(":ignore code", "Ignore problems with a code (css.*); none: selected"),
         new(":unignore code", "Stop ignoring a code; no code: every ignored code"),
         new("FRAGMENT IGNORE", "The badges above a folder that is not fully checked"),

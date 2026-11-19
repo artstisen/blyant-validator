@@ -6,6 +6,22 @@
 - `:about` in the TUI: the version of Blyant Validator, its copyright and licence, and the projects it is modelled on.
   The copyright is set in `Directory.Build.props` (and built into the program), as `LICENSE` has it
 
+- HTML: errors the Nu Html Checker reports: no character encoding declared, or declared late (after 1024 bytes), twice
+  or as another than UTF-8 (`html.charset-*`); a second `<title>` (`html.title-twice`); a language that is not a
+  language tag (`html.bad-lang`: `lang="english"`, `lang="en_US"`); an empty `src`, `href` of `<link>` or `action` of
+  `<form>` (`html.empty-url`); a `<script src>` with code in it (`html.script-src-content`); an attribute with `=` and
+  no value (`html.parse.missing-attribute-value`); content after `</body>` (`html.parse.content-after-body`)
+- HTML warnings for typos and broken links: an unquoted value before `/>` (`html.unquoted-slash`), a `>` too many
+  (`html.stray-bracket`), a start tag without its `<` (`html.text-looks-like-start-tag`), links within the page to an
+  `id` that is not there (`html.broken-anchor`), and relative links, images, scripts and style sheets to files that
+  are not there (`html.missing-file`)
+- HTML warnings of the Nu Html Checker: a role an element has anyway (`html.redundant-role`), and a `<section>` or
+  `<article>` without a heading (`html.section-no-heading`)
+- Accessibility hints for HTML, as info, with `--accessibility` (and `:accessibility` in the TUI, kept in the
+  settings): links and buttons without text, form fields without a label, heading levels that skip, frames without a
+  title, pages without a viewport (`html.a11y.*`). The summary counts info, and the JSON output tells `accessibility`
+- Fragment mode also leaves out the character encoding, links within the page and links to files
+
 ### Changed
 - Texts follow the wording rules of Blyant (AGENTS.md, "Texts and wording"): messages, the help, `README.md`, the
   read-me of the releases and `CREDITS.md` name things instead of pointing back at them, and leave out "of its own".

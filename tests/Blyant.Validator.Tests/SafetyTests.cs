@@ -56,7 +56,7 @@ public sealed class SafetyTests : IDisposable
     [InlineData("time", "١٤:30")]
     public async Task ArabicIndicDigits_InAnInputValue_AreAnError_NotACrash(string type, string value)
     {
-        var html = $"<!DOCTYPE html><html lang=\"en\"><head><title>T</title></head><body><input type=\"{type}\" value=\"{value}\">";
+        var html = $"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body><input type=\"{type}\" value=\"{value}\">";
         var problems = await new HtmlValidator().ValidateAsync(new SourceDocument("t.html", html, DocumentKind.Html));
         Assert.Contains(problems, d => d.Code == "html.bad-value");
     }
@@ -64,7 +64,7 @@ public sealed class SafetyTests : IDisposable
     [Fact]
     public async Task AMonth_WithAFiveDigitYear_IsValid()
     {
-        var html = "<!DOCTYPE html><html lang=\"en\"><head><title>T</title></head><body><input type=\"month\" value=\"10000-11\">";
+        var html = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body><input type=\"month\" value=\"10000-11\">";
         Assert.Empty(await new HtmlValidator().ValidateAsync(new SourceDocument("t.html", html, DocumentKind.Html)));
     }
 
@@ -73,7 +73,7 @@ public sealed class SafetyTests : IDisposable
     [Fact]
     public async Task DeepHtml_IsReported_AndNotFormatted()
     {
-        var html = "<!DOCTYPE html><html lang=\"en\"><head><title>T</title></head><body>" + string.Concat(Enumerable.Repeat("<b>", 5000));
+        var html = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body>" + string.Concat(Enumerable.Repeat("<b>", 5000));
         var problems = await new HtmlValidator().ValidateAsync(new SourceDocument("t.html", html, DocumentKind.Html));
         Assert.Contains(problems, d => d.Code == "html.too-deep");
         Assert.Throws<Core.FormatException>(() => Format(new HtmlFormatter(), "t.html", html, DocumentKind.Html));
@@ -235,7 +235,7 @@ public sealed class SafetyTests : IDisposable
     [Fact]
     public async Task HtmlInForeignObject_IsCheckedAsHtml()
     {
-        const string html = "<!DOCTYPE html><html lang=\"en\"><head><title>T</title></head><body><svg viewBox=\"0 0 9 9\"><foreignObject width=\"9\" height=\"9\">" +
+        const string html = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body><svg viewBox=\"0 0 9 9\"><foreignObject width=\"9\" height=\"9\">" +
                             "<div xmlns=\"http://www.w3.org/1999/xhtml\"><img src=\"a.png\"></div></foreignObject></svg>";
         var problems = await new HtmlValidator().ValidateAsync(new SourceDocument("t.html", html, DocumentKind.Html));
         Assert.Equal("html.img-missing-alt", Assert.Single(problems).Code);
@@ -244,7 +244,7 @@ public sealed class SafetyTests : IDisposable
     [Fact]
     public async Task ANoBreakSpace_IsPartOfAnUnquotedValue()
     {
-        const string html = "<!DOCTYPE html><html lang=\"en\"><head><title>T</title></head><body><a href=/a b>x</a>";
+        const string html = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body><a href=/a b>x</a>";
         Assert.Empty(await new HtmlValidator().ValidateAsync(new SourceDocument("t.html", html, DocumentKind.Html)));
         Assert.Contains("href=/a b>", Format(new HtmlFormatter(), "t.html", html, DocumentKind.Html), StringComparison.Ordinal);
     }

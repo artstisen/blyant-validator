@@ -112,6 +112,8 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
   terminal's clipboard sequence (OSC 52), so it works over SSH too, and no other program is started. Most terminals
   take it (Windows Terminal, kitty, WezTerm, Alacritty, iTerm2 …); the Terminal of macOS, GNOME Terminal and the
   Linux console do not, and are told about.
+- `:accessibility` turns the accessibility hints for HTML on or off (see [Accessibility hints](#accessibility-hints)).
+  They are shown as info (`i`) in the peek, and the setting is kept.
 - `:fragment` and `:ignore` change how the files of the folder shown (and its subfolders) are checked; see
   [Fragments and ignored problems](#fragments-and-ignored-problems). A folder that is not fully checked has the
   badges `FRAGMENT` and `IGNORE 2` (two codes ignored) after the path, and the peek says it with the result of a
@@ -158,6 +160,7 @@ done once.
 | `--typst <path>` | Path to `typst` (or set `BLYANT_TYPST`; default: `typst` on `PATH`). |
 | `--java <path>` | Path to `java` (default: `JAVA_HOME`, then `PATH`). |
 | `--fragment` | Check HTML files as fragments: the content of a `<body>`, for a page made elsewhere (a CMS). See below. |
+| `--accessibility` | Also give the accessibility hints for HTML, as info (see [Accessibility hints](#accessibility-hints)). |
 | `-i, --ignore <codes>` | Ignore problems with these codes, comma-separated (`css.*` ignores all codes starting with `css.`). Can be given more than once. |
 
 When `--fragment` or `--ignore` is used, the summary says that it was not a full check, and how many problems were
@@ -198,7 +201,8 @@ a `<script>`, inserted in a page whose doctype, `<head>` and `<body>` the CMS ma
 has errors that belong to the page, not to the fragment (no doctype, no title, no `lang`).
 
 - **Fragment mode** (`--fragment`, or `:fragment` in the TUI) checks an HTML file as the content of a `<body>`. The
-  doctype, the title and the language of the page are not checked; everything else is: the markup, attributes,
+  doctype, the title, the language and the character encoding of the page are not checked, nor links within the page
+  and to files (they are those of the published page); everything else is: the markup, attributes,
   content models, `<img alt>`, duplicate IDs, `<input>` types, and the CSS of `<style>` elements and `style`
   attributes. Parts of a page that a fragment should not have (a doctype, `<html>`, `<head>`, `<body>`, `<title>`,
   `<meta>`, `<base>`) are warnings (`html.fragment-page-part`), as they were most likely pasted in by mistake.
@@ -269,6 +273,21 @@ property that is reported is a gap in the validator, not in your file: please te
   CDATA and `<?…?>` in HTML, bad character references (`&#xZZ;`, `&#0;`, `&copy` without `;`), and
   the end of the file inside a tag, comment or element. End tags that HTML lets you leave out (`</li>`,
   `</p>`, `</td>` …) are not reported.
+- **The character encoding**, as the Nu Html Checker checks it: declared (`<meta charset="utf-8">`, or a BOM), in the
+  first 1024 bytes of the file, once, and as UTF-8. Without it a browser may guess another encoding, and letters such
+  as `æ`, `ø` and `é` come out garbled.
+- **More errors the Nu Html Checker finds**: a second `<title>`, a language that is not a language tag (`lang="english"`,
+  `lang="en_US"`: write `en-US`), an empty `src` (`<img src="">`, also `<script>`, `<iframe>` …, an empty `href` of
+  `<link>` and `action` of `<form>`), a `<script src>` with code in it (the code never runs), an attribute with `=`
+  and no value (`<p class=>`), and content after `</body>` or `</html>`.
+- **Typos and broken links** (warnings): an unquoted value right before `/>` (`<img src=a.png alt=x/>` makes the alt
+  text `x/`), a `>` too many after a tag (`</p>>`), a start tag without its `<` (`li>Two</li>`), links within the page
+  to an `id` that is not there (`href="#intro"`; `#` and `#top` go to the top), and relative links, images, scripts
+  and style sheets to files that are not there. Paths from the root of the site (`/css/site.css`) and web addresses
+  are not checked, nor anything in a page with `<base href>`.
+- **Warnings of the Nu Html Checker**: a role an element has anyway (`<button role="button">`,
+  `<nav role="navigation">`; `role="list"` on a list is left alone, a known fix for Safari), and a `<section>` or
+  `<article>` without a heading.
 - **An end tag without its `<`** (a warning): `fast fragt</a>/li>` and `<li>Normal/li>` are valid HTML, as `</li>`
   may be left out, and browsers show `/li>` on the page. Only the names of HTML elements count (`/notanelement>` and
   `TCP/IP>` do not), a name of one letter not right after a letter or digit (`a/b>`); not in a web address
@@ -296,6 +315,23 @@ property that is reported is a gap in the validator, not in your file: please te
 - Missing `<title>` and `lang`, `<img>` without `alt`, duplicate IDs.
 
 SVG and MathML inside a page are only checked for parse errors.
+
+#### Accessibility hints
+
+With `--accessibility` (or `:accessibility` in the TUI) the HTML checks also give hints of the kind Lighthouse and
+axe give. They are not errors of HTML, so they are info, and their codes start with `html.a11y.` (`--ignore
+html.a11y.*` leaves them all out again):
+
+| Code | Hint |
+| --- | --- |
+| `html.a11y.link-name` | A link with no text: a screen reader reads the address instead. An image with alt text, `aria-label` or `title` is a name too. |
+| `html.a11y.button-name` | A button with no text. |
+| `html.a11y.label` | A form field with no label: no `<label for>`, no `<label>` around it, no `aria-label`. A placeholder is not a label. |
+| `html.a11y.heading-order` | A heading level that skips: an `<h3>` after an `<h1>`. The first heading may be at any level. |
+| `html.a11y.frame-title` | An `<iframe>` without `title`. |
+| `html.a11y.viewport` | A page without `<meta name="viewport">`: phones show it as a small desktop page (not in a fragment). |
+
+The summary counts them: `3 file(s) checked: 0 error(s), 1 warning(s), 4 info.`
 
 ### XML
 
@@ -414,12 +450,14 @@ parentheses).
   ],
   "fragment": false,
   "ignore": [],
-  "ignored": 0
+  "ignored": 0,
+  "accessibility": false
 }
 ```
 
-`fragment` tells whether HTML files were checked as fragments, `ignore` lists the codes given with `--ignore`, and
-`ignored` is the number of problems left out.
+`fragment` tells whether HTML files were checked as fragments, `ignore` lists the codes given with `--ignore`,
+`ignored` is the number of problems left out, and `accessibility` tells whether the accessibility hints were given
+(`severity` is then `info`).
 
 ### Using the Nu Html Checker (`--engine vnu`)
 

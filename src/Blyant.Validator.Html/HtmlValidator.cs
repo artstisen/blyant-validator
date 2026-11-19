@@ -4,6 +4,17 @@ using Blyant.Validator.Html.Rules;
 
 namespace Blyant.Validator.Html;
 
+/// <summary>What the native HTML checks are asked to do.</summary>
+/// <param name="Fragment">Check the file as a fragment: the content of a &lt;body&gt; that is inserted in a page made
+/// elsewhere (an article for a CMS). The checks of the page around it (the doctype, the title, the language, the
+/// character encoding, links within the page and to files) are left out, and the parts of a page that a fragment
+/// should not have are warned about.</param>
+/// <param name="Accessibility">Also give the accessibility hints (<see cref="HtmlRuleSet.Accessibility"/>), as info:
+/// links and buttons without text, form fields without a label, heading levels that skip …</param>
+/// <param name="Exists">Whether a file or folder is there, for relative links and images (the program gives
+/// DocumentIo.IsFileOrFolder); null: they are not checked. The checks themselves never touch the file system.</param>
+public sealed record HtmlCheckOptions(bool Fragment = false, bool Accessibility = false, Func<string, bool>? Exists = null);
+
 /// <summary>
 /// Native HTML validator. Reads the document with <see cref="HtmlReader"/> (which reports parse errors)
 /// and then runs conformance rules over the tree.
@@ -11,16 +22,24 @@ namespace Blyant.Validator.Html;
 public sealed class HtmlValidator : IValidator
 {
     private readonly IReadOnlyList<IHtmlRule> _rules;
-    private readonly bool _fragment;
+    private readonly HtmlCheckOptions _options;
 
-    public HtmlValidator() : this(HtmlRuleSet.Default) { }
+    public HtmlValidator() : this(new HtmlCheckOptions()) { }
 
-    /// <param name="fragment">Check the file as a fragment: the content of a &lt;body&gt; that is inserted in a page
-    /// made elsewhere (an article for a CMS). The checks of the page around it (the doctype, the title, the language)
-    /// are left out, and the parts of a page that a fragment should not have are warned about.</param>
-    public HtmlValidator(bool fragment) : this(fragment ? HtmlRuleSet.Fragment : HtmlRuleSet.Default) => _fragment = fragment;
+    /// <param name="fragment">Check the file as a fragment (see <see cref="HtmlCheckOptions.Fragment"/>).</param>
+    public HtmlValidator(bool fragment) : this(new HtmlCheckOptions(fragment)) { }
 
-    public HtmlValidator(IReadOnlyList<IHtmlRule> rules) => _rules = rules;
+    public HtmlValidator(HtmlCheckOptions options)
+    {
+        _options = options;
+        _rules = [.. options.Fragment ? HtmlRuleSet.Fragment : HtmlRuleSet.Default, .. options.Accessibility ? HtmlRuleSet.Accessibility : []];
+    }
+
+    public HtmlValidator(IReadOnlyList<IHtmlRule> rules)
+    {
+        _rules = rules;
+        _options = new HtmlCheckOptions();
+    }
 
     public string Engine => "native";
 
@@ -34,7 +53,7 @@ public sealed class HtmlValidator : IValidator
 
         foreach (var error in result.Errors)
         {
-            if (_fragment && error.Code == "html.parse.missing-doctype") continue;
+            if (_options.Fragment && error.Code is "html.parse.missing-doctype" or "html.parse.content-after-body") continue;
             var pos = lines[error.Offset];
             diagnostics.Add(new Diagnostic(document.Path, Severity.Error, error.Code, error.Message, pos, pos, Engine));
         }
@@ -49,7 +68,7 @@ public sealed class HtmlValidator : IValidator
             return Task.FromResult<IReadOnlyList<Diagnostic>>([.. diagnostics.OrderBy(d => d.Start.Line).ThenBy(d => d.Start.Column)]);
         }
 
-        var context = new HtmlRuleContext(document, result.Root, lines, diagnostics);
+        var context = new HtmlRuleContext(document, result.Root, lines, diagnostics) { Options = _options };
         foreach (var rule in _rules)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -65,6 +84,9 @@ public sealed class HtmlValidator : IValidator
 public sealed class HtmlRuleContext(SourceDocument document, HElement root, LineMap lines, List<Diagnostic> sink)
 {
     public SourceDocument Document { get; } = document;
+
+    /// <summary>What the checks are asked to do (a fragment, the accessibility hints, the files around the file).</summary>
+    public HtmlCheckOptions Options { get; init; } = new();
 
     /// <summary>The document; its children are the top-level nodes.</summary>
     public HElement Root { get; } = root;

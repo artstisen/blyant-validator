@@ -83,6 +83,12 @@ public class HtmlRuleTests
             """;
 
         Assert.Empty(await Validate(page));
+        // With the accessibility hints asked for: only the two that are true (the select and the textarea of the form
+        // have no label), as info
+        var hints = await new HtmlValidator(new HtmlCheckOptions(Accessibility: true))
+            .ValidateAsync(new SourceDocument("t.html", page, DocumentKind.Html));
+        Assert.Equal(["html.a11y.label", "html.a11y.label"], hints.Select(d => d.Code));
+        Assert.All(hints, d => Assert.Equal(Severity.Info, d.Severity));
     }
 
     [Theory]

@@ -15,15 +15,15 @@ public class FalsePositiveTests
     private static async Task<IReadOnlyList<Diagnostic>> Html(string html) =>
         await new HtmlValidator().ValidateAsync(new SourceDocument("t.html", html, DocumentKind.Html));
 
-    private const string Page = "<!DOCTYPE html><html lang=\"en\"><head><title>T</title></head><body>";
+    private const string Page = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body>";
 
     // ---- HTML
 
     [Theory]
     // The start and end tags of head and body may be left out
     [InlineData("<!DOCTYPE html><html lang=en><meta charset=utf-8><title>T</title><p>Hello")]
-    [InlineData("<!DOCTYPE html><html lang=en><head><title>T</title><p>Hello</p>")]
-    [InlineData("<!DOCTYPE html><html lang=en><title>T</title>Hello <b>world</b>")]
+    [InlineData("<!DOCTYPE html><html lang=en><head><meta charset=\"utf-8\"><title>T</title><p>Hello</p>")]
+    [InlineData("<!DOCTYPE html><html lang=en><meta charset=\"utf-8\"><title>T</title>Hello <b>world</b>")]
     [InlineData("<!DOCTYPE html><html lang=en><meta charset=utf-8><title>T</title><body><p>x</p></body></html>")]
     [InlineData("<!DOCTYPE html>\n<html lang=en>\n<head>\n<meta charset=utf-8>\n<title>T</title>\n<link rel=stylesheet href=a.css>\n<h1>Hi</h1>\n")]
     // Table parts whose tags may be left out
@@ -53,7 +53,7 @@ public class FalsePositiveTests
     [Fact]
     public async Task MetadataAfterTheBody_IsStillAnError()
     {
-        var problems = await Html("<!DOCTYPE html><html lang=en><head><title>T</title></head><body><p>x</p></body><meta charset=utf-8></html>");
+        var problems = await Html("<!DOCTYPE html><html lang=en><head><meta charset=\"utf-8\"><title>T</title></head><body><p>x</p></body><meta charset=utf-8></html>");
         Assert.Contains(problems, d => d.Code == "html.content-model");
     }
 

@@ -39,6 +39,7 @@ internal sealed class ResultStore : IDisposable
     private readonly Task _worker;
     private int _changed;
     private volatile Engines _engines;
+    private volatile bool _accessibility;
 
     // Counts the changes of engine and rules: a result made before one is not kept (it was made the old way)
     private int _generation;
@@ -62,6 +63,19 @@ internal sealed class ResultStore : IDisposable
         {
             if (_engines == value) return;
             _engines = value;
+            Interlocked.Increment(ref _generation);
+            _results.Clear();
+        }
+    }
+
+    /// <summary>The accessibility hints of HTML files, as info (:accessibility). Changing it validates the files again.</summary>
+    public bool Accessibility
+    {
+        get => _accessibility;
+        set
+        {
+            if (_accessibility == value) return;
+            _accessibility = value;
             Interlocked.Increment(ref _generation);
             _results.Clear();
         }
@@ -185,7 +199,7 @@ internal sealed class ResultStore : IDisposable
                 DocumentKind.Typst => new TypstValidator(DocumentIo.TypstFiles),
                 _ when engines.Vnu => new VnuValidator(_vnu),
                 DocumentKind.Css => new CssValidator(),
-                _ => new HtmlValidator(fragment),
+                _ => new HtmlValidator(new HtmlCheckOptions(fragment, _accessibility, DocumentIo.IsFileOrFolder)),
             };
             var found = await validator.ValidateAsync(document, ct).ConfigureAwait(false);
             var diagnostics = IgnoreList.Apply(found, rules.Ignore);

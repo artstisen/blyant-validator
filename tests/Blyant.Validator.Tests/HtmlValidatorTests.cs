@@ -14,7 +14,7 @@ public class HtmlValidatorTests
         var result = await Validate("""
             <!DOCTYPE html>
             <html lang="en">
-            <head><title>Test</title></head>
+            <head><meta charset="utf-8"><title>Test</title></head>
             <body><img src="a.png" alt=""></body>
             </html>
             """);
@@ -28,7 +28,7 @@ public class HtmlValidatorTests
         var result = await Validate("""
             <!DOCTYPE html>
             <html lang="en">
-            <head><title>Test</title></head>
+            <head><meta charset="utf-8"><title>Test</title></head>
             <body>
             <img src="a.png">
             </body>
@@ -44,7 +44,7 @@ public class HtmlValidatorTests
     public async Task DuplicateId_IsReported()
     {
         var result = await Validate("""
-            <!DOCTYPE html><html lang="en"><head><title>T</title></head>
+            <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>T</title></head>
             <body><p id="x"></p><p id="x"></p></body></html>
             """);
 
@@ -63,7 +63,7 @@ public class HtmlValidatorTests
     [Fact]
     public async Task ParseErrors_AreReported()
     {
-        var result = await Validate("<html lang=\"en\"><head><title>T</title></head><body></body></html>");
+        var result = await Validate("<html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body></body></html>");
 
         Assert.Contains(result, d => d.Code.StartsWith("html.parse.", StringComparison.Ordinal));
     }

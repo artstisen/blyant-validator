@@ -99,6 +99,10 @@ internal static partial class Browser
                 (0, _) => Plural(result.Warnings, "warning"),
                 _ => Plural(result.Errors, "error") + ", " + Plural(result.Warnings, "warning"),
             };
+        // (info, such as the accessibility hints, is counted when there is any)
+        var infos = result is { Failure: null } ? result.Diagnostics.Count(d => d.Severity == Severity.Info) : 0;
+        if (infos > 0 && !_results.IsPending(item.Path))
+            summary = result!.Errors + result.Warnings == 0 ? $"{infos} info" : $"{summary}, {infos} info";
         // Not a full check: said with the result
         if (result is { Failure: null } && (result.Fragment || result.Ignored > 0))
         {
