@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.2 (unreleased)
+## 0.6.2 (2026-11-19)
 
 ### Added
 - `:about` in the TUI: the version of Blyant Validator, its copyright and licence, and the projects it is modelled on.
