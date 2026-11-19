@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using Blyant.Validator.Core;
+﻿using Blyant.Validator.Core;
 using Blyant.Validator.Html.Parsing;
 
 namespace Blyant.Validator.Html.Rules;
@@ -30,7 +29,7 @@ public sealed class AnchorRule : IHtmlRule
             if (target.Length == 0 || target.Equals("top", StringComparison.OrdinalIgnoreCase) || Templates.IsTemplate(target) ||
                 target[0] is '/' or '!' || target.Contains(":~:", StringComparison.Ordinal))
                 continue;
-            if (ids.Contains(target) || ids.Contains(Links.Unescape(target))) continue;
+            if (ids.Contains(target) || ids.Contains(Urls.Unescape(target))) continue;
             context.Report(href.ValueContentStart, Severity.Warning, "html.broken-anchor",
                 $"There is no element with id “{target}” in this page: the link goes nowhere.");
         }
@@ -45,25 +44,20 @@ public sealed class AnchorRule : IHtmlRule
 /// </summary>
 public sealed partial class FileLinkRule : IHtmlRule
 {
-    private static readonly (string Element, string Attribute)[] Targets =
-    [
-        ("a", "href"), ("area", "href"), ("link", "href"), ("img", "src"), ("script", "src"), ("iframe", "src"),
-        ("source", "src"), ("video", "src"), ("audio", "src"), ("track", "src"), ("embed", "src"), ("input", "src"),
-        ("video", "poster"), ("object", "data"),
-    ];
-
     public void Check(HtmlRuleContext context)
     {
         if (context.Options.Exists is not { } exists || context.Options.Fragment) return;
         if (context.Find("base")?.HasAttribute("href") == true) return;
         var folder = Path.GetDirectoryName(Path.GetFullPath(context.Document.Path)) ?? ".";
-        // (the names of each folder, asked once for the page)
+        // (the names of each folder, and whether each file is there, asked once for the page: a page may link to the
+        // same files many times)
         var names = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        var found = new Dictionary<string, bool>(StringComparer.Ordinal);
         foreach (var element in context.Root.Descendants().Where(e => !e.IsForeign))
         {
-            foreach (var (name, attributeName) in Targets)
+            foreach (var url in Links.AttributesOf(element.Lower).Where(u => u.File))
             {
-                if (element.Lower != name || element.GetAttribute(attributeName) is not { } attribute) continue;
+                if (element.GetAttribute(url.Attribute) is not { } attribute) continue;
                 if (Links.RelativeFile(attribute.Value) is not { } file) continue;
                 string full;
                 try
@@ -78,7 +72,7 @@ public sealed partial class FileLinkRule : IHtmlRule
                 if (context.Options.NamesIn is { } namesIn && CaseOf(file, folder, namesIn, names) is { } written)
                     context.Report(attribute.ValueContentStart, Severity.Warning, "html.file-case",
                         $"The file is written “{written}”, not “{file}”: a server that tells case apart (Linux) does not find it.");
-                else if (!exists(full))
+                else if (!(found.TryGetValue(full, out var there) ? there : found[full] = exists(full)))
                     context.Report(attribute.ValueContentStart, Severity.Warning, "html.missing-file", $"The file “{file}” is not there.");
             }
         }
@@ -152,36 +146,51 @@ public sealed class UnquotedSlashRule : IHtmlRule
     }
 }
 
-/// <summary>What the link rules share: which links are relative paths to files, and decoding them.</summary>
-internal static partial class Links
+/// <summary>What the link rules share: the attributes that hold links, which links are relative paths to files, and
+/// decoding them.</summary>
+internal static class Links
 {
+    /// <param name="File">The link may be to a file next to the page (FileLinkRule).</param>
+    /// <param name="NonEmpty">The URL must not be empty (EmptyUrlRule): an empty href of &lt;a&gt; is the page itself, an
+    /// empty action of a &lt;form&gt; is not allowed.</param>
+    public sealed record UrlAttribute(string Attribute, bool File, bool NonEmpty);
+
+    // The attributes of each element that hold a link
+    private static readonly Dictionary<string, UrlAttribute[]> ByElement = new(StringComparer.Ordinal)
+    {
+        ["a"] = [new("href", File: true, NonEmpty: false)],
+        ["area"] = [new("href", File: true, NonEmpty: false)],
+        ["link"] = [new("href", File: true, NonEmpty: true)],
+        ["img"] = [new("src", File: true, NonEmpty: true)],
+        ["script"] = [new("src", File: true, NonEmpty: true)],
+        ["iframe"] = [new("src", File: true, NonEmpty: true)],
+        ["source"] = [new("src", File: true, NonEmpty: true)],
+        ["video"] = [new("src", File: true, NonEmpty: true), new("poster", File: true, NonEmpty: true)],
+        ["audio"] = [new("src", File: true, NonEmpty: true)],
+        ["track"] = [new("src", File: true, NonEmpty: true)],
+        ["embed"] = [new("src", File: true, NonEmpty: true)],
+        ["input"] = [new("src", File: true, NonEmpty: false)],
+        ["object"] = [new("data", File: true, NonEmpty: true)],
+        ["form"] = [new("action", File: false, NonEmpty: true)],
+    };
+
+    /// <summary>The attributes of an element (its lowercase name) that hold a link: none for most elements.</summary>
+    public static IReadOnlyList<UrlAttribute> AttributesOf(string element) =>
+        ByElement.TryGetValue(element, out var attributes) ? attributes : [];
+
     /// <summary>The path of a relative link to a file, without its query and fragment, decoded; null for other links.</summary>
     public static string? RelativeFile(string value)
     {
         // (character references are decoded first, as browsers do: "Caf&eacute;.html", "a&#35;b.html")
         value = Decode(value).Trim();
-        if (value.Length == 0 || value[0] is '/' or '\\' or '#' or '?' || Scheme().IsMatch(value) || Templates.IsTemplate(value)) return null;
+        if (value.Length == 0 || value[0] is '/' or '\\' or '#' or '?' || Urls.HasScheme(value) || Templates.IsTemplate(value)) return null;
         // (a "\" is read as "/", as browsers do: on Linux and macOS it would be a part of the name)
-        var file = Unescape(value.Split('#', '?')[0].Replace('\\', '/'));
+        var file = Urls.Unescape(value.Split('#', '?')[0].Replace('\\', '/'));
         return file.Length == 0 || file.Contains('\0') ? null : file;
     }
 
     /// <summary>A value with its character references decoded (&amp;amp;, &amp;eacute;, &amp;#32;), as browsers read it.</summary>
     public static string Decode(string value) => value.Contains('&') ? System.Net.WebUtility.HtmlDecode(value) : value;
 
-    public static string Unescape(string text)
-    {
-        try
-        {
-            return Uri.UnescapeDataString(text);
-        }
-        catch (UriFormatException)
-        {
-            return text;
-        }
-    }
 
-    // https:, mailto:, tel:, data:, javascript: …
-    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9+.\-]*:")]
-    private static partial Regex Scheme();
 }

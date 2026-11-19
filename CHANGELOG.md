@@ -25,6 +25,8 @@
 - The summary of `validate` and the title of the peek count info when there is any (`…, 2 info`): the hints, and
   also the info of CSS (`css.vendor-extension`) and of vnu, which was not counted before
 - Fragment mode also leaves out the character encoding, links within the page and links to files
+- In the TUI, a file with a link to a file that is not there (HTML and Markdown) is checked again every few seconds,
+  without showing it as being checked: the warning goes as soon as the file comes, also in another folder
 
 ### Changed
 - Texts follow the wording rules of Blyant (AGENTS.md, "Texts and wording"): messages, the help, `README.md`, the

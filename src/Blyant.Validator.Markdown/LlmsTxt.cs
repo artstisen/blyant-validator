@@ -88,7 +88,7 @@ internal static partial class LlmsTxt
     {
         if (url.Length == 0) return "The link has no URL.";
         if (url.Any(char.IsWhiteSpace)) return $"“{Shorten(url)}” contains a space: use “%20” instead.";
-        if (Scheme().IsMatch(url))
+        if (Urls.HasScheme(url))
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is "http" or "https" && uri.Host.Length == 0)
                 return $"“{Shorten(url)}” is not a valid URL.";
@@ -107,6 +107,4 @@ internal static partial class LlmsTxt
     [GeneratedRegex(@"^\s*[-*+]\s+\[((?:[^\[\]]|\[[^\[\]]*\])+)\]\(((?:[^()]|\([^()]*\))*)\)(\s*:\s*.*)?\s*$")]
     private static partial Regex FileListItem();
 
-    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9+.-]*:")]
-    private static partial Regex Scheme();
 }

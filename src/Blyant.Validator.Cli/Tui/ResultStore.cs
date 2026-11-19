@@ -34,6 +34,9 @@ internal sealed class ResultStore : IDisposable
 {
     private readonly ConcurrentDictionary<string, FileResult> _results = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, byte> _queued = new(StringComparer.Ordinal);
+
+    // Files checked again quietly (Recheck): their result is kept, and shown, until the new one is in
+    private readonly ConcurrentDictionary<string, byte> _quiet = new(StringComparer.Ordinal);
     private readonly Channel<string> _requests = Channel.CreateUnbounded<string>(new UnboundedChannelOptions { SingleReader = true });
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _worker;
@@ -113,8 +116,31 @@ internal sealed class ResultStore : IDisposable
     /// <summary>The result kept for a file, current or not (null if it was never validated).</summary>
     public FileResult? Last(string path) => _results.TryGetValue(path, out var result) ? result : null;
 
-    /// <summary>True while a file waits to be validated, or is being validated.</summary>
-    public bool IsPending(string path) => _queued.ContainsKey(path);
+    /// <summary>True while a file waits to be validated, or is being validated (not when it is checked again quietly).</summary>
+    public bool IsPending(string path) => _queued.ContainsKey(path) && !_quiet.ContainsKey(path);
+
+    /// <summary>
+    /// The codes of the problems that depend on other files than the file itself (a link to a file that is not there):
+    /// a file with one of them is checked again now and then (<see cref="Recheck"/>), as the other file may have come
+    /// </summary>
+    public static readonly IReadOnlySet<string> LinkCodes = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "html.missing-file", "html.file-case", "md.broken-link",
+    };
+
+    /// <summary>True when the result of a file has a problem of <see cref="LinkCodes"/>.</summary>
+    public static bool HasLinkProblem(FileResult result) => result.Diagnostics.Any(d => LinkCodes.Contains(d.Code));
+
+    /// <summary>
+    /// Validate a file again quietly: the result it has is kept, and is not shown as being checked, until the new one is
+    /// in (for a file whose links lead to files that may have come meanwhile)
+    /// </summary>
+    public void Recheck(string path)
+    {
+        if (_queued.ContainsKey(path)) return;
+        _quiet[path] = 0;
+        Request(path);
+    }
 
     /// <summary>Validate a file again, even if nothing seems to have changed.</summary>
     public void Refresh(string path)
@@ -169,6 +195,7 @@ internal sealed class ResultStore : IDisposable
                 finally
                 {
                     _queued.TryRemove(path, out _);
+                    _quiet.TryRemove(path, out _);
                     if (stale) Request(path);
                     Interlocked.Exchange(ref _changed, 1);
                 }

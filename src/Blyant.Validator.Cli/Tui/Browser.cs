@@ -160,6 +160,11 @@ internal static partial class Browser
     }
 
     private static long _nextDiskCheck;
+    private static long _nextLinkCheck;
+
+    // How often the files shown with a link to a missing file are checked again (the file may have come meanwhile, in
+    // another folder than the one shown, which tells nothing)
+    private const int LinkCheckMilliseconds = 5000;
 
     // While waiting for a key: results that came in, and (once a second) files and directories changed on disk
     private static bool Idle()
@@ -190,6 +195,20 @@ internal static partial class Browser
             for (var i = pane.Top; i < end; i++)
             {
                 if (!pane.Items[i].IsDirectory) _results.Get(pane.Items[i].Path);
+            }
+        }
+
+        if (Environment.TickCount64 >= _nextLinkCheck)
+        {
+            _nextLinkCheck = Environment.TickCount64 + LinkCheckMilliseconds;
+            foreach (var pane in IsDual && !_peeking ? Panes : [ActivePane])
+            {
+                var end = Math.Min(pane.Items.Count, pane.Top + PageSize);
+                for (var i = pane.Top; i < end; i++)
+                {
+                    if (!pane.Items[i].IsDirectory && _results.Last(pane.Items[i].Path) is { } last && ResultStore.HasLinkProblem(last))
+                        _results.Recheck(pane.Items[i].Path);
+                }
             }
         }
 

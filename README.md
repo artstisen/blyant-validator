@@ -84,7 +84,8 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 
 - Each HTML, CSS, XML, Markdown and Typst file shows its result: `ok`, the number of errors and warnings (`3E 1W`), `...` while it is
   checked, or `failed`. Files are checked in the background, and checked again when they change on disk, so the
-  list stays up to date while you edit the files in another program.
+  list stays up to date while you edit the files in another program. A file with a link to a file that is not there
+  is checked again every few seconds, so the warning goes as soon as the file comes.
 - `V` peeks at the selected file: its text in colors, with a mark (`E`, `W`, `i`) in front of the lines with
   problems and the place of each error highlighted. `P` shows the list of problems instead.
 - `Tab` goes into the peek: `j`/`k` move, `n`/`N` go to the next and previous problem (the message of the problem is shown

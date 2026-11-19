@@ -95,7 +95,7 @@ public sealed partial class MarkdownValidator(Func<string, bool>? exists = null)
 
             if (target.StartsWith('#'))
             {
-                var anchor = Unescape(target[1..]);
+                var anchor = Urls.Unescape(target[1..]);
                 if (anchor.Length > 0 && !reader.Anchors.Contains(anchor) && !reader.Anchors.Contains(anchor.ToLowerInvariant()))
                     report(link.Line, link.Column, Severity.Warning, "md.broken-anchor",
                         $"There is no heading or anchor “{anchor}” in this file.");
@@ -103,26 +103,14 @@ public sealed partial class MarkdownValidator(Func<string, bool>? exists = null)
             }
 
             // Only relative paths are checked: not web addresses (https:, mailto: …), not paths from the site root
-            if (exists == null || Scheme().IsMatch(target) || target.StartsWith('/') || target.StartsWith('\\')) continue;
+            if (exists == null || Urls.HasScheme(target) || target.StartsWith('/') || target.StartsWith('\\')) continue;
             // (a "\" is read as "/", as browsers do: on Linux and macOS it would be a part of the name)
             var file = target.Split('#', '?')[0].Replace('\\', '/');
             if (file.Length == 0) continue;
-            var full = Path.GetFullPath(Path.Combine(directory, Unescape(file)));
+            var full = Path.GetFullPath(Path.Combine(directory, Urls.Unescape(file)));
             if (!exists(full))
                 report(link.Line, link.Column, Severity.Warning, "md.broken-link",
                     $"The {what} target “{Shorten(file)}” does not exist.");
-        }
-    }
-
-    private static string Unescape(string text)
-    {
-        try
-        {
-            return Uri.UnescapeDataString(text);
-        }
-        catch (UriFormatException)
-        {
-            return text;
         }
     }
 
@@ -131,6 +119,4 @@ public sealed partial class MarkdownValidator(Func<string, bool>? exists = null)
     [GeneratedRegex(@"^ {0,3}#{1,6}[^#\s]")]
     private static partial Regex NoSpaceHeading();
 
-    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9+.-]*:")]
-    private static partial Regex Scheme();
 }

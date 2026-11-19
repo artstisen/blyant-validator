@@ -165,6 +165,30 @@ public sealed class FragmentAndIgnoreTests : IDisposable
     }
 
     [Fact]
+    public async Task AFileThatComes_IsFoundWhenTheLinksAreCheckedAgain_WithoutShowingTheFileAsBeingChecked()
+    {
+        // (the image comes in a folder below the page, so the folder of the page tells nothing: the TUI checks the
+        // files with a link to a missing file again now and then)
+        var path = Path.Combine(_dir, "page.html");
+        await File.WriteAllTextAsync(path, "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head>" +
+                                           "<body><img src=\"img/logo.png\" alt=\"Logo\"></body></html>");
+        using var store = new ResultStore(Engines.Native, new VnuOptions());
+        store.Get(path);
+        await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
+        var before = store.Get(path)!;
+        Assert.True(ResultStore.HasLinkProblem(before));
+
+        Directory.CreateDirectory(Path.Combine(_dir, "img"));
+        await File.WriteAllTextAsync(Path.Combine(_dir, "img", "logo.png"), "");
+        store.Recheck(path);
+        Assert.False(store.IsPending(path));
+        // (the result is shown until the new one is in: the old one, or already the new one, never none)
+        Assert.NotNull(store.Get(path));
+        await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
+        Assert.Empty(store.Get(path)!.Diagnostics);
+    }
+
+    [Fact]
     public void Badge_TellsWhatIsNotChecked()
     {
         Assert.Equal(string.Empty, Browser.Badge(CheckRules.Full));

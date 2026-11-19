@@ -190,6 +190,16 @@ public class HtmlMistakeTests
     }
 
     [Fact]
+    public async Task AFileLinkedToManyTimes_IsLookedUpOnce()
+    {
+        var asked = 0;
+        var options = new HtmlCheckOptions(Exists: _ => { asked++; return false; });
+        var found = await Check(Head + "<img src=\"a.png\" alt=\"1\"><img src=\"a.png\" alt=\"2\"><a href=\"./a.png\">3</a>" + Tail, options);
+        Assert.Equal(3, found.Count(d => d.Code == "html.missing-file"));
+        Assert.Equal(1, asked);
+    }
+
+    [Fact]
     public async Task CharacterReferences_InALink_AreDecoded()
     {
         var asked = new List<string>();

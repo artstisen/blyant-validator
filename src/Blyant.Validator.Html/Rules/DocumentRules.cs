@@ -109,23 +109,17 @@ public sealed partial class LangRule : IHtmlRule
 /// </summary>
 public sealed class EmptyUrlRule : IHtmlRule
 {
-    private static readonly (string Element, string Attribute)[] NonEmpty =
-    [
-        ("img", "src"), ("script", "src"), ("iframe", "src"), ("source", "src"), ("video", "src"), ("audio", "src"),
-        ("track", "src"), ("embed", "src"), ("link", "href"), ("form", "action"), ("video", "poster"), ("object", "data"),
-    ];
-
     public void Check(HtmlRuleContext context)
     {
         foreach (var element in context.Root.Descendants().Where(e => !e.IsForeign))
         {
-            foreach (var (name, attributeName) in NonEmpty)
+            foreach (var url in Links.AttributesOf(element.Lower).Where(u => u.NonEmpty))
             {
                 // (src= with nothing after it is told by the reader: an attribute value missing)
-                if (element.Lower != name || element.GetAttribute(attributeName) is not { RawValue: { Length: > 0 } } attribute) continue;
+                if (element.GetAttribute(url.Attribute) is not { RawValue: { Length: > 0 } } attribute) continue;
                 if (attribute.Value.Trim().Length == 0)
                     context.Report(attribute.Start, Severity.Error, "html.empty-url",
-                        $"The “{attributeName}” of “{name}” is empty: give the URL, or leave out the attribute.");
+                        $"The “{url.Attribute}” of “{element.Lower}” is empty: give the URL, or leave out the attribute.");
             }
         }
     }
