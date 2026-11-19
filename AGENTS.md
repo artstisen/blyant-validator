@@ -44,6 +44,30 @@ W3C CSS Validation Service (<https://github.com/w3c/css-validator>), and written
   rename them. Messages may be improved
 - Text shown to the user is English
 
+## Texts and wording
+Text shown to the user is English, written where it is used: messages of the checks, the help, key hints, the boxes
+of the TUI and the output of the command line. The same rules go for the Markdown files (`README.md`, `CHANGELOG.md`,
+`CREDITS.md` and the other files for GitHub), the read-me of the releases (`docs/release/README.txt`) and the texts
+of a release. They follow Blyant's `AGENTS.md` ("Texts and languages"), so the two projects read the same.
+
+- Keep texts short: leave out "the" where the text reads well without it, as in labels, key hints and help rows
+  (`j/k Select`, `Format marked files`, not `Format the marked files`)
+- The same goes for the headings of the Markdown files: `Installation`, `Exit codes`, not `The exit codes`. Keep
+  "the" after a verb or a preposition where English needs it (`Using the Typst compiler`, `Opening files in your
+  editor`). A heading renamed changes its anchor: change the links to it too (in all the Markdown files)
+- **Name things, don't point back at them.** Use "its", "their", "of it" and "of them" only when nothing else reads
+  as well, and never twice in one sentence. Write "opens the file at the line with the problem", not "at its line";
+  "Typst writes the files in a hidden folder", not "writes them in a folder of it"
+- **Avoid "of its own", "of their own" and "its own".** Write "unpack it in a new folder" or "keep the program in a
+  separate folder", not "a folder of its own"; "each main file is a separate document", not "a document of its own"
+- **Say it as you would explain it to someone.** Use plain verbs and say who does what. A heading can start with a
+  verb: "Check a download", not "Downloads and their checksums". Prefer "the peek shows the lines of a file" to "the
+  peek shows lines of it"
+- **No riddles.** If a sentence needs reading twice, say it another way: "Esc stops Typst; nothing is written", not
+  "Esc: nothing is made of it"
+- **Use "any" for something that may or may not be there:** "the warnings of Typst, if any", "`F` formats any marked
+  files", not "formats their marked files"
+
 ## The TUI
 The TUI (`Cli/Tui`) is adapted from the file browser of Blyant (MIT License, same author). Its terminal parts
 (`Tui/Terminal`: keys, colors, boxes, the command line, the help) and the highlighters (`Tui/Highlighting`) are
@@ -138,7 +162,7 @@ The files of the user must never be left empty or half written, whenever the pro
 - A file is written back with the encoding it had: a UTF-8 file with a BOM keeps its BOM, and the line
   endings of the file (CRLF or LF) are kept
 - A file that the formatting does not change is not written
-- A file that is not UTF-8 is not read (`DocumentIo` throws `NotUtf8Exception`): decoded as UTF-8 its other
+- A file that is not UTF-8 is not read (`DocumentIo` throws `NotUtf8Exception`): decoded as UTF-8 the other
   characters would be replaced, and formatting would write that back
 
 ## Linux and macOS
@@ -147,7 +171,7 @@ GitHub workflow `Build and test` builds and tests it on all three systems.
 
 - Do not take the behaviour of the file system from Windows: names of files are case-sensitive on Linux,
   the separator is `/` (use `Path.Combine`, never a written `\`), and a name starting with `.` is hidden
-- On macOS names are usually not case-sensitive (its file systems take `Page.html` and `page.html` as the same
+- On macOS names are usually not case-sensitive (the file systems of macOS take `Page.html` and `page.html` as the same
   name, as Windows does), but a volume can be: code must work both ways, and a test of names that differ only in
   case first checks that the file system tells them apart (as `FileCollector.SamePlace` asks the folder, not the
   system)

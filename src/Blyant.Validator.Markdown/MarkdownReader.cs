@@ -379,7 +379,7 @@ public sealed partial class MarkdownReader
                 if (end < 0)
                 {
                     Problems.Add(new MarkdownProblem(line.Number, column, "md.unclosed-link",
-                        $"The link “[{Shorten(linkText)}](…” is not closed with “)” on its line."));
+                        $"The link “[{Shorten(linkText)}](…” is not closed with “)” on the same line."));
                     break;
                 }
 

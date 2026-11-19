@@ -32,7 +32,7 @@ public sealed class CssFormatter : IFormatter
         {
             // The line break that ends it would become a space, and the string would then take in what follows
             throw new Core.FormatException(
-                $"A string is not closed before the end of its line (line {new LineMap(css)[badString.Start].Line}).");
+                $"A string is not closed before the end of the line (line {new LineMap(css)[badString.Start].Line}).");
         }
 
         if (sheet.HasStructuralErrors)

@@ -3,8 +3,8 @@ Blyant's tools/screenshots.py.
 
     python tools/screenshots.py [--exe PATH] [scene ...]
 
-The program is run in a hidden terminal (a pseudo console) of 100x30, with a demo site in C:\\Sites and a data
-directory of its own in the temp folder, so nothing of the user's is shown or changed. Each scene gets the keys that
+The program is run in a hidden terminal (a pseudo console) of 100x30, with a demo site in C:\\Sites and a separate
+data directory in the temp folder, so nothing of the user's is shown or changed. Each scene gets the keys that
 set it up, and what the terminal then shows (each cell with its colors, and the cursor) is drawn as an SVG in
 docs/screenshots. Run it again after a change of the screens.
 
@@ -388,8 +388,8 @@ def svg(screen, title, show_cursor):
 # The scenes: a name, a title, the settings, the arguments of the program, the keys, and if the cursor is drawn
 
 SCENES = [
-    ('file-browser', 'Blyant Validator: the files of a site, with their results', {}, [], ['<wait>'], False),
-    ('peek', 'Blyant Validator: V, the peek of a file with its problems marked', {}, [], ['V'], False),
+    ('file-browser', 'Blyant Validator: the files of a site, with the result of each', {}, [], ['<wait>'], False),
+    ('peek', 'Blyant Validator: V, the peek of a file with the problems marked', {}, [], ['V'], False),
     ('peek-problem', 'Blyant Validator: in the peek, n goes from problem to problem', {}, [],
      ['V', '<Tab>', 'n'], False),
     ('problems', 'Blyant Validator: P, the problems of a file', {}, [], ['P', '<Tab>', 'jj'], False),

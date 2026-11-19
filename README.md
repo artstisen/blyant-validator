@@ -3,7 +3,7 @@
 A cross-platform command-line tool that validates and formats HTML and CSS files, and validates XML files such as
 sitemaps, Markdown files such as llms.txt, and Typst documents. It's written in
 C#/.NET 10 and designed as an optional companion to the [Blyant editor](https://blyant-editor.com/),
-but it works on its own too.
+but it also works without Blyant.
 
 **Run it side by side with your favorite editor, for real-time validation of all your files.** The TUI watches the
 folders it shows and checks a file again the moment it is saved, so the errors and warnings of your HTML, CSS, XML,
@@ -15,7 +15,7 @@ format it when you are done.
 >
 > Blyant Validator has no dependencies besides .NET.
 
-![The TUI: the files of a site with their results, and the peek of a file going from problem to problem](docs/screenshots/peek-problem.svg)
+![The TUI: the files of a site with the result of each, and the peek of a file going from problem to problem](docs/screenshots/peek-problem.svg)
 
 ## Credits
 
@@ -55,7 +55,7 @@ and the licence. The program is a single file with the .NET runtime in it: nothi
   `dotnet blyant-validator.dll` in the unzipped folder.
 
 To check that a download is whole and unchanged, download `SHA256SUMS.txt` from the release too, into the same folder,
-and compare the SHA-256 of the archive with its line there:
+and compare the SHA-256 of the archive with the one listed in that file:
 
 - **Linux**: `sha256sum -c SHA256SUMS.txt --ignore-missing` (it says `OK` for the archive)
 - **macOS**: `shasum -a 256 -c SHA256SUMS.txt --ignore-missing`
@@ -63,7 +63,7 @@ and compare the SHA-256 of the archive with its line there:
   the line of the archive in `SHA256SUMS.txt` (in any case of letters)
 
 The settings of the TUI are kept in a folder `data` next to the program, or, if that folder cannot be written to, in
-`Blyant Validator/data` in your application data (see [The TUI](#the-tui)).
+`Blyant Validator/data` in your application data (see [TUI](#tui)).
 
 ## Usage
 
@@ -75,7 +75,7 @@ blyant-validator format   <paths>... [options]
 blyant-validator credits
 ```
 
-### The TUI
+### TUI
 
 Started without a command (or with `browse`), Blyant Validator is a file browser in the terminal, in the style of
 the file browser of the Blyant editor: one or two panes, and a peek of the selected file in the other pane.
@@ -86,9 +86,9 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
   checked, or `failed`. Files are checked in the background, and checked again when they change on disk, so the
   list stays up to date while you edit the files in another program.
 - `V` peeks at the selected file: its text in colors, with a mark (`E`, `W`, `i`) in front of the lines with
-  problems and the place of each error highlighted. `P` shows the list of its problems instead.
-- `Tab` goes into the peek: `j`/`k` move, `n`/`N` go to the next and previous problem (its message is shown on
-  the bottom line), `/` searches, `h`/`l` scroll sideways, and in the list of problems `Enter` shows a problem in
+  problems and the place of each error highlighted. `P` shows the list of problems instead.
+- `Tab` goes into the peek: `j`/`k` move, `n`/`N` go to the next and previous problem (the message of the problem is shown
+  on the bottom line), `/` searches, `h`/`l` scroll sideways, and in the list of problems `Enter` shows a problem in
   the file. `Tab`, `Esc` or `q` goes back to the list, and a `:` command typed in the peek runs in the list
   (`:ignore` there ignores the problem selected, or the first one on the line of the cursor).
 - `I` shows the full text of the problems on the line (in the list of problems: of the selected one) in a box, for
@@ -107,14 +107,14 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 - `:number` numbers the rows of the panes, and `:nonumber` takes the numbers away again, as in Blyant. A count in
   front of a key uses them: `5j` and `5k` move 5 rows, `12gg` and `12G` go to row 12 (the count is shown at the
   bottom right of the pane while it is typed, and `Esc` drops it).
-- `:path` copies the full path of the selected file or folder to the clipboard, and `:name` its name (on `..`, the
+- `:path` copies the full path of the selected file or folder to the clipboard, and `:name` only the name (on `..`, the
   name of the folder shown), as in Blyant. It is sent with the
   terminal's clipboard sequence (OSC 52), so it works over SSH too, and no other program is started. Most terminals
   take it (Windows Terminal, kitty, WezTerm, Alacritty, iTerm2 …); the Terminal of macOS, GNOME Terminal and the
   Linux console do not, and are told about.
 - `:fragment` and `:ignore` change how the files of the folder shown (and its subfolders) are checked; see
   [Fragments and ignored problems](#fragments-and-ignored-problems). A folder that is not fully checked has the
-  badges `FRAGMENT` and `IGNORE 2` (two codes ignored) after its path, and the peek says it with the result of a
+  badges `FRAGMENT` and `IGNORE 2` (two codes ignored) after the path, and the peek says it with the result of a
   file: "no problems (fragment, 3 ignored)".
 
 The TUI needs a window of at least 80×24, like Blyant.
@@ -133,10 +133,10 @@ site with mistakes on purpose, as Blyant's are.
 
 | | |
 |---|---|
-| ![The files of a site with their results](docs/screenshots/file-browser.svg) | ![The peek of a file](docs/screenshots/peek.svg) |
+| ![The files of a site with the result of each](docs/screenshots/file-browser.svg) | ![The peek of a file](docs/screenshots/peek.svg) |
 | The files of a site in two panes, each with its result | `V`: the peek, with the lines that have problems marked and each error's place highlighted |
 | ![From problem to problem](docs/screenshots/peek-problem.svg) | ![The problems of a file](docs/screenshots/problems.svg) |
-| `Tab` into the peek, and `n` to the next problem: its message on the bottom line | `P`: the problems of the file; `Enter` shows one in the file |
+| `Tab` into the peek, and `n` to the next problem: the message on the bottom line | `P`: the problems of the file; `Enter` shows one in the file |
 | ![A style sheet in the peek](docs/screenshots/css.svg) | ![Formatting a file](docs/screenshots/format.svg) |
 | A style sheet: an unknown property and an unknown unit | `F`: formatting a file, after asking |
 | ![A sitemap](docs/screenshots/sitemap.svg) | ![llms.txt](docs/screenshots/llms-txt.svg) |
@@ -175,7 +175,7 @@ ignored (css.*).`
 | `--line-width <n>` | HTML elements whose content fits within this width stay on one line (default 100). |
 
 Without `--write` or `--check`, the formatted text is printed. `--write` only touches files that change, and
-replaces them safely (a temporary file is written first), keeping their encoding and line endings. A link is
+replaces them safely (a temporary file is written first), with the encoding and line endings they had. A link is
 followed (the file it leads to is written, and the link stays), and a file keeps its permissions (Linux, macOS) or
 attributes (Windows). Output is written as UTF-8, also to a file or a pipe.
 
@@ -187,15 +187,15 @@ attributes (Windows). Output is written as UTF-8, also to a file or a pipe.
 | 1 | Errors found, or `format --check` found unformatted files. |
 | 2 | The tool itself failed: bad arguments, a path that does not exist, a file that cannot be read or written, vnu or Typst not available, a file that could not be formatted, or an error of the program itself. The other files are still done. |
 
-A file that is not UTF-8 (Windows-1252, Latin-1, UTF-16 …) is not read: decoded as UTF-8 its other characters would
-be lost. `validate` reports it as an error of the file (`file.not-utf8`, with the line of the first byte that is not
+A file that is not UTF-8 (Windows-1252, Latin-1, UTF-16 …) is not read: decoded as UTF-8, letters such as
+`æ`, `ø` and `é` would be lost. `validate` reports it as an error of the file (`file.not-utf8`, with the line of the first byte that is not
 UTF-8), and `format` leaves it as it is.
 
 ## Fragments and ignored problems
 
 Documentation written for a CMS is often a fragment: headings, paragraphs, code examples, sometimes a `<style>` or
 a `<script>`, inserted in a page whose doctype, `<head>` and `<body>` the CMS makes. Checked as a page, such a file
-has errors that are not its own (no doctype, no title, no `lang`).
+has errors that belong to the page, not to the fragment (no doctype, no title, no `lang`).
 
 - **Fragment mode** (`--fragment`, or `:fragment` in the TUI) checks an HTML file as the content of a `<body>`. The
   doctype, the title and the language of the page are not checked; everything else is: the markup, attributes,
@@ -207,7 +207,7 @@ has errors that are not its own (no doctype, no title, no `lang`).
   after each problem (`[css.unknown-at-rule]`). A code ending in `.*` ignores all codes that start with it:
   `css.*`, `html.parse.*`. Codes never change, so an ignored code stays ignored when a message is improved.
 
-In the TUI, these are rules of a folder, kept in `settings.ini`; they apply to its subfolders too, unless a subfolder
+In the TUI, these are rules of a folder, kept in `settings.ini`; they apply to the subfolders too, unless a subfolder
 is changed itself:
 
 | Command | Does |
@@ -215,7 +215,7 @@ is changed itself:
 | `:fragment` | The HTML files of the folder shown are fragments; again: full pages. |
 | `:ignore code ...` | Ignore problems with these codes in the folder. |
 | `:ignore` | In the peek (`Tab`): ignore the code of the selected problem (`P`), or of the first problem on the line of the cursor. Elsewhere: show the codes ignored. |
-| `:unignore code ...` | Stop ignoring these codes; without a code: all of them. |
+| `:unignore code ...` | Stop ignoring these codes; without a code: every ignored code. |
 
 The command line has no saved rules: `validate` checks fully unless `--fragment` or `--ignore` is given, so a script
 gives the same result wherever it runs.
@@ -237,7 +237,7 @@ property that is reported is a gap in the validator, not in your file: please te
 | Sitemaps | The [sitemap protocol 0.9](https://www.sitemaps.org/protocol.html), with dates in the [W3C Datetime](https://www.w3.org/TR/NOTE-datetime) format. |
 | Feeds | [RSS 2.0](https://www.rssboard.org/rss-specification) (the RSS Advisory Board), with dates as [RFC 822](https://www.rfc-editor.org/rfc/rfc822); [Atom](https://www.rfc-editor.org/rfc/rfc4287) (RFC 4287), with dates as [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339). |
 | Markdown | [CommonMark](https://spec.commonmark.org/), as far as the checks need it, with the heading anchors GitHub makes. |
-| Typst | The [syntax of Typst](https://typst.app/docs/reference/syntax/) as the Typst compiler 0.15 reads it, as far as it can be told without compiling: the errors found were compared with the compiler's, on real documents and on hundreds of damaged copies of them. |
+| Typst | The [syntax of Typst](https://typst.app/docs/reference/syntax/) as the Typst compiler 0.15 reads it, as far as it can be told without compiling: the errors found were compared with the compiler's, on real documents and on hundreds of damaged copies of those documents. |
 | llms.txt | The [llms.txt format](https://llmstxt.org/), built in: nothing is fetched. |
 
 ## What is checked
@@ -301,7 +301,7 @@ SVG and MathML inside a page are only checked for parse errors.
 
 - **Well-formedness** of `.xml`, `.svg` and `.xhtml` files (XML 1.0): unclosed and mismatched tags, duplicate
   attributes, a bare `&`, HTML entities such as `&nbsp;` that XML does not know, more than one root element … The
-  first mistake is reported, at its line and column (XML stops there, as browsers do). Entities declared in the file
+  first mistake is reported, with line and column (XML stops there, as browsers do). Entities declared in the file
   itself (its internal DTD subset, as Adobe Illustrator's SVG has) are known; nothing outside the file is ever
   loaded: an entity of an external DTD is a warning (`xml.undeclared-entity`), as is an entity declared to be in
   another file (`xml.external-entity`), and entities may expand to at most 10,000,000 characters.
@@ -321,12 +321,12 @@ SVG and MathML inside a page are only checked for parse errors.
 
 ### Markdown and llms.txt
 
-Markdown has no invalid documents, so its checks are warnings, about what probably does not show as meant:
+Markdown has no invalid documents, so the Markdown checks are warnings, about what probably does not show as meant:
 
 - A code block (````` or `~~~`) that is never closed, which makes the rest of the file code.
 - `#Heading` without a space (not a heading), empty headings, more than one level 1 heading, and levels that skip
   one (`#` to `###`).
-- Links: `[text](` not closed on its line, empty targets `[text]()`, references `[text][label]` with no
+- Links: `[text](` not closed on the same line, empty targets `[text]()`, references `[text][label]` with no
   `[label]: url`, labels defined twice, `#anchors` with no heading (or `id`) of that name in the file, and relative
   links and images to files that do not exist.
 
@@ -342,7 +342,7 @@ number of level 1 headings.
 ### Typst
 
 Typst (`.typ`) is checked for what the Typst compiler refuses, and that can be told without compiling the document.
-Typst has three modes, the text (markup), code (after `#`, and in its brackets) and math (between `$`), and the
+Typst has three modes, the text (markup), code (after `#`, and in the brackets of the code) and math (between `$`), and the
 checks follow them as the compiler does:
 
 - **Not closed**: raw text and blocks (`` ` `` and ```` ``` ````), strings, equations (`$`), and brackets of code and
@@ -353,11 +353,11 @@ checks follow them as the compiler does:
 - **Closed but not opened**: a `]` in the text with no `[`, and a `)`, `}` or `]` in code that closes nothing.
 - **`#` with no code after it** (`C# language`: write `\#`).
 - **References**: an `@reference` to a label that is not in the document, or that is there more than once. The
-  document of a chapter is that of its main file: the file that includes it, and the file that includes that …
-  (looked for in its folder and the three folders above it, also with a path from the root,
-  `#include "/chapters/one.typ"`), with all the files the main file includes. So a chapter may refer to a label of
-  another. When two main files include a chapter (a book and a handout), each is a document of its own; the main file
-  of `:typst` and `--engine typst` is the first, from its own folder up, by name. A label in code that may place it
+  document of a chapter is the document of the main file: the file that includes the chapter, and the file that
+  includes that … (looked for in the folder of the chapter and the three folders above, also with a path from the
+  root, `#include "/chapters/one.typ"`), with all the files the main file includes. So a chapter may refer to a label
+  of another. When two main files include a chapter (a book and a handout), each is a separate document; the main
+  file of `:typst` and `--engine typst` is the first, from the folder of the chapter up, by name. A label in code that may place it
   any number of times (the body of an `#if`, `#for` or `#let`) is there, but is not counted as more than once, and
   neither are the labels of imported files. An e-mail address in the text is a reference to Typst: write `\@`.
   References are not checked when labels are made by code (`label("…")`), with a bibliography (its keys are referred
@@ -365,7 +365,7 @@ checks follow them as the compiler does:
 - **Files**: a file given to `#include`, `#import`, `image()`, `read()`, `json()`, `bibliography()` … that is not
   there (relative to the file; a path from the root of the project, `/…`, is not checked).
 - **Packages** are checked for their name only (`@preview/name:1.0.0`): nothing is fetched.
-- Warnings: `=Heading` without its space (it is text), and a label in a file more than once.
+- Warnings: `=Heading` without the space (it is text), and a label in a file more than once.
 
 What code means is the compiler's to tell, and is not checked: an unknown function or variable, the arguments of a
 call, a `set` or `show` rule, fonts. Typst files are not formatted (line breaks and spaces carry meaning in the
@@ -384,13 +384,13 @@ parentheses).
   `!IMPORTANT`. Comments are kept, and so is one empty line where the file had empty lines. Custom properties
   (`--name`) keep their value exactly as written. A file with a block that is never closed, or a string with a
   line break in it, is not formatted.
-- **XML**: elements that hold only elements get their children on lines of their own, indented. Kept exactly as
+- **XML**: elements that hold only elements get each child on a separate line, indented. Kept exactly as
   written: an element with text in it (a `<loc>`, a `<title>`, mixed content) or only whitespace, everything under
   `xml:space="preserve"`, SVG text (`<text>`, `<tspan>`, `<textPath>`), and XHTML (an element that declares the XHTML
   namespace, as in Atom's `type="xhtml"` content), where whitespace between elements shows. Comments, CDATA, the declaration and the doctype are kept, and one empty line where the
   file had empty lines. Runs of spaces between attributes become one space. A file that is not well-formed is not
   formatted.
-- **HTML**: block-level elements (`div`, `p`, `li`, `table` …) get lines of their own and are indented.
+- **HTML**: block-level elements (`div`, `p`, `li`, `table` …) start on a new line and are indented.
   Text and inline elements stay together, keeping the line breaks of the source; elements whose content
   fits within `--line-width` stay on one line. Whitespace is only added or removed where the browser
   ignores it: a `<script>`, `<link>` or `<noscript>` right next to text stays in the line. The contents of `<pre>`,
@@ -437,15 +437,15 @@ code means (an unknown function or variable, a wrong argument, a missing font), 
 CLI itself:
 
 1. Install the [Typst CLI](https://github.com/typst/typst) (`winget install Typst.Typst`, `brew install typst`, or a
-   release of it).
+   release from GitHub).
 2. Run `blyant-validator validate book --recursive --engine typst`, with `--typst path/to/typst` when it is not on
    `PATH` (or set `BLYANT_TYPST`). In the TUI: `:engine typst`. With the Nu Html Checker too: `--engine vnu,typst`.
 
 Each Typst file is compiled with `typst compile`, and the PDF is thrown away: no file is written. A chapter is
-compiled as part of its document: when another file includes it (looked for in its folder and the three folders
-above, and upwards from there), the main file is compiled, and the errors and warnings in the chapter are kept, so a chapter
-may refer to the labels of the others. A chapter that no file around it includes is compiled on its own, as
-`typst compile` would. As the compiler, the engine stops at the first error of the code (after all the errors of the
+compiled as part of the document: when another file includes the chapter (looked for in the folder of the chapter and
+the three folders above, and upwards from there), the main file is compiled, and the errors and warnings in the
+chapter are kept, so a chapter may refer to the labels of the others. A chapter that no file around it includes is
+compiled alone, as `typst compile` would. As the compiler, the engine stops at the first error of the code (after all the errors of the
 syntax). It is run for each file, so it is slower than the native checks.
 
 Typst downloads the packages a document imports (`@preview/…`) the first time it compiles it: with `--engine typst`
@@ -454,7 +454,7 @@ the program can go online, which the native checks never do. The TUI starts no o
 
 ### Opening files in your editor (`O`)
 
-The TUI checks files; you change them in an editor of your own. Set it once with `:editor`, followed by the program
+The TUI checks files; you change them in the editor you prefer. Set it once with `:editor`, followed by the program
 and its arguments (a path with blanks in double quotes); it is kept in the settings (`editor=` in `settings.ini`):
 
 | `:editor …` | Opens |
@@ -470,8 +470,8 @@ selected in the problems; in the list it is line 1. `:editor` alone tells the ed
 away.
 
 An editor in the terminal (Vim, Neovim, Blyant, nano) gets the terminal: the TUI waits until it is closed, and then
-draws itself again, with the result of the file checked anew. A program with windows of its own (on Windows: Notepad,
-VS Code) is started and not waited for; the result of the file follows when you save it. With `--wait` (VS Code) it
+draws itself again, with the result of the file checked anew. A program that opens a window (on Windows: Notepad, VS
+Code) is started and not waited for; the result of the file follows when you save it. With `--wait` (VS Code) it
 would be waited for: leave that out.
 
 The editor is started directly, never through a shell, so a file name is never read as a command. On Windows a `.cmd`
@@ -547,7 +547,7 @@ dotnet publish src/Blyant.Validator.Cli -c Release -r win-x64 --self-contained
 | `src/Blyant.Validator.Typst` | Typst reader (markup, code and math) and validator. |
 | `src/Blyant.Validator.Vnu` | Adapter that runs `vnu.jar` and converts its JSON output. |
 | `src/Blyant.Validator.TypstCompiler` | The `typst` engine: runs the Typst CLI and reads its diagnostics. |
-| `src/Blyant.Validator.Cli` | The `blyant-validator` program: the commands, and the TUI in `Tui/` (its terminal parts in `Tui/Terminal/` and the highlighters in `Tui/Highlighting/` are adapted from Blyant). |
+| `src/Blyant.Validator.Cli` | The `blyant-validator` program: the commands, and the TUI in `Tui/` (the terminal parts in `Tui/Terminal/` and the highlighters in `Tui/Highlighting/` are adapted from Blyant). |
 | `tests/Blyant.Validator.Tests` | xUnit tests. |
 
 Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed in [CHANGELOG.md](CHANGELOG.md).
@@ -571,7 +571,7 @@ Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed 
 - [x] Markdown checks, and the llms.txt format
 - [x] Fragments (HTML for a CMS) and ignored problem codes, per folder in the TUI
 - [x] Typst: what the compiler refuses without compiling, references, files and packages
-- [x] Typst: an optional `--engine typst` that runs the Typst CLI for all its errors
+- [x] Typst: an optional `--engine typst` that runs the Typst CLI for all the errors of the compiler
 - [x] TUI: `:typst` makes a Typst document into PDF, PNG, SVG or HTML; `O` opens a file in your own editor
 - [ ] Comparison test suite against vnu output
 - [x] Release builds for Windows, Linux and macOS (`publish.ps1`)

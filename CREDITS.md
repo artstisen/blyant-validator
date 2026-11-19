@@ -11,7 +11,7 @@ Many thanks to them.
 
 The Nu Html Checker is the engine behind the W3C's HTML validator at <https://validator.w3.org/nu/>.
 Blyant Validator's native HTML checks are modelled on its behaviour and messages. The optional
-`--engine vnu` mode runs the Nu Html Checker itself (`vnu.jar`, downloaded separately) and shows its results.
+`--engine vnu` mode runs the Nu Html Checker itself (`vnu.jar`, downloaded separately) and shows the results.
 
 ### W3C CSS Validation Service
 
@@ -22,7 +22,7 @@ Blyant Validator's native CSS checks are modelled on its behaviour and messages.
 
 Blyant Validator is an independent project, written from scratch in C#. It is not affiliated with or endorsed
 by the W3C or the authors of the projects above. No source code from either project is included. If any is
-added in the future, its licence text will be added to [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+added in the future, the licence of that code will be added to [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Blyant
 

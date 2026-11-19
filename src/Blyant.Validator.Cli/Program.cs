@@ -103,7 +103,7 @@ try
 catch (UsageException ex)
 {
     Console.Error.WriteLine($"{CommandLine.Program}: {ex.Message}");
-    Console.Error.WriteLine($"Run '{CommandLine.Program} {command.Name} --help' to see its options.");
+    Console.Error.WriteLine($"Run '{CommandLine.Program} {command.Name} --help' to see the options.");
     return 2;
 }
 
@@ -116,7 +116,7 @@ if (parsed.Help)
 if (command.Name == "format" && parsed.Flag("--check") && parsed.Flag("--write"))
 {
     Console.Error.WriteLine($"{CommandLine.Program}: use --check or --write, not both.");
-    Console.Error.WriteLine($"Run '{CommandLine.Program} format --help' to see its options.");
+    Console.Error.WriteLine($"Run '{CommandLine.Program} format --help' to see the options.");
     return 2;
 }
 
@@ -127,7 +127,7 @@ if (command.Name is "validate" or "browse")
     if (Engines.Parse(parsed.Text("--engine")!) is not { } chosen)
     {
         Console.Error.WriteLine($"{CommandLine.Program}: '{parsed.Text("--engine")}' is not an engine: use native, vnu, typst or vnu,typst.");
-        Console.Error.WriteLine($"Run '{CommandLine.Program} {command.Name} --help' to see its options.");
+        Console.Error.WriteLine($"Run '{CommandLine.Program} {command.Name} --help' to see the options.");
         return 2;
     }
 
@@ -141,7 +141,7 @@ foreach (var entry in command.Name == "validate" ? parsed.Texts("--ignore").Sele
     if (!Blyant.Validator.Core.IgnoreList.IsValid(entry))
     {
         Console.Error.WriteLine($"{CommandLine.Program}: '{entry}' is not a diagnostic code to ignore (as 'html.missing-lang' or 'css.*').");
-        Console.Error.WriteLine($"Run '{CommandLine.Program} {command.Name} --help' to see its options.");
+        Console.Error.WriteLine($"Run '{CommandLine.Program} {command.Name} --help' to see the options.");
         return 2;
     }
 

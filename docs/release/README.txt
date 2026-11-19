@@ -5,13 +5,13 @@ Version {version}
 
 Validates and formats HTML and CSS files, and validates XML (sitemaps, RSS and
 Atom feeds, SVG), Markdown (llms.txt) and Typst, in the terminal. A companion
-to the Blyant editor (https://blyant-editor.com/), and a program of its own
-too.
+to the Blyant editor (https://blyant-editor.com/), and it works without
+Blyant too.
 
 Run it side by side with your favorite editor, for real-time validation of all
 your files: the file browser watches the folders it shows and checks a file
-again the moment it is saved, so its errors and warnings are always up to date
-while you work, in any editor.
+again the moment it is saved, so the errors and warnings of each file are
+always up to date while you work, in any editor.
 
 The program is one file with the .NET runtime in it: nothing else has to be
 installed. The full documentation, with screenshots, is on GitHub:
@@ -29,8 +29,8 @@ STARTING IT
     blyant-validator credits
     blyant-validator <command> --help
 
-On Linux and macOS, start it with ./blyant-validator in its folder. If it was
-not unpacked with tar, make it executable once with:
+On Linux and macOS, start it with ./blyant-validator in the folder of the
+program. If it was not unpacked with tar, make it executable once with:
 
     chmod +x blyant-validator
 
@@ -53,7 +53,7 @@ while it is checked. The window must be at least 80 columns and 24 rows.
     j/k, arrows   Select a file or folder
     Enter, l      Open a folder; on a file: the peek, with the focus in it
     h, Backspace  The folder above
-    V             The peek: the file in the other pane, its problems marked
+    V             The peek: the file in the other pane, the problems marked
     P             The list of the problems of the file
     Tab           The other pane, or into the peek (n/N: next problem there)
     F             Format the file (or the marked files), after asking
@@ -101,7 +101,7 @@ scratch: no code from them is included.
   - The W3C CSS Validation Service, W3C Software and Document License
     https://github.com/w3c/css-validator
 
-Its file browser is adapted from the Blyant editor, by the same author.
+The file browser is adapted from the Blyant editor, by the same author.
 
 
 LICENCE AND NOTICES

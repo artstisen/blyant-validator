@@ -288,7 +288,7 @@ public sealed class TypstReader
 
             if (char.IsLetterOrDigit(after))
                 Problems.Add(new TypstProblem(_pos, "typst.heading-space",
-                    $"“{_s[_pos..end]}{after}” is text: a heading needs a space after its “{_s[_pos..end]}”.", IsError: false));
+                    $"“{_s[_pos..end]}{after}” is text: a heading needs a space after the “{_s[_pos..end]}”.", IsError: false));
             return false;
         }
 

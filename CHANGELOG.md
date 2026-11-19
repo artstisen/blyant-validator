@@ -6,6 +6,13 @@
 - `:about` in the TUI: the version of Blyant Validator, its copyright and licence, and the projects it is modelled on.
   The copyright is set in `Directory.Build.props` (and built into the program), as `LICENSE` has it
 
+### Changed
+- Texts follow the wording rules of Blyant (AGENTS.md, "Texts and wording"): messages, the help, `README.md`, the
+  read-me of the releases and `CREDITS.md` name things instead of pointing back at them, and leave out "of its own".
+  The help rows are shorter, so none is cut in a window of 80×24, and `:editor none` has a separate row. The
+  heading "The TUI" of `README.md` is now "TUI"
+- The screenshots are made again: the key hints show `O Edit`
+
 ## 0.6.1 (2026-11-16)
 
 ### Added

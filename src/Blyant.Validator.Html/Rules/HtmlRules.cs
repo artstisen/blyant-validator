@@ -61,7 +61,7 @@ public sealed class FragmentRule : IHtmlRule
             };
             if (pagePart)
                 context.Report(element, Severity.Warning, "html.fragment-page-part",
-                    $"Element “{element.Lower}” belongs to the page, not to a fragment: the page the fragment is inserted in has its own.");
+                    $"Element “{element.Lower}” belongs to the page, not to a fragment: the page the fragment is inserted in already has one.");
         }
     }
 }
