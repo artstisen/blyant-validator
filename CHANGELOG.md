@@ -2,6 +2,10 @@
 
 ## 0.6.2 (unreleased)
 
+### Added
+- `:about` in the TUI: the version of Blyant Validator, its copyright and licence, and the projects it is modelled on.
+  The copyright is set in `Directory.Build.props` (and built into the program), as `LICENSE` has it
+
 ## 0.6.1 (2026-11-16)
 
 ### Added

@@ -82,6 +82,10 @@ internal static class CommandLine
 
     public static readonly OptionSpec HelpOption = new("--help", "-h", "Show help and usage information.");
 
+    /// <summary>The copyright of the program ("Copyright (c) 2026 …"), from Directory.Build.props.</summary>
+    public static string Copyright =>
+        typeof(CommandLine).Assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright ?? string.Empty;
+
     public static string Version
     {
         get
@@ -197,7 +201,7 @@ internal static class CommandLine
     public static string RootHelp(IReadOnlyList<CommandSpec> commands)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"Blyant Validator {Version}: validate and format HTML, CSS and XML files, and validate Markdown.");
+        sb.AppendLine($"Blyant Validator {Version}: validate and format HTML, CSS and XML files, and validate Markdown and Typst.");
         sb.AppendLine();
         sb.AppendLine("Usage:");
         sb.AppendLine($"  {Program} <command> [options]");

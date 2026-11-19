@@ -60,6 +60,7 @@ while it is checked. The window must be at least 80 columns and 24 rows.
     O             Open the file in your editor (set it with :editor nvim)
     /             Only list the names containing a text
     :             A command: :cd, :fragment, :ignore, :number, :path ...
+                  :about tells the version, the copyright and the licence
                   :typst makes a Typst document into PDF, PNG, SVG or HTML
     ?             All the keys and commands
     q, Esc        Quit, after asking

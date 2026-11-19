@@ -103,6 +103,7 @@ the file browser of the Blyant editor: one or two panes, and a peek of the selec
 - `T` shows one pane or two, `/` filters the list, `:` opens the command line (`:cd`, `:engine vnu`, `:engine typst`, `:all` to
   list all files …, with `Tab` completion), and `?` shows all keys. `q` or `Esc` quits, after asking (as in
   Blyant); Ctrl+C quits at once.
+- `:about` shows the version of Blyant Validator, its copyright and licence, and the projects it is modelled on.
 - `:number` numbers the rows of the panes, and `:nonumber` takes the numbers away again, as in Blyant. A count in
   front of a key uses them: `5j` and `5k` move 5 rows, `12gg` and `12G` go to row 12 (the count is shown at the
   bottom right of the pane while it is typed, and `Esc` drops it).

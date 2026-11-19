@@ -20,7 +20,7 @@ internal static partial class Browser
     /// When a command is added, renamed or removed, change this table, RunCommand and HelpRows together
     /// </summary>
     internal static readonly CommandTable CommandTable = new(
-        ["all", "cd", "edit", "editor", "engine", "format", "fragment", "help", "home", "ignore", "name", "nonumber", "number", "panes",
+        ["about", "all", "cd", "edit", "editor", "engine", "format", "fragment", "help", "home", "ignore", "name", "nonumber", "number", "panes",
             "path", "peek", "problems", "quit", "refresh", "typst", "unignore"],
         ["q", "h", "exit", "close"],
         new Dictionary<string, string[]> { ["engine"] = [.. Engines.Names] });
@@ -33,6 +33,9 @@ internal static partial class Browser
         {
             case "q" or "quit" or "exit" or "close":
                 return CommandResult.Quit;
+            case "about":
+                ShowAbout();
+                break;
             case "h" or "help":
                 HelpViewer.Show(HelpRows);
                 break;
@@ -376,6 +379,7 @@ internal static partial class Browser
         new(":unignore code", "Stop ignoring a code; no code: all of them"),
         new("FRAGMENT IGNORE", "The badges above a folder that is not fully checked"),
         new(":refresh", "As r"),
+        new(":about", "The version of Blyant Validator, its copyright and licence"),
         new(":help :quit", "This help; quit (:q)"),
     ];
 }

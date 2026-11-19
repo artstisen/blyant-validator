@@ -95,6 +95,24 @@ public partial class ProjectRulesTests
     }
 
     [Fact]
+    public void TheCopyright_IsThatOfTheLicence()
+    {
+        // (shown by :about: the line of Directory.Build.props, built into the program, as LICENSE has it)
+        var copyright = Blyant.Validator.Cli.CommandLine.Copyright;
+        Assert.StartsWith("Copyright (c) ", copyright, StringComparison.Ordinal);
+        Assert.Contains(copyright + "\n", File.ReadAllText(Path.Combine(Root, "LICENSE")).ReplaceLineEndings("\n"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheAboutBox_TellsTheVersionAndTheCopyright()
+    {
+        var texts = Blyant.Validator.Cli.Tui.Browser.AboutTexts().Select(t => t.Text).ToList();
+        Assert.Equal($"Blyant Validator {Blyant.Validator.Cli.CommandLine.Version}", texts[0]);
+        Assert.Contains(Blyant.Validator.Cli.CommandLine.Copyright, texts);
+        Assert.Contains(texts, t => t.Contains("MIT License", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void MarkdownFiles_HaveLf()
     {
         var wrong = RepositoryFiles(".md")
