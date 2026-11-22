@@ -89,7 +89,7 @@ public sealed partial class MarkdownValidator(Func<string, bool>? exists = null)
             var target = link.Target ?? string.Empty;
             if (target.Length == 0)
             {
-                report(link.Line, link.Column, Severity.Warning, "md.empty-link", $"The {what} “[{Shorten(link.Text)}]()” has no target.");
+                report(link.Line, link.Column, Severity.Warning, "md.empty-link", $"The {what} “[{Texts.Shorten(link.Text, 40)}]()” has no target.");
                 continue;
             }
 
@@ -110,13 +110,10 @@ public sealed partial class MarkdownValidator(Func<string, bool>? exists = null)
             var full = Path.GetFullPath(Path.Combine(directory, Urls.Unescape(file)));
             if (!exists(full))
                 report(link.Line, link.Column, Severity.Warning, "md.broken-link",
-                    $"The {what} target “{Shorten(file)}” does not exist.");
+                    $"The {what} target “{Texts.Shorten(file, 40)}” does not exist.");
         }
     }
 
-    private static string Shorten(string text) => text.Length > 40 ? text[..40] + "…" : text;
-
     [GeneratedRegex(@"^ {0,3}#{1,6}[^#\s]")]
     private static partial Regex NoSpaceHeading();
-
 }

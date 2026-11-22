@@ -1,6 +1,7 @@
 ﻿using System.Collections.Frozen;
 using System.Text;
 using System.Text.RegularExpressions;
+using Blyant.Validator.Core;
 
 namespace Blyant.Validator.Markdown;
 
@@ -380,7 +381,7 @@ public sealed partial class MarkdownReader
                 if (end < 0)
                 {
                     Problems.Add(new MarkdownProblem(line.Number, column, "md.unclosed-link",
-                        $"The link “[{Shorten(linkText)}](…” is not closed with “)” on the same line."));
+                        $"The link “[{Texts.Shorten(linkText, 30)}](…” is not closed with “)” on the same line."));
                     break;
                 }
 
@@ -470,8 +471,6 @@ public sealed partial class MarkdownReader
         }
         return new string(chars);
     }
-
-    private static string Shorten(string text) => text.Length > 30 ? text[..30] + "…" : text;
 
     [GeneratedRegex(@"^ {0,3}(`{3,}|~{3,})")]
     private static partial Regex FenceOpen();

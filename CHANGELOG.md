@@ -12,6 +12,15 @@
   `FrozenSet` and `FrozenDictionary` for the lookups built once; the test classes are sealed. Nothing the program
   does changes
 
+### Fixed
+- Typst: a file included by a path whose folder differs from the disk only in case (`#include "chapters/one.typ"`
+  for a folder `Chapters`, where names are not case-sensitive) is the file, and the labels of the document are found
+  in it. The folders are asked, not the system, as when files are collected; the check of paths is shared
+  (`DiskPaths.SamePlace`)
+- A long value quoted in a message is not cut inside a character of two UTF-16 units (an emoji): the message showed
+  “�”. The nine copies of the code are one (`Texts.Shorten`)
+- `O` in the TUI always tells why an editor cannot be started
+
 ## 0.6.2 (2026-11-19)
 
 ### Added

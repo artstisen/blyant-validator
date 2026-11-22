@@ -69,7 +69,7 @@ internal static partial class LlmsTxt
                     if (CheckUrl(url) is { } problem) report(line.Number, column, Severity.Error, "llms.bad-url", problem);
                     else if (!urls.TryAdd(url, line.Number))
                         report(line.Number, column, Severity.Warning, "llms.duplicate-url",
-                            $"“{Shorten(url)}” is listed more than once (first on line {urls[url]}).");
+                            $"“{Texts.Shorten(url, 60)}” is listed more than once (first on line {urls[url]}).");
                 }
             }
             else if (!(previous == LineKind.ListItem && line.Kind == LineKind.Text && char.IsWhiteSpace(line.Text[0])))
@@ -87,24 +87,21 @@ internal static partial class LlmsTxt
     private static string? CheckUrl(string url)
     {
         if (url.Length == 0) return "The link has no URL.";
-        if (url.Any(char.IsWhiteSpace)) return $"“{Shorten(url)}” contains a space: use “%20” instead.";
+        if (url.Any(char.IsWhiteSpace)) return $"“{Texts.Shorten(url, 60)}” contains a space: use “%20” instead.";
         if (Urls.HasScheme(url))
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is "http" or "https" && uri.Host.Length == 0)
-                return $"“{Shorten(url)}” is not a valid URL.";
+                return $"“{Texts.Shorten(url, 60)}” is not a valid URL.";
             return null;
         }
 
         return Uri.IsWellFormedUriString(url, UriKind.Relative) || Uri.TryCreate(url, UriKind.Relative, out _)
             ? null
-            : $"“{Shorten(url)}” is not a valid URL.";
+            : $"“{Texts.Shorten(url, 60)}” is not a valid URL.";
     }
-
-    private static string Shorten(string text) => text.Length > 60 ? text[..60] + "…" : text;
 
     // "- [name](url): notes", also indented (a list in a list), with brackets in the name and parentheses in the URL
     // (one level: "[a [b]]", "https://en.wikipedia.org/wiki/Foo_(bar)")
     [GeneratedRegex(@"^\s*[-*+]\s+\[((?:[^\[\]]|\[[^\[\]]*\])+)\]\(((?:[^()]|\([^()]*\))*)\)(\s*:\s*.*)?\s*$")]
     private static partial Regex FileListItem();
-
 }

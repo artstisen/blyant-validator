@@ -63,9 +63,9 @@ internal static partial class Feeds
         CheckRssCommon(channel, report);
 
         if (channel.Element("ttl") is { } ttl && !IsNonNegativeInteger(ttl.Value))
-            report(ttl, Severity.Error, "rss.bad-value", $"“{Shorten(ttl.Value)}” is not a number of minutes.");
+            report(ttl, Severity.Error, "rss.bad-value", $"“{Texts.Shorten(ttl.Value, 60)}” is not a number of minutes.");
         if (channel.Element("language") is { } language && !LanguageCode().IsMatch(language.Value.Trim()))
-            report(language, Severity.Warning, "rss.bad-value", $"“{Shorten(language.Value)}” is not a language code (as “en” or “da-DK”).");
+            report(language, Severity.Warning, "rss.bad-value", $"“{Texts.Shorten(language.Value, 60)}” is not a language code (as “en” or “da-DK”).");
         if (channel.Element("image") is { } image)
         {
             foreach (var required in new[] { "url", "title", "link" })
@@ -76,10 +76,10 @@ internal static partial class Feeds
         }
         foreach (var hour in channel.Element("skipHours")?.Elements("hour") ?? [])
             if (!int.TryParse(hour.Value.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var h) || h > 23)
-                report(hour, Severity.Error, "rss.bad-value", $"“{Shorten(hour.Value)}” is not an hour from 0 to 23.");
+                report(hour, Severity.Error, "rss.bad-value", $"“{Texts.Shorten(hour.Value, 60)}” is not an hour from 0 to 23.");
         foreach (var day in channel.Element("skipDays")?.Elements("day") ?? [])
             if (!Days.Contains(day.Value.Trim()))
-                report(day, Severity.Error, "rss.bad-value", $"“{Shorten(day.Value)}” is not a day (Monday … Sunday).");
+                report(day, Severity.Error, "rss.bad-value", $"“{Texts.Shorten(day.Value, 60)}” is not a day (Monday … Sunday).");
 
         var guids = new Dictionary<string, XElement>(StringComparer.Ordinal);
         foreach (var item in channel.Elements("item"))
@@ -96,9 +96,9 @@ internal static partial class Feeds
                     report(guid, Severity.Error, "rss.bad-value", "The “isPermaLink” attribute must be “true” or “false”.");
                 else if (permalink != "false" && UrlProblem(guid.Value.Trim()) is not null)
                     report(guid, Severity.Error, "rss.bad-guid",
-                        $"“{Shorten(guid.Value.Trim())}” is not a URL: a “guid” is a link unless it has isPermaLink=\"false\".");
+                        $"“{Texts.Shorten(guid.Value.Trim(), 60)}” is not a URL: a “guid” is a link unless it has isPermaLink=\"false\".");
                 if (!guids.TryAdd(guid.Value.Trim(), guid))
-                    report(guid, Severity.Warning, "rss.duplicate-guid", $"The guid “{Shorten(guid.Value.Trim())}” is used by more than one item.");
+                    report(guid, Severity.Warning, "rss.duplicate-guid", $"The guid “{Texts.Shorten(guid.Value.Trim(), 60)}” is used by more than one item.");
             }
 
             if (item.Element("enclosure") is { } enclosure)
@@ -109,7 +109,7 @@ internal static partial class Feeds
                 if (enclosure.Attribute("url") is { } url && UrlProblem(url.Value) is { } problem)
                     report(enclosure, Severity.Error, "rss.bad-url", problem);
                 if (enclosure.Attribute("length") is { } length && !IsNonNegativeInteger(length.Value))
-                    report(enclosure, Severity.Error, "rss.bad-value", $"The enclosure length “{Shorten(length.Value)}” is not a number of bytes.");
+                    report(enclosure, Severity.Error, "rss.bad-value", $"The enclosure length “{Texts.Shorten(length.Value, 60)}” is not a number of bytes.");
             }
 
             if (item.Element("source") is { } source && source.Attribute("url") is null)
@@ -153,10 +153,10 @@ internal static partial class Feeds
             {
                 case DateCheck.Invalid:
                     report(date, Severity.Error, "rss.bad-date",
-                        $"“{Shorten(value)}” is not an RFC 822 date: use, for example, “Tue, 10 Nov 2026 14:30:00 GMT”.");
+                        $"“{Texts.Shorten(value, 60)}” is not an RFC 822 date: use, for example, “Tue, 10 Nov 2026 14:30:00 GMT”.");
                     break;
                 case DateCheck.WrongWeekday:
-                    report(date, Severity.Warning, "rss.bad-date", $"The weekday of “{Shorten(value)}” is not that of the date.");
+                    report(date, Severity.Warning, "rss.bad-date", $"The weekday of “{Texts.Shorten(value, 60)}” is not that of the date.");
                     break;
             }
         }
@@ -165,7 +165,7 @@ internal static partial class Feeds
         {
             if (person is not null && !person.Value.Contains('@'))
                 report(person, Severity.Warning, "rss.bad-value",
-                    $"“{Shorten(person.Value.Trim())}” is not an e-mail address: RSS expects one here (use dc:creator for a name).");
+                    $"“{Texts.Shorten(person.Value.Trim(), 60)}” is not an e-mail address: RSS expects one here (use dc:creator for a name).");
         }
     }
 
@@ -230,7 +230,7 @@ internal static partial class Feeds
                 report(content, Severity.Error, "atom.bad-content", "A “content” element with a “src” attribute must be empty.");
 
             if (entry.Element(Atom("id")) is { } id && !ids.TryAdd(id.Value.Trim(), id))
-                report(id, Severity.Warning, "atom.duplicate-id", $"The id “{Shorten(id.Value.Trim())}” is used more than once.");
+                report(id, Severity.Warning, "atom.duplicate-id", $"The id “{Texts.Shorten(id.Value.Trim(), 60)}” is used more than once.");
         }
 
         if (!feedHasAuthor && !feed.Elements(Atom("entry")).Any())
@@ -252,12 +252,12 @@ internal static partial class Feeds
 
         if (element.Element(Atom("id")) is { } id && !IriScheme().IsMatch(id.Value.Trim()))
             report(id, Severity.Error, "atom.bad-id",
-                $"“{Shorten(id.Value.Trim())}” is not an absolute IRI: an id has a scheme, as “https://…”, “urn:uuid:…” or “tag:…”.");
+                $"“{Texts.Shorten(id.Value.Trim(), 60)}” is not an absolute IRI: an id has a scheme, as “https://…”, “urn:uuid:…” or “tag:…”.");
 
         foreach (var date in element.Elements().Where(e => e.Name == Atom("updated") || e.Name == Atom("published")))
             if (!IsRfc3339(date.Value.Trim()))
                 report(date, Severity.Error, "atom.bad-date",
-                    $"“{Shorten(date.Value.Trim())}” is not an RFC 3339 date: use, for example, “2026-11-10T14:30:00Z”.");
+                    $"“{Texts.Shorten(date.Value.Trim(), 60)}” is not an RFC 3339 date: use, for example, “2026-11-10T14:30:00Z”.");
 
         foreach (var link in element.Elements(Atom("link")))
             if (link.Attribute("href") is null)
@@ -286,16 +286,14 @@ internal static partial class Feeds
     private static string? UrlProblem(string url)
     {
         if (url.Length == 0) return "The URL is empty.";
-        if (url.Any(char.IsWhiteSpace)) return $"“{Shorten(url)}” contains a space: use “%20” instead.";
+        if (url.Any(char.IsWhiteSpace)) return $"“{Texts.Shorten(url, 60)}” contains a space: use “%20” instead.";
         return Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" && uri.Host.Length > 0
             ? null
-            : $"“{Shorten(url)}” is not an absolute http or https URL.";
+            : $"“{Texts.Shorten(url, 60)}” is not an absolute http or https URL.";
     }
 
     private static bool IsNonNegativeInteger(string value) =>
         value.Trim().Length is > 0 and < 19 && value.Trim().All(char.IsAsciiDigit);
-
-    private static string Shorten(string text) => text.Length > 60 ? text[..60] + "…" : text;
 
     [GeneratedRegex(@"^((?<wd>Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*)?(?<d>[0-9]{1,2})\s+(?<mon>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(?<y>[0-9]{2}|[0-9]{4})\s+(?<hh>[0-9]{2}):(?<mm>[0-9]{2})(:(?<ss>[0-9]{2}))?\s+(UT|GMT|EST|EDT|CST|CDT|MST|MDT|PST|PDT|Z|[A-IK-Y]|[+-][0-9]{4})$")]
     private static partial Regex Rfc822Date();

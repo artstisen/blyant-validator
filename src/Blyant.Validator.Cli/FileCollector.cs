@@ -1,4 +1,6 @@
-﻿namespace Blyant.Validator.Cli;
+﻿using Blyant.Validator.Core;
+
+namespace Blyant.Validator.Cli;
 
 /// <summary>Expands the paths given on the command line into a list of files.</summary>
 internal static class FileCollector
@@ -52,37 +54,13 @@ internal static class FileCollector
         {
             var full = Path.GetFullPath(file);
             if (!seen.TryGetValue(full, out var same)) seen[full] = same = [];
-            if (same.Any(other => SamePlace(other, full))) continue;
+            // (a folder that cannot be read: two files on Linux, one elsewhere)
+            if (same.Any(other => DiskPaths.SamePlace(other, full, DocumentIo.NamesIn, !OperatingSystem.IsLinux()))) continue;
             same.Add(full);
             result.Add(file);
         }
 
         return result;
-    }
-
-    /// <summary>
-    /// True when two full paths that are equal but for the case of letters are the same place on the disk: unless a
-    /// folder holds both spellings (a file system that tells case apart), they are
-    /// </summary>
-    internal static bool SamePlace(string a, string b)
-    {
-        if (string.Equals(a, b, StringComparison.Ordinal)) return true;
-        var folderA = Path.GetDirectoryName(a);
-        var folderB = Path.GetDirectoryName(b);
-        if (folderA is null || folderB is null) return true; // Roots: "C:\" and "c:\"
-        if (!SamePlace(folderA, folderB)) return false;
-        var nameA = Path.GetFileName(a);
-        var nameB = Path.GetFileName(b);
-        if (string.Equals(nameA, nameB, StringComparison.Ordinal)) return true;
-        try
-        {
-            var names = Directory.EnumerateFileSystemEntries(folderA).Select(Path.GetFileName).ToHashSet(StringComparer.Ordinal);
-            return !(names.Contains(nameA) && names.Contains(nameB));
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            return !OperatingSystem.IsLinux();
-        }
     }
 
     /// <summary>

@@ -81,7 +81,7 @@ internal static class DocumentIo
 
     /// <summary>
     /// What the Typst validator may ask of the files around a Typst file: whether a file is there, the text of a Typst
-    /// file (null when it cannot be read), and the Typst files of a folder
+    /// file (null when it cannot be read), the Typst files of a folder, and the names in a folder as they are written
     /// </summary>
     public static Typst.TypstFiles TypstFiles { get; } = new(
         IsFileOrFolder,
@@ -107,7 +107,8 @@ internal static class DocumentIo
             {
                 return [];
             }
-        });
+        },
+        NamesIn);
 
     public static async Task<SourceDocument> LoadAsync(string path, CancellationToken ct) =>
         FromBytes(path, await File.ReadAllBytesAsync(path, ct).ConfigureAwait(false));

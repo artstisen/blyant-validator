@@ -183,6 +183,15 @@ public sealed class HtmlRuleTests
     }
 
     [Fact]
+    public async Task ALongValue_IsNotCutInsideAnEmoji()
+    {
+        var a = new string('a', 39);
+        var d = Assert.Single(await InBody($"<img src=\"a.png\" alt=\"\" width=\"{a}😀\">"), d => d.Code == "html.bad-value");
+        Assert.Contains($"“{a}…”", d.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(d.Message, char.IsSurrogate);
+    }
+
+    [Fact]
     public async Task AttributeProblem_PointsAtTheAttribute()
     {
         var d = Assert.Single(await Validate(Head + "\n<div  foo=\"1\">x</div>" + Tail));

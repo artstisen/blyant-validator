@@ -120,7 +120,7 @@ public sealed partial class AttributeRule : IHtmlRule
 
         if (problem is not null)
             context.Report(attribute.ValueStart >= 0 ? attribute.ValueStart : attribute.Start, Severity.Error,
-                "html.bad-value", $"Bad value “{Shorten(value)}” for attribute “{name}” on element “{el}”{problem}" +
+                "html.bad-value", $"Bad value “{Texts.Shorten(value, 40)}” for attribute “{name}” on element “{el}”{problem}" +
                                   (problem.Length == 0 ? "." : string.Empty));
     }
 
@@ -207,8 +207,6 @@ public sealed partial class AttributeRule : IHtmlRule
     }
 
     private static bool IsSpace(char c) => c is ' ' or '\t' or '\n' or '\r' or '\f';
-
-    private static string Shorten(string value) => value.Length > 40 ? value[..40] + "…" : value;
 
     [GeneratedRegex("^on[a-z]+$")]
     private static partial Regex EventHandler();

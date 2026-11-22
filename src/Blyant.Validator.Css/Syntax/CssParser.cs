@@ -1,4 +1,6 @@
-﻿namespace Blyant.Validator.Css.Syntax;
+﻿using Blyant.Validator.Core;
+
+namespace Blyant.Validator.Css.Syntax;
 
 /// <summary>Something in a style sheet or a block: a rule, an at-rule, a declaration or a comment.</summary>
 public abstract class CssItem
@@ -374,7 +376,7 @@ public sealed class CssParser
 
         if (start.Type != CssTokenType.Ident)
         {
-            Error(start, "css.parse.invalid-declaration", $"“{Shorten(start.Text(_sheet.Source))}” is not a valid declaration: expected a property name.");
+            Error(start, "css.parse.invalid-declaration", $"“{Texts.Shorten(start.Text(_sheet.Source), 30)}” is not a valid declaration: expected a property name.");
             return new CssBogus(tokens) { Start = start.Start, HadSemicolon = semicolon };
         }
 
@@ -430,7 +432,7 @@ public sealed class CssParser
             if (next.Type == CssTokenType.EndOfFile)
             {
                 var what = close == CssTokenType.RightSquare ? "]" : close == CssTokenType.RightCurly ? "}" : ")";
-                Error(token, "css.parse.unclosed-parenthesis", $"“{Shorten(token.Text(_sheet.Source))}” is never closed (missing “{what}”).", structural: true);
+                Error(token, "css.parse.unclosed-parenthesis", $"“{Texts.Shorten(token.Text(_sheet.Source), 30)}” is never closed (missing “{what}”).", structural: true);
                 return result;
             }
             if (next.Type == close)
@@ -443,7 +445,7 @@ public sealed class CssParser
             if (!allowBraces && next.Type is CssTokenType.RightCurly or CssTokenType.Semicolon)
             {
                 var what = close == CssTokenType.RightSquare ? "]" : ")";
-                Error(token, "css.parse.unclosed-parenthesis", $"“{Shorten(token.Text(_sheet.Source))}” is not closed (missing “{what}”).", structural: true);
+                Error(token, "css.parse.unclosed-parenthesis", $"“{Texts.Shorten(token.Text(_sheet.Source), 30)}” is not closed (missing “{what}”).", structural: true);
                 return result;
             }
             result.AddRange(ConsumeComponent(allowBraces));
@@ -458,6 +460,4 @@ public sealed class CssParser
         while (end > start && tokens[end - 1].Type == CssTokenType.Whitespace) end--;
         return tokens.GetRange(start, end - start);
     }
-
-    private static string Shorten(string text) => text.Length > 30 ? text[..30] + "…" : text;
 }

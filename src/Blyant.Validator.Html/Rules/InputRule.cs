@@ -75,7 +75,7 @@ public sealed partial class InputRule : IHtmlRule
 
                 if (Problem(type, name, attribute.Value, input.HasAttribute("alpha") || input.HasAttribute("colorspace")) is { } problem)
                     context.Report(attribute.ValueStart >= 0 ? attribute.ValueStart : attribute.Start, Severity.Error,
-                        "html.bad-value", $"Bad value “{Shorten(attribute.Value)}” for attribute “{name}” on element “input”: {problem}");
+                        "html.bad-value", $"Bad value “{Texts.Shorten(attribute.Value, 40)}” for attribute “{name}” on element “input”: {problem}");
             }
         }
     }
@@ -126,8 +126,6 @@ public sealed partial class InputRule : IHtmlRule
         int.Parse(t.Groups[1].Value, CultureInfo.InvariantCulture) <= 23 &&
         int.Parse(t.Groups[2].Value, CultureInfo.InvariantCulture) <= 59 &&
         (!t.Groups[3].Success || int.Parse(t.Groups[3].Value, CultureInfo.InvariantCulture) <= 59);
-
-    private static string Shorten(string value) => value.Length > 40 ? value[..40] + "…" : value;
 
     // A valid floating-point number of HTML: -1, 2.5, .5, 1e3 (not "1." nor "+1")
     [GeneratedRegex(@"^-?([0-9]+(\.[0-9]+)?|\.[0-9]+)([eE][+-]?[0-9]+)?$")]

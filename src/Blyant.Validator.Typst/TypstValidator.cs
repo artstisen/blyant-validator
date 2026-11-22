@@ -5,13 +5,15 @@ namespace Blyant.Validator.Typst;
 
 /// <summary>
 /// What the validator may ask of the files around a Typst file (the validator itself does not touch the file system):
-/// whether a file is there, the text of a file, and the Typst files of a folder. A function left out (null) means
-/// that check is not made.
+/// whether a file is there, the text of a file, the Typst files of a folder, and the names of the files and folders in
+/// a folder, as they are written (to tell paths that differ only in case apart). A function left out (null) means that
+/// check is not made.
 /// </summary>
 public sealed record TypstFiles(
     Func<string, bool>? Exists = null,
     Func<string, string?>? Read = null,
-    Func<string, IReadOnlyList<string>>? TypstFilesIn = null);
+    Func<string, IReadOnlyList<string>>? TypstFilesIn = null,
+    Func<string, IReadOnlyList<string>>? NamesIn = null);
 
 /// <summary>
 /// Native Typst validator: what the Typst compiler refuses and that can be told without compiling (see
@@ -115,19 +117,12 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
             .Distinct(StringComparer.Ordinal).Take(MaxFiles);
     }
 
-    /// <summary>
-    /// True when two full paths are the same file. Paths that differ only in the case of letters are, unless the folder
-    /// has both names (a file system that tells case apart: on Linux, and on some macOS volumes): asked of the folder, not
-    /// of the system
-    /// </summary>
-    internal static bool SamePath(string a, string b, TypstFiles files)
-    {
-        if (string.Equals(a, b, StringComparison.Ordinal)) return true;
-        if (!string.Equals(a, b, StringComparison.OrdinalIgnoreCase)) return false;
-        if (files.TypstFilesIn is null || Path.GetDirectoryName(a) is not { } folder) return true;
-        var names = files.TypstFilesIn(folder).Select(Path.GetFileName).ToHashSet(StringComparer.Ordinal);
-        return !(names.Contains(Path.GetFileName(a)) && names.Contains(Path.GetFileName(b)));
-    }
+    // True when two full paths are the same file: asked of the folders (DiskPaths.SamePlace). Without NamesIn, paths
+    // that differ only in case are taken as the same file
+    private static bool SamePath(string a, string b, TypstFiles files) =>
+        files.NamesIn is { } namesIn
+            ? DiskPaths.SamePlace(a, b, namesIn)
+            : string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 
     // The full paths of the files of a document: the same file in any case of letters is read once (a file system that
     // tells case apart rarely has two such files, and then a check is left out rather than wrong)

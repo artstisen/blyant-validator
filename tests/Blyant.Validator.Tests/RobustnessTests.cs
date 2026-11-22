@@ -230,7 +230,7 @@ public sealed class RobustnessTests : IDisposable
 
         var both = FileCollector.Collect([upper, lower, _dir], false, TextWriter.Null, out _);
         Assert.Equal(caseSensitive ? 2 : 1, both.Count);
-        Assert.Equal(!caseSensitive, FileCollector.SamePlace(upper, lower));
+        Assert.Equal(!caseSensitive, DiskPaths.SamePlace(upper, lower, DocumentIo.NamesIn));
     }
 
     // ---- vnu's output

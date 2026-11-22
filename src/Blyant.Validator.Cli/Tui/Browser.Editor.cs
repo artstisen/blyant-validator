@@ -59,14 +59,13 @@ internal static partial class Browser
         }
 
         var program = editor.Resolve();
-        if (editor.Problem(program) is { } problem)
+        // (a program that is not found is a problem too: the message is never left out)
+        var problem = editor.Problem(program);
+        if (problem is not null || program is null)
         {
-            _message = problem;
+            _message = problem ?? $"Not found: {editor.Program}";
             return;
         }
-
-        // (a program that is not found is a problem above: here it is there)
-        if (program is null) return;
 
         var psi = new ProcessStartInfo(program)
         {

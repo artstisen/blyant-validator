@@ -241,7 +241,15 @@ public sealed class TypstValidatorTests
 
     // A folder of files given as texts: the folders listed in the order given (not sorted), as a file system may
     private static TypstFiles FilesOf(Dictionary<string, string> texts) =>
-        new(texts.ContainsKey, p => texts.GetValueOrDefault(p), f => [.. texts.Keys.Where(k => Path.GetDirectoryName(k) == f)]);
+        new(texts.ContainsKey, p => texts.GetValueOrDefault(p), f => [.. texts.Keys.Where(k => Path.GetDirectoryName(k) == f)],
+            f => NamesIn(f, texts.Keys));
+
+    // The names of the files and folders in a folder, as a disk that tells case apart has them
+    private static IReadOnlyList<string> NamesIn(string folder, IEnumerable<string> files) =>
+        [.. files.Select(k => Path.GetRelativePath(folder, k))
+            .Where(r => !r.StartsWith("..", StringComparison.Ordinal) && !Path.IsPathRooted(r))
+            .Select(r => r.Split(Path.DirectorySeparatorChar)[0])
+            .Distinct(StringComparer.Ordinal)];
 
     [Fact]
     public void AnIncludeFromTheRoot_IsFromTheFolderOfTheMainFile()
@@ -300,6 +308,26 @@ public sealed class TypstValidatorTests
 
         // (a file system that tells case apart, with both files: One.typ is another file)
         texts[Path.Combine(folder, "One.typ")] = "= Other\n";
+        Assert.Equal(one, TypstValidator.MainFile(one, FilesOf(texts)));
+    }
+
+    [Fact]
+    public void AnIncludeWithAFolderInOtherCase_IsTheFile_UnlessTheFolderHasBoth()
+    {
+        // (the folder on the disk is "Chapters"; Typst takes "chapters/one.typ" where names are not case-sensitive)
+        var folder = Path.GetFullPath("folder-cased");
+        var main = Path.Combine(folder, "main.typ");
+        var one = Path.Combine(folder, "Chapters", "one.typ");
+        var texts = new Dictionary<string, string>
+        {
+            [main] = "= Intro <intro>\n#include \"chapters/one.typ\"\n",
+            [one] = "See @intro.\n",
+        };
+        Assert.Empty(TypstValidator.Validate(one, texts[one], FilesOf(texts)));
+        Assert.Equal(main, TypstValidator.MainFile(one, FilesOf(texts)));
+
+        // (a file system that tells case apart, with both folders: chapters/one.typ is another file)
+        texts[Path.Combine(folder, "chapters", "one.typ")] = "= Other\n";
         Assert.Equal(one, TypstValidator.MainFile(one, FilesOf(texts)));
     }
 

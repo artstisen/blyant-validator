@@ -372,7 +372,7 @@ public sealed class CssValidator : IValidator
                 var first = declaration.Value[0];
                 var last = declaration.Value[^1];
                 Report(first.Start, last.End, Severity.Error, "css.invalid-value",
-                    $"Value “{Shorten(Collapse(source[first.Start..last.End]))}” is not valid for “{name}”.");
+                    $"Value “{Texts.Shorten(Collapse(source[first.Start..last.End]), 60)}” is not valid for “{name}”.");
             }
         }
 
@@ -425,7 +425,5 @@ public sealed class CssValidator : IValidator
             }
             return sb.ToString();
         }
-
-        private static string Shorten(string text) => text.Length > 60 ? text[..60] + "…" : text;
     }
 }

@@ -98,7 +98,7 @@ internal static partial class Sitemap
                 else
                 {
                     if (!seen.Add(url))
-                        Report(loc, Severity.Warning, "sitemap.duplicate-loc", $"“{Shorten(url)}” is listed more than once.");
+                        Report(loc, Severity.Warning, "sitemap.duplicate-loc", $"“{Texts.Shorten(url, 60)}” is listed more than once.");
                     var host = new Uri(url).Host;
                     firstHost ??= host;
                     if (!host.Equals(firstHost, StringComparison.OrdinalIgnoreCase) && otherHosts.Add(host))
@@ -109,15 +109,15 @@ internal static partial class Sitemap
 
             if (parts.TryGetValue("lastmod", out var lastmod) && !IsW3cDate(lastmod.Value.Trim()))
                 Report(lastmod, Severity.Error, "sitemap.bad-lastmod",
-                    $"“{Shorten(lastmod.Value.Trim())}” is not a W3C date: use, for example, “2026-11-10” or “2026-11-10T14:30:00+01:00”.");
+                    $"“{Texts.Shorten(lastmod.Value.Trim(), 60)}” is not a W3C date: use, for example, “2026-11-10” or “2026-11-10T14:30:00+01:00”.");
 
             if (parts.TryGetValue("changefreq", out var changefreq) && !ChangeFrequencies.Contains(changefreq.Value.Trim()))
                 Report(changefreq, Severity.Error, "sitemap.bad-changefreq",
-                    $"“{Shorten(changefreq.Value.Trim())}” is not a change frequency: use always, hourly, daily, weekly, monthly, yearly or never.");
+                    $"“{Texts.Shorten(changefreq.Value.Trim(), 60)}” is not a change frequency: use always, hourly, daily, weekly, monthly, yearly or never.");
 
             if (parts.TryGetValue("priority", out var priority) && !IsPriority(priority.Value.Trim()))
                 Report(priority, Severity.Error, "sitemap.bad-priority",
-                    $"“{Shorten(priority.Value.Trim())}” is not a priority: use a number from 0.0 to 1.0.");
+                    $"“{Texts.Shorten(priority.Value.Trim(), 60)}” is not a priority: use a number from 0.0 to 1.0.");
         }
     }
 
@@ -126,10 +126,10 @@ internal static partial class Sitemap
     {
         if (url.Length == 0) return "The “loc” element must not be empty.";
         if (url.Length > MaxLocLength) return $"A URL in a sitemap must not be longer than {MaxLocLength} characters.";
-        if (url.Any(char.IsWhiteSpace)) return $"“{Shorten(url)}” contains a space: use “%20” instead.";
+        if (url.Any(char.IsWhiteSpace)) return $"“{Texts.Shorten(url, 60)}” contains a space: use “%20” instead.";
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https") ||
             uri.Host.Length == 0)
-            return $"“{Shorten(url)}” is not an absolute http or https URL (with the host, as “https://example.org/page.html”).";
+            return $"“{Texts.Shorten(url, 60)}” is not an absolute http or https URL (with the host, as “https://example.org/page.html”).";
         return null;
     }
 
@@ -149,8 +149,6 @@ internal static partial class Sitemap
     }
 
     private static bool IsPriority(string value) => Priority().IsMatch(value);
-
-    private static string Shorten(string text) => text.Length > 60 ? text[..60] + "…" : text;
 
     [GeneratedRegex(@"^﻿?\s*<\?xml[^>]*?\sencoding\s*=\s*[""']([^""']+)[""']")]
     private static partial Regex Declaration();

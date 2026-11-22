@@ -90,6 +90,7 @@ internal static partial class Browser
             notSaved = Remember(settings);
             Keyboard.Idle = null;
             Results.Dispose();
+            _resultStore = null;
             Tools.ShowCursor();
             ConsoleColors.Reset();
             Console.Clear();
