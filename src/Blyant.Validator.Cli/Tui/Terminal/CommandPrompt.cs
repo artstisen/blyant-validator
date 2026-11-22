@@ -31,8 +31,8 @@ internal static class CommandPrompt
     internal static string? Read(char prefix, CommandTable? commands = null)
     {
         var command = string.Empty;
-        var completion = commands == null ? null : new CommandCompletion(commands);
-        var recall = commands == null ? null : new CommandRecall(commands.History);
+        var completion = commands is null ? null : new CommandCompletion(commands);
+        var recall = commands is null ? null : new CommandRecall(commands.History);
         Tools.WriteBottomLine(prefix == Prefix ? CommandLabel : prefix.ToString(),
             ConsoleColors.ColorPreset.CommandLineInverted, true);
         ConsoleColors.SetColors(ConsoleColors.ColorPreset.CommandLineInverted);
@@ -69,7 +69,7 @@ internal static class CommandPrompt
                 if (key.Key is ConsoleKey.UpArrow or ConsoleKey.DownArrow)
                 {
                     var recalled = key.Key == ConsoleKey.UpArrow ? recall?.Previous(command) : recall?.Next();
-                    if (recalled != null)
+                    if (recalled is not null)
                     {
                         Replace(recalled);
                         completion?.Reset();

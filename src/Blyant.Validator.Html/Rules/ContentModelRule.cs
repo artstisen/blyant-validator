@@ -252,7 +252,7 @@ public sealed class ContentModelRule : IHtmlRule
         if (IsInteractive(element))
         {
             var container = ancestors.LastOrDefault(a => a.Lower is "a" or "button" && !a.IsForeign);
-            if (container != null && !(container.Lower == name))
+            if (container is not null && !(container.Lower == name))
                 context.Report(element, Severity.Error, "html.content-model",
                     $"The element “{name}” must not appear as a descendant of the “{container.Lower}” element.");
         }

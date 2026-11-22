@@ -104,7 +104,7 @@ internal static partial class Browser
             // (made HTML is checked, as any other)
             foreach (var path in written.Where(p => ResultStore.IsValidated(p))) _results.Refresh(path);
             var warnings = export.Problems.Count;
-            _message = failed == null
+            _message = failed is null
                 ? $"Made {Made(export)}" + (warnings > 0 ? $" ({warnings} warning{(warnings == 1 ? "" : "s")} of Typst)" : "")
                 : written.Count == 0
                     ? "Not put in place: " + failed
@@ -124,13 +124,13 @@ internal static partial class Browser
             ChoiceBox.Forget();
             // (a folder of the name cannot be replaced)
             var folder = existing.FirstOrDefault(Directory.Exists);
-            var question = folder != null ? $"There is a folder {Path.GetFileName(folder)}"
+            var question = folder is not null ? $"There is a folder {Path.GetFileName(folder)}"
                 : existing.Count == 1 ? $"Replace {Path.GetFileName(existing[0])}?" : $"Replace {existing.Count} files?";
             var note = problem.Length > 0 ? problem
                 : existing.Count == 1 ? $"A file of that name is there. Typst made {Made(export)}."
                 : $"Files of those names are there ({Path.GetFileName(existing[0])} …). Typst made {Made(export)}.";
-            string[] choices = folder != null ? ["Save as another name", "Cancel"] : ["Replace", "Save as another name", "Cancel"];
-            string[] keys = folder != null ? ["S", "C"] : ["R", "S", "C"];
+            string[] choices = folder is not null ? ["Save as another name", "Cancel"] : ["Replace", "Save as another name", "Cancel"];
+            string[] keys = folder is not null ? ["S", "C"] : ["R", "S", "C"];
             var picked = ChoiceBox.Pick("Typst", question, note, choices, keys, 0);
             if (picked < 0 || choices[picked] == "Cancel") return false;
             if (choices[picked] == "Replace") return true;
@@ -144,7 +144,7 @@ internal static partial class Browser
                 $"A new name, in the folder of {Path.GetFileName(export.MainFile)}" + (pages ? $"\nOne {extension[1..].ToUpperInvariant()} per page: the name, -1, -2 …" : string.Empty),
                 "Name:", stem);
             problem = string.Empty;
-            if (name == null) continue;
+            if (name is null) continue;
             // (the extension of the format is added: typed too, it is not doubled)
             if (name.EndsWith(extension, StringComparison.OrdinalIgnoreCase)) name = name[..^extension.Length].TrimEnd();
             if (FileNames.Problem(name + extension) is { } wrong)

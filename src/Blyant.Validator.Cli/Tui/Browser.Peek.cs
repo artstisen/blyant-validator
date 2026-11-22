@@ -90,8 +90,8 @@ internal static partial class Browser
         if (SelectedItem() is not { IsDirectory: false } item) return PeekedDirectory() ?? string.Empty;
         if (!ResultStore.IsValidated(item.Path)) return item.Name + " - not checked";
         var result = _results.Last(item.Path);
-        var summary = result == null || _results.IsPending(item.Path) ? "checking..."
-            : result.Failure != null ? "could not be checked"
+        var summary = result is null || _results.IsPending(item.Path) ? "checking..."
+            : result.Failure is not null ? "could not be checked"
             : (result.Errors, result.Warnings) switch
             {
                 (0, 0) => "no problems",
@@ -130,7 +130,7 @@ internal static partial class Browser
     {
         if (SelectedItem() is not { IsDirectory: false } item) return false;
         var info = new FileInfo(item.Path);
-        if (!info.Exists) return _peekSource != null;
+        if (!info.Exists) return _peekSource is not null;
         var result = _results.Get(item.Path);
         return _peekSource is not { } source || source.Path != item.Path || source.Written != info.LastWriteTimeUtc ||
                source.Length != info.Length || !ReferenceEquals(source.Result, result);
@@ -228,7 +228,7 @@ internal static partial class Browser
         {
             DrawPeekLines(left, width, DirectoryContents(directory, PageSize), false);
         }
-        else if (_peekDocument == null)
+        else if (_peekDocument is null)
         {
             DrawPeekLines(left, width, [_peekNote ?? string.Empty], true);
         }
@@ -398,13 +398,13 @@ internal static partial class Browser
         var result = _peekSource?.Result;
         IReadOnlyList<string> notes = !ResultStore.IsValidated(document.Path)
                 ? ["Not checked: not HTML, CSS, XML, Markdown or Typst"]
-            : result == null ? ["Checking..."]
-            : result.Failure != null ? ["Could not be checked: " + result.Failure]
+            : result is null ? ["Checking..."]
+            : result.Failure is not null ? ["Could not be checked: " + result.Failure]
             : document.Diagnostics.Count == 0 ? ["No problems found."]
             : [];
         if (notes.Count > 0)
         {
-            DrawPeekLines(left, width, notes, result == null);
+            DrawPeekLines(left, width, notes, result is null);
             return;
         }
 
@@ -450,7 +450,7 @@ internal static partial class Browser
         }
 
         LoadPeek();
-        if (_peekDocument == null)
+        if (_peekDocument is null)
         {
             _message = _peekNote ?? "Select a file to peek at";
             return;
@@ -501,7 +501,7 @@ internal static partial class Browser
                 // The file was changed, or checked again: shown as it is now, at the same place (and the results of
                 // the list beside it too)
                 LoadPeek();
-                if (_peekDocument == null) return;
+                if (_peekDocument is null) return;
                 // (the list may have been read again: files gone)
                 KeepInView(ActivePane);
                 DrawRows(_active);
@@ -531,17 +531,17 @@ internal static partial class Browser
                 _peekCommand = CommandPrompt.Read(':', CommandTable);
                 // ":ignore" without a code is for the problem selected here (the list of problems), or the first one
                 // on the line of the cursor: told now, as the problems may be checked again before it runs
-                if (_peekCommand != null && CommandPrompt.Name(_peekCommand) == "ignore" && CommandPrompt.Argument(_peekCommand).Length == 0)
+                if (_peekCommand is not null && CommandPrompt.Name(_peekCommand) == "ignore" && CommandPrompt.Argument(_peekCommand).Length == 0)
                 {
                     var problem = _peekMode == PeekMode.Problems
                         ? document.Diagnostics.ElementAtOrDefault(_problemSelected)
                         : document.On(_peekCursor).FirstOrDefault();
-                    if (problem != null) _peekCommand = "ignore " + problem.Code;
+                    if (problem is not null) _peekCommand = "ignore " + problem.Code;
                 }
 
-                if (_peekCommand != null && CommandPrompt.Name(_peekCommand) == "edit" && CommandPrompt.Argument(_peekCommand).Length == 0)
+                if (_peekCommand is not null && CommandPrompt.Name(_peekCommand) == "edit" && CommandPrompt.Argument(_peekCommand).Length == 0)
                     _peekCommand = "edit " + PeekLine(document);
-                if (_peekCommand != null) return;
+                if (_peekCommand is not null) return;
                 RedrawInPeek();
                 continue;
             }
@@ -683,7 +683,7 @@ internal static partial class Browser
         else if (key.KeyChar == '/')
         {
             var text = CommandPrompt.Read('/');
-            if (text == null) return string.Empty;
+            if (text is null) return string.Empty;
             _peekSearch = text;
             _nextFindsSearch = true;
             if (document.Find(text, _peekCursor, true) is { } line) _peekCursor = line;

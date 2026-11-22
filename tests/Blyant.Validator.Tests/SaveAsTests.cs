@@ -62,6 +62,6 @@ public sealed class SaveAsTests
     [InlineData("tab\there.pdf", false)]
     public void FileNames_AreChecked(string name, bool allowed)
     {
-        Assert.Equal(allowed, FileNames.Problem(name) == null);
+        Assert.Equal(allowed, FileNames.Problem(name) is null);
     }
 }

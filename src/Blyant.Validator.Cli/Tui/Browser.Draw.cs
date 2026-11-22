@@ -262,14 +262,14 @@ internal static partial class Browser
     {
         if (!ResultStore.IsValidated(path)) return;
         var result = _results.Get(path);
-        if (result == null)
+        if (result is null)
         {
             ConsoleColors.SetColors(ConsoleColors.ColorPreset.Divider);
             Console.Write("...");
             return;
         }
 
-        if (result.Failure != null)
+        if (result.Failure is not null)
         {
             ConsoleColors.SetColors(ConsoleColors.ColorPreset.Error);
             Console.Write("failed");
@@ -388,7 +388,7 @@ internal static partial class Browser
         foreach (var item in pane.Items)
         {
             if (item.IsDirectory || _results.Last(item.Path) is not { } result) continue;
-            if (result.Errors > 0 || result.Failure != null) errors++;
+            if (result.Errors > 0 || result.Failure is not null) errors++;
             else if (result.Warnings > 0) warnings++;
         }
 

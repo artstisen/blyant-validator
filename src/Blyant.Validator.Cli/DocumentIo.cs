@@ -147,7 +147,7 @@ internal static class DocumentIo
         var other = span.StartsWith((byte[])[0xFF, 0xFE, 0, 0]) || span.StartsWith((byte[])[0, 0, 0xFE, 0xFF]) ? "UTF-32"
             : span.StartsWith((byte[])[0xFF, 0xFE]) || span.StartsWith((byte[])[0xFE, 0xFF]) ? "UTF-16"
             : null;
-        if (other != null)
+        if (other is not null)
             throw new NotUtf8Exception($"The file is in {other}, not UTF-8: it is not checked or formatted. Save it as UTF-8.", 1);
 
         var hasBom = span.StartsWith(Utf8WithBom.Preamble);

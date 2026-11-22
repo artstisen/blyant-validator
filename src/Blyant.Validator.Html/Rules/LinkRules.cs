@@ -111,7 +111,7 @@ public sealed partial class FileLinkRule
             if (!cache.TryGetValue(current, out var names)) cache[current] = names = namesIn(current);
             var match = names.FirstOrDefault(n => string.Equals(n, name, StringComparison.Ordinal)) ??
                         names.FirstOrDefault(n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase));
-            if (match == null) return null;
+            if (match is null) return null;
             differs |= match != name;
             written.Add(match);
             current = Path.Combine(current, match);

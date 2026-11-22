@@ -103,7 +103,7 @@ internal sealed class EditorCommand
     /// <summary>Why the command cannot be used, or null when it can.</summary>
     public string? Problem(string? resolved)
     {
-        if (resolved == null) return $"Not found: {Program}";
+        if (resolved is null) return $"Not found: {Program}";
         var extension = Path.GetExtension(resolved);
         if (extension.Equals(".cmd", StringComparison.OrdinalIgnoreCase) || extension.Equals(".bat", StringComparison.OrdinalIgnoreCase))
             return $"{Path.GetFileName(resolved)} is run by cmd.exe: give the editor's program (.exe) instead";

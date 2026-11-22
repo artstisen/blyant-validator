@@ -310,7 +310,7 @@ public sealed class TypstFactAttribute : FactAttribute
                 RedirectStandardError = true,
                 UseShellExecute = false,
             });
-            if (process == null) return false;
+            if (process is null) return false;
             process.WaitForExit(10_000);
             return process.HasExited && process.ExitCode == 0;
         }

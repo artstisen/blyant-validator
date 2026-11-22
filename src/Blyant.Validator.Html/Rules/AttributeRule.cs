@@ -81,7 +81,7 @@ public sealed partial class AttributeRule : IHtmlRule
         // Obsolete attributes are told about by ObsoleteRule
         if (HtmlSpec.ObsoleteAttributes.ContainsKey(el + " " + name)) return;
 
-        if (attribute.RawValue == null) value = string.Empty;
+        if (attribute.RawValue is null) value = string.Empty;
         string? problem = null;
         if (HtmlSpec.BooleanAttributes.Contains(name))
         {
@@ -118,7 +118,7 @@ public sealed partial class AttributeRule : IHtmlRule
             }
         }
 
-        if (problem != null)
+        if (problem is not null)
             context.Report(attribute.ValueStart >= 0 ? attribute.ValueStart : attribute.Start, Severity.Error,
                 "html.bad-value", $"Bad value “{Shorten(value)}” for attribute “{name}” on element “{el}”{problem}" +
                                   (problem.Length == 0 ? "." : string.Empty));

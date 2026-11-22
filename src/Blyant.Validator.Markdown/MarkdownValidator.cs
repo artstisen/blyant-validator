@@ -78,7 +78,7 @@ public sealed partial class MarkdownValidator(Func<string, bool>? exists = null)
         foreach (var link in reader.Links)
         {
             var what = link.IsImage ? "image" : "link";
-            if (link.Label != null)
+            if (link.Label is not null)
             {
                 if (!reader.Definitions.ContainsKey(MarkdownReader.NormalizeLabel(link.Label)))
                     report(link.Line, link.Column, Severity.Warning, "md.undefined-reference",
@@ -103,7 +103,7 @@ public sealed partial class MarkdownValidator(Func<string, bool>? exists = null)
             }
 
             // Only relative paths are checked: not web addresses (https:, mailto: …), not paths from the site root
-            if (exists == null || Urls.HasScheme(target) || target.StartsWith('/') || target.StartsWith('\\')) continue;
+            if (exists is null || Urls.HasScheme(target) || target.StartsWith('/') || target.StartsWith('\\')) continue;
             // (a "\" is read as "/", as browsers do: on Linux and macOS it would be a part of the name)
             var file = target.Split('#', '?')[0].Replace('\\', '/');
             if (file.Length == 0) continue;

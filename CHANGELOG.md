@@ -2,6 +2,12 @@
 
 ## 0.6.3 (unreleased)
 
+### Changed
+- The code follows the CSharp Coding Kit (https://github.com/artstisen/csharp-coding-kit) where `AGENTS.md` does not
+  ask for something else: `is null` and `is not null` instead of `== null` and `!= null`, and the clock is read in one
+  place (`IsoDateTime`, adapted from Blyant's), in UTC, through a `TimeProvider`; a time is made local only where a
+  person reads it (the time `settings.ini` was written). Nothing the program does changes
+
 ## 0.6.2 (2026-11-19)
 
 ### Added

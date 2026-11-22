@@ -14,7 +14,7 @@ internal static partial class Browser
     {
         if (argument.Length == 0)
         {
-            _message = Editor == null ? "No editor: set one with :editor path (and arguments)" : $"Editor: {Editor.Text} (O opens the selected file)";
+            _message = Editor is null ? "No editor: set one with :editor path (and arguments)" : $"Editor: {Editor.Text} (O opens the selected file)";
             return;
         }
 

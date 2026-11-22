@@ -39,7 +39,7 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
     public async Task<IReadOnlyList<Diagnostic>> ValidateAsync(SourceDocument document, CancellationToken cancellationToken = default)
     {
         var file = Path.GetFullPath(document.Path);
-        var main = files == null ? file : TypstValidator.MainFile(file, files);
+        var main = files is null ? file : TypstValidator.MainFile(file, files);
         var psi = new ProcessStartInfo(options.ResolveTypst())
         {
             RedirectStandardOutput = true,

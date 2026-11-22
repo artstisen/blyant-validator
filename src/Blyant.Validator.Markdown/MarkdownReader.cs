@@ -92,7 +92,7 @@ public sealed partial class MarkdownReader
             var text = lines[i];
             var number = i + 1;
 
-            if (fence != null)
+            if (fence is not null)
             {
                 Lines.Add(new MarkdownLine(number, text, LineKind.Code));
                 var inner = fenceQuoted ? Unquote(text) : text;
@@ -100,7 +100,7 @@ public sealed partial class MarkdownReader
                 continue;
             }
 
-            if (htmlEnd != null)
+            if (htmlEnd is not null)
             {
                 // An HTML block goes on to its end (a blank line ends it, or is kept in it)
                 if (htmlEnd.Length > 0 || text.Trim().Length > 0)
@@ -167,7 +167,7 @@ public sealed partial class MarkdownReader
             }
 
             var kind = Classify(text, previous, out var level, out var headingText);
-            if (kind == LineKind.Heading && level > 0 && headingText == null)
+            if (kind == LineKind.Heading && level > 0 && headingText is null)
             {
                 // Setext: the line below a paragraph makes the paragraph a heading (all its lines are its text)
                 var above = Lines[^1];
@@ -199,7 +199,7 @@ public sealed partial class MarkdownReader
             previous = kind;
         }
 
-        if (fence != null)
+        if (fence is not null)
             Problems.Add(new MarkdownProblem(fenceLine, 1, "md.unclosed-fence",
                 $"The code block opened with “{fence}” is never closed: the rest of the file is shown as code."));
 

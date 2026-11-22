@@ -23,7 +23,7 @@ public sealed class XmlFormatter : IFormatter
     {
         var errors = XmlValidator.Validate(document.Path, document.Content)
             .FirstOrDefault(d => d.Code == "xml.not-well-formed");
-        if (errors != null)
+        if (errors is not null)
             throw new Core.FormatException($"{errors.Message} (line {errors.Start.Line})");
 
         var newline = options.NewLine ?? document.DetectNewLine();
@@ -103,7 +103,7 @@ public sealed class XmlFormatter : IFormatter
         var space = false;
         foreach (var c in tag)
         {
-            if (quote != null)
+            if (quote is not null)
             {
                 result.Append(c);
                 if (c == quote) quote = null;
@@ -258,7 +258,7 @@ internal static class XmlSourceReader
         for (var i = start + 1; i < s.Length; i++)
         {
             var c = s[i];
-            if (quote != null)
+            if (quote is not null)
             {
                 if (c == quote) quote = null;
             }

@@ -152,11 +152,19 @@ internal sealed class ResultStore : IDisposable
     /// <summary>True (once) when results have come in since this was asked last.</summary>
     public bool TakeChanged() => Interlocked.Exchange(ref _changed, 0) == 1;
 
-    /// <summary>Wait until no file waits to be validated (for tests).</summary>
-    public async Task WaitIdleAsync(TimeSpan timeout)
+    /// <summary>Wait until no file waits to be validated, or the time is up (for tests).</summary>
+    public async Task WaitIdleAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        var end = DateTime.UtcNow + timeout;
-        while (!_queued.IsEmpty && DateTime.UtcNow < end) await Task.Delay(10).ConfigureAwait(false);
+        using var time = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        time.CancelAfter(timeout);
+        try
+        {
+            while (!_queued.IsEmpty) await Task.Delay(10, time.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // The time is up: the caller looks at the results there are
+        }
     }
 
     private void Request(string path)

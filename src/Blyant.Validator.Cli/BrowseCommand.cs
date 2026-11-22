@@ -18,7 +18,7 @@ internal static class BrowseCommand
             return 2;
         }
 
-        if (folder != null && !Directory.Exists(folder))
+        if (folder is not null && !Directory.Exists(folder))
         {
             Console.Error.WriteLine($"{CommandLine.Program}: '{folder}' is not a directory.");
             return 2;

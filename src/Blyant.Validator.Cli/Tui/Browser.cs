@@ -102,7 +102,7 @@ internal static partial class Browser
         }
 
         // (told after the screen is cleared, so it can be read)
-        if (notSaved != null) Console.Error.WriteLine($"{CommandLine.Program}: the settings could not be saved: {notSaved}");
+        if (notSaved is not null) Console.Error.WriteLine($"{CommandLine.Program}: the settings could not be saved: {notSaved}");
         return 0;
     }
 
@@ -121,7 +121,7 @@ internal static partial class Browser
         Panes[0].Directory = Existing(settings.BrowseDirectory1);
         Panes[1].Directory = Existing(settings.BrowseDirectory2);
         string?[] selected = [NullIfEmpty(settings.BrowseSelected1), NullIfEmpty(settings.BrowseSelected2)];
-        if (directory != null)
+        if (directory is not null)
         {
             ActivePane.Directory = Path.GetFullPath(directory);
             selected[_active] = null;
@@ -267,7 +267,7 @@ internal static partial class Browser
             }
 
             var count = _listCount.Take();
-            if (count != null && key.Key == ConsoleKey.Escape)
+            if (count is not null && key.Key == ConsoleKey.Escape)
             {
                 Draw(hadMessage);
                 continue;
@@ -279,7 +279,7 @@ internal static partial class Browser
             if (key.KeyChar == ':')
             {
                 var command = CommandPrompt.Read(':', CommandTable);
-                if (command != null && RunCommand(command) == CommandResult.Quit && ConfirmExit()) break;
+                if (command is not null && RunCommand(command) == CommandResult.Quit && ConfirmExit()) break;
             }
             else if (key.KeyChar == '?')
             {
@@ -468,7 +468,7 @@ internal static partial class Browser
             return;
         }
 
-        var found = selected == null ? -1 : pane.Items.FindIndex(item => item.Name == selected.Name);
+        var found = selected is null ? -1 : pane.Items.FindIndex(item => item.Name == selected.Name);
         pane.Index = found >= 0 ? found : Math.Min(index, Math.Max(0, pane.Items.Count - 1));
         pane.Top = top;
         pane.ShownTop = -1;
@@ -500,7 +500,7 @@ internal static partial class Browser
         if (ActivePane.Directory.Length == 0) return;
         var parent = System.IO.Directory.GetParent(ActivePane.Directory)?.FullName;
         var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(ActivePane.Directory));
-        if (parent != null)
+        if (parent is not null)
         {
             ChangeDirectory(parent, name);
         }
@@ -553,7 +553,7 @@ internal static partial class Browser
         if (pane.MarksDirectory != pane.Directory) pane.Marks.Clear();
         pane.Marks.RemoveWhere(path => !DocumentIo.IsFile(path));
         pane.MarksDirectory = pane.Directory;
-        pane.Index = Math.Max(0, select == null ? 0 : items.FindIndex(i => i.Name == select || i.Path == select));
+        pane.Index = Math.Max(0, select is null ? 0 : items.FindIndex(i => i.Name == select || i.Path == select));
         pane.Top = 0;
         pane.ShownTop = -1;
         return true;

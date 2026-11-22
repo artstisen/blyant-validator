@@ -66,7 +66,7 @@ public sealed partial class TextRule : IHtmlRule
             if (match.Index > 0 && !string.IsNullOrWhiteSpace(text.Raw[lineStart..match.Index])) continue;
             var closed = index + 1 < parent.Children.Count
                 ? parent.Children[index + 1] is HStrayEndTag stray && IsEndTagOf(stray.Raw, name)
-                : parent.EndTag != null && parent.Lower.Equals(name, StringComparison.OrdinalIgnoreCase);
+                : parent.EndTag is not null && parent.Lower.Equals(name, StringComparison.OrdinalIgnoreCase);
             if (!closed) continue;
             context.Report(text.Start + match.Index, Severity.Warning, "html.text-looks-like-start-tag",
                 $"“{name}>” in the text looks like a start tag without its “<”: browsers show it as text. Write “<{name}>”.");

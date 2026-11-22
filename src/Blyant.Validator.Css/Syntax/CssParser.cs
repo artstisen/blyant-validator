@@ -300,10 +300,10 @@ public sealed class CssParser
             switch (token.Type)
             {
                 case CssTokenType.EndOfFile:
-                    if (open != null)
+                    if (open is not null)
                         Error(open, "css.parse.unclosed-block", "Block is never closed (missing “}”).", structural: true);
                     return;
-                case CssTokenType.RightCurly when open == null:
+                case CssTokenType.RightCurly when open is null:
                     Error(token, "css.parse.unexpected-close", "Unexpected “}”: there is no block to close.", structural: true);
                     _i++;
                     break;

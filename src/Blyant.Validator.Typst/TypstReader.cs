@@ -732,7 +732,7 @@ public sealed class TypstReader
     private void CallArguments(string? name)
     {
         var open = _pos - 1;
-        if (name != null)
+        if (name is not null)
         {
             if (DynamicFunctions.Contains(name)) HasDynamicLabels = true;
             if (PathFunctions.Contains(name)) NotePath(name);
@@ -751,7 +751,7 @@ public sealed class TypstReader
         var i = _pos;
         while (At(i) is ' ' or '\t') i++;
         var path = At(i) == '"' ? StringOnItsOwn(i) : null;
-        if (path != null) Paths.Add(new TypstPath(path, i, function));
+        if (path is not null) Paths.Add(new TypstPath(path, i, function));
         else if (function is "import" or "include") HasDynamicIncludes = true;
     }
 

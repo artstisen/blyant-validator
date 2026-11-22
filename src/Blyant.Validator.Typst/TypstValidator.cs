@@ -69,7 +69,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
             }
 
             // (a path from the root of the project: the root is not known here)
-            if (files.Exists == null || file.Path.Length == 0 || Resolve(folder, file.Path, root: null) is not { } full) continue;
+            if (files.Exists is null || file.Path.Length == 0 || Resolve(folder, file.Path, root: null) is not { } full) continue;
             if (!files.Exists(full))
                 report(file.Offset, Severity.Error, "typst.missing-file", $"The file “{file.Path}” is not there.");
         }
@@ -85,7 +85,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
         path = path.Replace('\\', '/');
         if (path.StartsWith('/'))
         {
-            if (root == null) return null;
+            if (root is null) return null;
             (folder, path) = (root, path.TrimStart('/'));
         }
 
@@ -109,7 +109,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
     private static IEnumerable<string> Around(string full, TypstFiles files)
     {
         var folders = new List<string>();
-        for (var folder = Path.GetDirectoryName(full); folder != null && folders.Count < Levels; folder = Path.GetDirectoryName(folder))
+        for (var folder = Path.GetDirectoryName(full); folder is not null && folders.Count < Levels; folder = Path.GetDirectoryName(folder))
             folders.Add(folder);
         return folders.SelectMany(f => files.TypstFilesIn!(f).Select(Path.GetFullPath).Order(StringComparer.Ordinal))
             .Distinct(StringComparer.Ordinal).Take(MaxFiles);
@@ -124,7 +124,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
     {
         if (string.Equals(a, b, StringComparison.Ordinal)) return true;
         if (!string.Equals(a, b, StringComparison.OrdinalIgnoreCase)) return false;
-        if (files.TypstFilesIn == null || Path.GetDirectoryName(a) is not { } folder) return true;
+        if (files.TypstFilesIn is null || Path.GetDirectoryName(a) is not { } folder) return true;
         var names = files.TypstFilesIn(folder).Select(Path.GetFileName).ToHashSet(StringComparer.Ordinal);
         return !(names.Contains(Path.GetFileName(a)) && names.Contains(Path.GetFileName(b)));
     }
@@ -191,7 +191,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
             // The file is its own document; the files beside it may be in the same document elsewhere
             if (Tally(full, parsed, counted, present) == false) return null;
             var folder = Path.GetDirectoryName(full);
-            foreach (var other in files.TypstFilesIn == null || folder == null ? [] : files.TypstFilesIn(folder))
+            foreach (var other in files.TypstFilesIn is null || folder is null ? [] : files.TypstFilesIn(folder))
             {
                 if (parsed.Get(Path.GetFullPath(other)) is { } beside) present.UnionWith(beside.Labels.Select(l => l.Name));
             }
@@ -281,7 +281,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
     private static List<string>? Includers(string full, ParsedFiles parsed)
     {
         var files = parsed.Files;
-        if (files.TypstFilesIn == null || files.Read == null) return [];
+        if (files.TypstFilesIn is null || files.Read is null) return [];
         var result = new List<string>();
         foreach (var other in Around(full, files))
         {

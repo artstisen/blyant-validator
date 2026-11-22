@@ -43,7 +43,7 @@ internal static partial class Feeds
     {
         var report = MakeReporter(path, diagnostics);
         var version = rss.Attribute("version")?.Value;
-        if (version == null)
+        if (version is null)
             report(rss, Severity.Error, "rss.version", "The “rss” element is missing required attribute “version” (“2.0”).");
         else if (version != "2.0")
             report(rss, Severity.Warning, "rss.version", $"RSS version “{version}”: the rules of RSS 2.0 are used.");
@@ -68,7 +68,7 @@ internal static partial class Feeds
         if (channel.Element("image") is { } image)
         {
             foreach (var required in new[] { "url", "title", "link" })
-                if (image.Element(required) == null)
+                if (image.Element(required) is null)
                     report(image, Severity.Error, "rss.missing-element", $"Element “image” is missing required child element “{required}”.");
             CheckUrl(image.Element("url"), report);
             CheckUrl(image.Element("link"), report);
@@ -84,7 +84,7 @@ internal static partial class Feeds
         foreach (var item in channel.Elements("item"))
         {
             CheckChildren(item, "item", ItemElements, [], report);
-            if (item.Element("title") == null && item.Element("description") == null)
+            if (item.Element("title") is null && item.Element("description") is null)
                 report(item, Severity.Error, "rss.missing-element", "An “item” must have a “title” or a “description”, or both.");
             CheckRssCommon(item, report);
 
@@ -93,7 +93,7 @@ internal static partial class Feeds
                 var permalink = guid.Attribute("isPermaLink")?.Value.Trim();
                 if (permalink is not (null or "true" or "false"))
                     report(guid, Severity.Error, "rss.bad-value", "The “isPermaLink” attribute must be “true” or “false”.");
-                else if (permalink != "false" && UrlProblem(guid.Value.Trim()) != null)
+                else if (permalink != "false" && UrlProblem(guid.Value.Trim()) is not null)
                     report(guid, Severity.Error, "rss.bad-guid",
                         $"“{Shorten(guid.Value.Trim())}” is not a URL: a “guid” is a link unless it has isPermaLink=\"false\".");
                 if (!guids.TryAdd(guid.Value.Trim(), guid))
@@ -103,7 +103,7 @@ internal static partial class Feeds
             if (item.Element("enclosure") is { } enclosure)
             {
                 foreach (var required in new[] { "url", "length", "type" })
-                    if (enclosure.Attribute(required) == null)
+                    if (enclosure.Attribute(required) is null)
                         report(enclosure, Severity.Error, "rss.missing-attribute", $"Element “enclosure” is missing required attribute “{required}”.");
                 if (enclosure.Attribute("url") is { } url && UrlProblem(url.Value) is { } problem)
                     report(enclosure, Severity.Error, "rss.bad-url", problem);
@@ -111,7 +111,7 @@ internal static partial class Feeds
                     report(enclosure, Severity.Error, "rss.bad-value", $"The enclosure length “{Shorten(length.Value)}” is not a number of bytes.");
             }
 
-            if (item.Element("source") is { } source && source.Attribute("url") == null)
+            if (item.Element("source") is { } source && source.Attribute("url") is null)
                 report(source, Severity.Error, "rss.missing-attribute", "Element “source” is missing required attribute “url”.");
         }
     }
@@ -129,7 +129,7 @@ internal static partial class Feeds
         }
 
         foreach (var element in required)
-            if (parent.Element(element) == null)
+            if (parent.Element(element) is null)
                 report(parent, Severity.Error, "rss.missing-element", $"Element “{name}” is missing required child element “{element}”.");
 
         foreach (var group in parent.Elements().Where(e => e.Name.NamespaceName.Length == 0 && e.Name.LocalName is not ("item" or "category"))
@@ -146,7 +146,7 @@ internal static partial class Feeds
         CheckUrl(element.Element("docs"), report);
         foreach (var date in new[] { element.Element("pubDate"), element.Element("lastBuildDate") })
         {
-            if (date == null) continue;
+            if (date is null) continue;
             var value = date.Value.Trim();
             switch (Rfc822(value))
             {
@@ -162,7 +162,7 @@ internal static partial class Feeds
 
         foreach (var person in new[] { element.Element("managingEditor"), element.Element("webMaster"), element.Element("author") })
         {
-            if (person != null && !person.Value.Contains('@'))
+            if (person is not null && !person.Value.Contains('@'))
                 report(person, Severity.Warning, "rss.bad-value",
                     $"“{Shorten(person.Value.Trim())}” is not an e-mail address: RSS expects one here (use dc:creator for a name).");
         }
@@ -222,11 +222,11 @@ internal static partial class Feeds
                 report(entry, Severity.Error, "atom.missing-author",
                     "An “entry” must have an “author” when the “feed” has none.");
 
-            if (entry.Element(Atom("content")) == null &&
+            if (entry.Element(Atom("content")) is null &&
                 !entry.Elements(Atom("link")).Any(l => (l.Attribute("rel")?.Value ?? "alternate") == "alternate"))
                 report(entry, Severity.Error, "atom.missing-content",
                     "An “entry” must have a “content” element or a link with rel=\"alternate\".");
-            if (entry.Element(Atom("content")) is { } content && content.Attribute("src") != null && !content.IsEmpty &&
+            if (entry.Element(Atom("content")) is { } content && content.Attribute("src") is not null && !content.IsEmpty &&
                 content.Value.Trim().Length > 0)
                 report(content, Severity.Error, "atom.bad-content", "A “content” element with a “src” attribute must be empty.");
 
@@ -243,7 +243,7 @@ internal static partial class Feeds
     {
         static XName Atom(string local) => XName.Get(local, AtomNamespace);
         foreach (var required in new[] { "id", "title", "updated" })
-            if (element.Element(Atom(required)) == null)
+            if (element.Element(Atom(required)) is null)
                 report(element, Severity.Error, "atom.missing-element", $"Element “{name}” is missing required child element “{required}”.");
 
         foreach (var group in element.Elements().Where(e => e.Name.NamespaceName == AtomNamespace && singles.Contains(e.Name.LocalName))
@@ -261,11 +261,11 @@ internal static partial class Feeds
                     $"“{Shorten(date.Value.Trim())}” is not an RFC 3339 date: use, for example, “2026-11-10T14:30:00Z”.");
 
         foreach (var link in element.Elements(Atom("link")))
-            if (link.Attribute("href") == null)
+            if (link.Attribute("href") is null)
                 report(link, Severity.Error, "atom.missing-attribute", "Element “link” is missing required attribute “href”.");
 
         foreach (var person in element.Elements().Where(e => e.Name == Atom("author") || e.Name == Atom("contributor")))
-            if (person.Element(Atom("name")) == null)
+            if (person.Element(Atom("name")) is null)
                 report(person, Severity.Error, "atom.missing-element",
                     $"Element “{person.Name.LocalName}” is missing required child element “name”.");
     }
@@ -281,7 +281,7 @@ internal static partial class Feeds
 
     private static void CheckUrl(XElement? element, Reporter report)
     {
-        if (element != null && UrlProblem(element.Value.Trim()) is { } problem)
+        if (element is not null && UrlProblem(element.Value.Trim()) is { } problem)
             report(element, Severity.Error, "rss.bad-url", problem);
     }
 

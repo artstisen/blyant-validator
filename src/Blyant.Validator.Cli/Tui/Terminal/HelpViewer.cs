@@ -102,7 +102,7 @@ internal static class HelpViewer
             {
                 // Search: go to the first matching line from the top of the page
                 var text = CommandPrompt.Read('/');
-                if (text == null) continue;
+                if (text is null) continue;
                 search = text;
                 match = Find(lines, search, top - 1, true);
                 if (match < 0)

@@ -138,8 +138,8 @@ internal sealed class Settings
     internal string Format()
     {
         var text = new StringBuilder();
-        text.Append("; Last modified ")
-            .Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)).Append('\n');
+        // (in local time: a person reads it)
+        text.Append("; Last modified ").Append(IsoDateTime.LocalNow("yyyy-MM-dd HH:mm:ss")).Append('\n');
         text.Append("[SETTINGS]\n");
         text.Append('\n');
         text.Append("; FILE BROWSER\n");

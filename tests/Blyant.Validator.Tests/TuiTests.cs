@@ -70,7 +70,7 @@ public sealed class TuiTests : IDisposable
         Assert.Equal(1, first.Errors);
 
         await File.WriteAllTextAsync(path, "a { color: red; margin: 0 }");
-        File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddSeconds(5));
+        File.SetLastWriteTimeUtc(path, IsoDateTime.UtcNow().AddSeconds(5));
         Assert.Null(store.Get(path));
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
         Assert.Equal(0, store.Get(path)!.Errors);

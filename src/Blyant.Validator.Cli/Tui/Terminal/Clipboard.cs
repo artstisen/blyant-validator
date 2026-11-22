@@ -64,7 +64,7 @@ internal static class Clipboard
         if (term == "linux" || variable("TERM_PROGRAM") == "Apple_Terminal") return true;
         if (string.IsNullOrEmpty(variable("VTE_VERSION"))) return false;
         if (!string.IsNullOrEmpty(variable("TMUX")) || !string.IsNullOrEmpty(variable("TERM_PROGRAM"))) return false;
-        if (term != null && ClipboardTerms.Any(name => term.StartsWith(name, StringComparison.Ordinal))) return false;
+        if (term is not null && ClipboardTerms.Any(name => term.StartsWith(name, StringComparison.Ordinal))) return false;
         return !ClipboardMarkers.Any(marker => !string.IsNullOrEmpty(variable(marker)));
     }
 

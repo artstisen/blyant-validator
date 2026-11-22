@@ -19,7 +19,7 @@ public sealed partial class CharsetRule : IHtmlRule
     public void Check(HtmlRuleContext context)
     {
         if (context.Options.Fragment) return;
-        var declarations = context.FindAll("meta").Select(m => (Meta: m, Charset: CharsetOf(m))).Where(d => d.Charset != null).ToList();
+        var declarations = context.FindAll("meta").Select(m => (Meta: m, Charset: CharsetOf(m))).Where(d => d.Charset is not null).ToList();
         if (declarations.Count == 0)
         {
             if (!context.Document.HasUtf8Bom)

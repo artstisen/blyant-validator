@@ -17,7 +17,7 @@ public sealed class RedundantRoleRule : IHtmlRule
             if (element.GetAttribute("role") is not { } role) continue;
             // (the first of the roles given is the one used)
             var first = role.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.ToLowerInvariant();
-            if (first != null && first == ImplicitRole(element))
+            if (first is not null && first == ImplicitRole(element))
                 context.Report(role.Start, Severity.Warning, "html.redundant-role",
                     $"The “{first}” role is unnecessary for element “{element.Lower}”: it has that role anyway.");
         }
