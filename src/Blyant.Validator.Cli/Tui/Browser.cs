@@ -42,7 +42,10 @@ internal static partial class Browser
 
     private static string _message = string.Empty;
     private static bool _showAll; // All files are listed, not only HTML, CSS, XML, Markdown and Typst
-    private static ResultStore _results = null!;
+    private static ResultStore? _resultStore;
+
+    // The results of the files (made when the TUI starts)
+    private static ResultStore Results => _resultStore ?? throw new InvalidOperationException("The TUI is not running.");
 
     // A count typed in front of a key in the pane with the focus: 5j, 5k, 5gg, 5G (as in Blyant's file browser)
     private static readonly ListCount _listCount = new();
@@ -73,7 +76,7 @@ internal static partial class Browser
         }
 
         var settings = Settings.Load();
-        _results = new ResultStore(engines, vnu, settings.Checks, typst);
+        _resultStore = new ResultStore(engines, vnu, settings.Checks, typst);
         _typst = typst;
         Keyboard.Idle = Idle;
         string? notSaved;
@@ -86,7 +89,7 @@ internal static partial class Browser
         {
             notSaved = Remember(settings);
             Keyboard.Idle = null;
-            _results.Dispose();
+            Results.Dispose();
             Tools.ShowCursor();
             ConsoleColors.Reset();
             Console.Clear();
@@ -116,7 +119,7 @@ internal static partial class Browser
         _dualPane = settings.BrowseDual;
         FileNumbers = settings.FileNumbers;
         Editor = EditorCommand.Parse(settings.Editor);
-        _results.Accessibility = settings.Accessibility;
+        Results.Accessibility = settings.Accessibility;
         _active = settings.BrowsePane;
         Panes[0].Directory = Existing(settings.BrowseDirectory1);
         Panes[1].Directory = Existing(settings.BrowseDirectory2);
@@ -155,7 +158,7 @@ internal static partial class Browser
         settings.BrowseDual = _peeking ? _peekWasDual : _dualPane;
         settings.FileNumbers = FileNumbers;
         settings.Editor = Editor?.Text ?? string.Empty;
-        settings.Accessibility = _results.Accessibility;
+        settings.Accessibility = Results.Accessibility;
         return settings.Save();
     }
 
@@ -169,7 +172,7 @@ internal static partial class Browser
     // While waiting for a key: results that came in, and (once a second) files and directories changed on disk
     private static bool Idle()
     {
-        var changed = _results.TakeChanged();
+        var changed = Results.TakeChanged();
         if (Environment.TickCount64 < _nextDiskCheck) return changed;
         _nextDiskCheck = Environment.TickCount64 + 1000;
         // (while peeking, the other pane is hidden behind the peek: its files are not checked)
@@ -194,7 +197,7 @@ internal static partial class Browser
             var end = Math.Min(pane.Items.Count, pane.Top + PageSize);
             for (var i = pane.Top; i < end; i++)
             {
-                if (!pane.Items[i].IsDirectory) _results.Get(pane.Items[i].Path);
+                if (!pane.Items[i].IsDirectory) Results.Get(pane.Items[i].Path);
             }
         }
 
@@ -206,8 +209,8 @@ internal static partial class Browser
                 var end = Math.Min(pane.Items.Count, pane.Top + PageSize);
                 for (var i = pane.Top; i < end; i++)
                 {
-                    if (!pane.Items[i].IsDirectory && _results.Last(pane.Items[i].Path) is { } last && ResultStore.HasLinkProblem(last))
-                        _results.Recheck(pane.Items[i].Path);
+                    if (!pane.Items[i].IsDirectory && Results.Last(pane.Items[i].Path) is { } last && ResultStore.HasLinkProblem(last))
+                        Results.Recheck(pane.Items[i].Path);
                 }
             }
         }
@@ -445,7 +448,7 @@ internal static partial class Browser
         Reload(pane);
         foreach (var item in pane.Items)
         {
-            if (!item.IsDirectory && ResultStore.IsValidated(item.Path)) _results.Refresh(item.Path);
+            if (!item.IsDirectory && ResultStore.IsValidated(item.Path)) Results.Refresh(item.Path);
         }
 
         _message = "Checking the files again";
@@ -515,7 +518,7 @@ internal static partial class Browser
     // both sorted by name
     private static bool LoadItems(Pane pane, string? select)
     {
-        var items = new List<Item>();
+        List<Item> items = [];
         try
         {
             if (pane.Directory.Length == 0)

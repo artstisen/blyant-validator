@@ -54,7 +54,7 @@ public static class GrammarParser
 
     private static List<string> Lex(string text)
     {
-        var tokens = new List<string>();
+        List<string> tokens = [];
         var i = 0;
         while (i < text.Length)
         {
@@ -112,28 +112,28 @@ public static class GrammarParser
 
     private static GrammarNode ParseOneOf(List<string> t, ref int i)
     {
-        var items = new List<GrammarNode> { ParseAnyOf(t, ref i) };
+        List<GrammarNode> items = [ParseAnyOf(t, ref i)];
         while (i < t.Count && t[i] == "|") { i++; items.Add(ParseAnyOf(t, ref i)); }
         return items.Count == 1 ? items[0] : new OneOfNode(items);
     }
 
     private static GrammarNode ParseAnyOf(List<string> t, ref int i)
     {
-        var items = new List<GrammarNode> { ParseAllOf(t, ref i) };
+        List<GrammarNode> items = [ParseAllOf(t, ref i)];
         while (i < t.Count && t[i] == "||") { i++; items.Add(ParseAllOf(t, ref i)); }
         return items.Count == 1 ? items[0] : new AnyOfNode(items);
     }
 
     private static GrammarNode ParseAllOf(List<string> t, ref int i)
     {
-        var items = new List<GrammarNode> { ParseSequence(t, ref i) };
+        List<GrammarNode> items = [ParseSequence(t, ref i)];
         while (i < t.Count && t[i] == "&&") { i++; items.Add(ParseSequence(t, ref i)); }
         return items.Count == 1 ? items[0] : new AllOfNode(items);
     }
 
     private static GrammarNode ParseSequence(List<string> t, ref int i)
     {
-        var items = new List<GrammarNode>();
+        List<GrammarNode> items = [];
         while (i < t.Count && !IsOperator(t[i]))
             items.Add(ParseRepeated(t, ref i));
         if (items.Count == 0) throw new System.FormatException("Empty sequence in grammar.");

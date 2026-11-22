@@ -1,4 +1,5 @@
-﻿using Blyant.Validator.Core;
+﻿using System.Collections.Frozen;
+using Blyant.Validator.Core;
 using Blyant.Validator.Html.Parsing;
 
 namespace Blyant.Validator.Html.Rules;
@@ -91,7 +92,7 @@ public sealed partial class FileLinkRule
         Dictionary<string, IReadOnlyList<string>> cache)
     {
         var current = folder;
-        var written = new List<string>();
+        List<string> written = [];
         var differs = false;
         foreach (var name in file.Split('/'))
         {
@@ -129,10 +130,10 @@ public sealed partial class FileLinkRule
 public sealed class UnquotedSlashRule : IHtmlRule
 {
     // Attributes whose value is a link, which may end with "/"
-    private static readonly HashSet<string> LinkAttributes = new(StringComparer.OrdinalIgnoreCase)
-    {
+    private static readonly FrozenSet<string> LinkAttributes = FrozenSet.Create(StringComparer.OrdinalIgnoreCase,
+    [
         "href", "action", "formaction", "cite", "content", "data", "manifest",
-    };
+    ]);
 
     public void Check(HtmlRuleContext context)
     {
@@ -156,7 +157,7 @@ internal static class Links
     public sealed record UrlAttribute(string Attribute, bool File, bool NonEmpty);
 
     // The attributes of each element that hold a link
-    private static readonly Dictionary<string, UrlAttribute[]> ByElement = new(StringComparer.Ordinal)
+    private static readonly FrozenDictionary<string, UrlAttribute[]> ByElement = new Dictionary<string, UrlAttribute[]>(StringComparer.Ordinal)
     {
         ["a"] = [new("href", File: true, NonEmpty: false)],
         ["area"] = [new("href", File: true, NonEmpty: false)],
@@ -172,7 +173,7 @@ internal static class Links
         ["input"] = [new("src", File: true, NonEmpty: false)],
         ["object"] = [new("data", File: true, NonEmpty: true)],
         ["form"] = [new("action", File: false, NonEmpty: true)],
-    };
+    }.ToFrozenDictionary(StringComparer.Ordinal);
 
     /// <summary>The attributes of an element (its lowercase name) that hold a link: none for most elements.</summary>
     public static IReadOnlyList<UrlAttribute> AttributesOf(string element) =>

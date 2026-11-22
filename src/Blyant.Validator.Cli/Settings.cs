@@ -78,7 +78,8 @@ internal sealed class Settings
 
             return true;
         }
-        catch
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException or
+                                       System.Security.SecurityException)
         {
             return false;
         }

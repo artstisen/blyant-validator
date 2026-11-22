@@ -34,7 +34,7 @@ public sealed class RobustnessTests : IDisposable
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
         store.Get(path);
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
-        var result = store.Get(path)!;
+        var result = store.Result(path);
         Assert.True(result.Fragment);
         Assert.Empty(result.Diagnostics);
     }

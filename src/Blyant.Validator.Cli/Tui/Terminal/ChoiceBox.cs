@@ -155,7 +155,7 @@ internal static class ChoiceBox
     internal static void ShowTexts(string caption, IReadOnlyList<(string Text, ConsoleColors.ColorPreset Colors)> texts)
     {
         var inner = Screen.LineWidth - 6;
-        var rows = new List<(string Text, ConsoleColors.ColorPreset Colors)>();
+        List<(string Text, ConsoleColors.ColorPreset Colors)> rows = [];
         foreach (var (text, colors) in texts)
         {
             if (text.Length == 0) rows.Add((string.Empty, colors));
@@ -286,7 +286,7 @@ internal static class ChoiceBox
     /// </summary>
     internal static List<string> Wrap(string text, int width)
     {
-        var lines = new List<string>();
+        List<string> lines = [];
         var line = string.Empty;
         foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
         {

@@ -22,7 +22,7 @@ public sealed partial class MarkdownValidator(Func<string, bool>? exists = null)
 
     public static IReadOnlyList<Diagnostic> Validate(string path, string text, Func<string, bool>? exists = null)
     {
-        var diagnostics = new List<Diagnostic>();
+        List<Diagnostic> diagnostics = [];
         var reader = MarkdownReader.Read(text);
         var name = Path.GetFileName(path).ToLowerInvariant();
 

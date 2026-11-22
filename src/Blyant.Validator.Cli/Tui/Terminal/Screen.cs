@@ -28,7 +28,7 @@ internal static class Screen
             width = Console.WindowWidth - 1;
             height = Console.WindowHeight - 1;
         }
-        catch
+        catch (Exception e) when (Tools.IsConsoleFailure(e))
         {
             // The size of the window is not available: keep the dimensions
             return false;

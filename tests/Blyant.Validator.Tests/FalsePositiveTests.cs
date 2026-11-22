@@ -10,7 +10,7 @@ namespace Blyant.Validator.Tests;
 /// Valid files that were reported with problems (found in the code review): they must stay without problems. A false
 /// error is worse than a missed one.
 /// </summary>
-public class FalsePositiveTests
+public sealed class FalsePositiveTests
 {
     private static async Task<IReadOnlyList<Diagnostic>> Html(string html) =>
         await new HtmlValidator().ValidateAsync(new SourceDocument("t.html", html, DocumentKind.Html));

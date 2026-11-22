@@ -140,7 +140,7 @@ public sealed class SafetyTests : IDisposable
         using var store = new ResultStore(Engines.Native, new VnuOptions());
         store.Get(path);
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
-        var result = store.Get(path)!;
+        var result = store.Result(path);
         Assert.Null(result.Failure);
         Assert.Equal("file.not-utf8", Assert.Single(result.Diagnostics).Code);
     }

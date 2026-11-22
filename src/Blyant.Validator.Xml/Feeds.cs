@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections.Frozen;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Blyant.Validator.Core;
@@ -25,19 +26,19 @@ internal static partial class Feeds
         diagnostics.Add(new Diagnostic(path, severity, code, message, position, position));
     };
 
-    #region RSS 2.0
+    // ---- RSS 2.0
 
-    private static readonly HashSet<string> ChannelElements =
+    private static readonly FrozenSet<string> ChannelElements =
     [
         "title", "link", "description", "language", "copyright", "managingEditor", "webMaster", "pubDate",
         "lastBuildDate", "category", "generator", "docs", "cloud", "ttl", "image", "rating", "textInput", "skipHours",
         "skipDays", "item",
     ];
 
-    private static readonly HashSet<string> ItemElements =
+    private static readonly FrozenSet<string> ItemElements =
         ["title", "link", "description", "author", "category", "comments", "enclosure", "guid", "pubDate", "source"];
 
-    private static readonly HashSet<string> Days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    private static readonly FrozenSet<string> Days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
     public static void CheckRss(string path, XElement rss, List<Diagnostic> diagnostics)
     {
@@ -117,7 +118,7 @@ internal static partial class Feeds
     }
 
     // The children of a channel or item: known elements, the required ones, and single ones not repeated
-    private static void CheckChildren(XElement parent, string name, HashSet<string> known, string[] required, Reporter report)
+    private static void CheckChildren(XElement parent, string name, IReadOnlySet<string> known, string[] required, Reporter report)
     {
         foreach (var child in parent.Elements())
         {
@@ -197,12 +198,10 @@ internal static partial class Feeds
         return DateCheck.Valid;
     }
 
-    #endregion
+    // ---- Atom
 
-    #region Atom
-
-    private static readonly HashSet<string> FeedSingles = ["id", "title", "updated", "subtitle", "rights", "icon", "logo", "generator"];
-    private static readonly HashSet<string> EntrySingles = ["id", "title", "updated", "summary", "content", "published", "rights", "source"];
+    private static readonly FrozenSet<string> FeedSingles = ["id", "title", "updated", "subtitle", "rights", "icon", "logo", "generator"];
+    private static readonly FrozenSet<string> EntrySingles = ["id", "title", "updated", "summary", "content", "published", "rights", "source"];
 
     public static void CheckAtom(string path, XElement feed, List<Diagnostic> diagnostics)
     {
@@ -239,7 +238,7 @@ internal static partial class Feeds
     }
 
     // A feed or an entry: the required elements, those that may appear once, ids, dates, links and people
-    private static void CheckAtomElement(XElement element, string name, HashSet<string> singles, Reporter report)
+    private static void CheckAtomElement(XElement element, string name, IReadOnlySet<string> singles, Reporter report)
     {
         static XName Atom(string local) => XName.Get(local, AtomNamespace);
         foreach (var required in new[] { "id", "title", "updated" })
@@ -276,8 +275,6 @@ internal static partial class Feeds
         Rfc3339().IsMatch(value) &&
         DateTimeOffset.TryParse(value.Length > 19 && value[17..19] == "60" ? value[..17] + "59" + value[19..] : value,
             CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
-
-    #endregion
 
     private static void CheckUrl(XElement? element, Reporter report)
     {

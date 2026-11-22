@@ -73,7 +73,7 @@ public sealed class TuiTests : IDisposable
         File.SetLastWriteTimeUtc(path, IsoDateTime.UtcNow().AddSeconds(5));
         Assert.Null(store.Get(path));
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
-        Assert.Equal(0, store.Get(path)!.Errors);
+        Assert.Equal(0, store.Result(path).Errors);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class TuiTests : IDisposable
 
         store.Get(path);
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
-        Assert.NotNull(store.Get(path)!.Failure);
+        Assert.NotNull(store.Result(path).Failure);
     }
 
     [Fact]
@@ -158,11 +158,11 @@ public sealed class TuiTests : IDisposable
     public void Commands_AreHandledAndInTheHelp()
     {
         var root = new DirectoryInfo(AppContext.BaseDirectory);
-        while (!File.Exists(Path.Combine(root.FullName, "BlyantValidator.slnx"))) root = root.Parent!;
+        while (!File.Exists(Path.Combine(root.FullName, "BlyantValidator.slnx"))) root = root.Parent ?? throw new InvalidOperationException("BlyantValidator.slnx is not found.");
         var source = File.ReadAllText(Path.Combine(root.FullName, "src", "Blyant.Validator.Cli", "Tui", "Browser.Commands.cs"));
         var help = string.Join(' ', Browser.HelpRows.Select(r => r.Key));
 
-        var missing = new List<string>();
+        List<string> missing = [];
         foreach (var name in Browser.CommandTable.Names.Concat(Browser.CommandTable.ShortForms))
         {
             if (!source.Contains($"\"{name}\" or", StringComparison.Ordinal) &&

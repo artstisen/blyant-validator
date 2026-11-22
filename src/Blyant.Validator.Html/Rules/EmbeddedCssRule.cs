@@ -99,7 +99,7 @@ public sealed class EmbeddedCssRule : IHtmlRule
     // Problems found in decoded text, moved to their places in the file through the map of the decoding
     private static void AddMapped(HtmlRuleContext context, IReadOnlyList<Diagnostic> found, string decoded, int[] map, int offset)
     {
-        var lineStarts = new List<int> { 0 };
+        List<int> lineStarts = [0];
         for (var i = 0; i < decoded.Length; i++)
         {
             if (decoded[i] == '\n' || decoded[i] == '\r' && (i + 1 >= decoded.Length || decoded[i + 1] != '\n'))

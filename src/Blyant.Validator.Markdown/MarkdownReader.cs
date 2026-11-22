@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Frozen;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Blyant.Validator.Markdown;
@@ -225,14 +226,14 @@ public sealed partial class MarkdownReader
         return previous != LineKind.Text && LoneTag().IsMatch(text) ? string.Empty : null;
     }
 
-    private static readonly HashSet<string> BlockTags = new(StringComparer.Ordinal)
-    {
+    private static readonly FrozenSet<string> BlockTags = FrozenSet.Create(StringComparer.Ordinal,
+    [
         "address", "article", "aside", "base", "basefont", "blockquote", "body", "caption", "center", "col", "colgroup",
         "dd", "details", "dialog", "dir", "div", "dl", "dt", "fieldset", "figcaption", "figure", "footer", "form",
         "frame", "frameset", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hr", "html", "iframe", "legend", "li",
         "link", "main", "menu", "menuitem", "nav", "noframes", "ol", "optgroup", "option", "p", "param", "search",
         "section", "summary", "table", "tbody", "td", "tfoot", "th", "thead", "title", "tr", "track", "ul",
-    };
+    ]);
 
     // A line without the "> " of block quotes in front of it
     private static string Unquote(string text)

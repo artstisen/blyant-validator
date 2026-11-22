@@ -68,8 +68,11 @@ internal sealed class ParsedArguments(CommandSpec command)
 
     public string? Text(string name) => _values.TryGetValue(name, out var v) ? v : Spec(name).Default;
 
-    public int Number(string name) =>
-        int.Parse(_values.TryGetValue(name, out var v) ? v : Spec(name).Default!, CultureInfo.InvariantCulture);
+    /// <summary>The value of an option that has a default (an option without one is a mistake in Program.cs).</summary>
+    public string Value(string name) =>
+        Text(name) ?? throw new InvalidOperationException($"The option {name} has no value and no default.");
+
+    public int Number(string name) => int.Parse(Value(name), CultureInfo.InvariantCulture);
 }
 
 /// <summary>

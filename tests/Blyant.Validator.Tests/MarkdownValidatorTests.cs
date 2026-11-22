@@ -3,7 +3,7 @@ using Blyant.Validator.Markdown;
 
 namespace Blyant.Validator.Tests;
 
-public class MarkdownValidatorTests
+public sealed class MarkdownValidatorTests
 {
     private static IReadOnlyList<Diagnostic> Validate(string text, string name = "README.md", Func<string, bool>? exists = null) =>
         MarkdownValidator.Validate(name, text.ReplaceLineEndings("\n"), exists);
@@ -84,7 +84,7 @@ public class MarkdownValidatorTests
     public void RelativeLinks_AreCheckedWithTheGivenFunction()
     {
         var root = Path.GetFullPath(".");
-        var asked = new List<string>();
+        List<string> asked = [];
         bool Exists(string path)
         {
             asked.Add(path);

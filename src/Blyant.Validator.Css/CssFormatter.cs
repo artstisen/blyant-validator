@@ -187,7 +187,7 @@ public sealed class CssFormatter : IFormatter
 
         private static List<List<CssToken>> SplitAtTopLevelCommas(List<CssToken> tokens)
         {
-            var parts = new List<List<CssToken>> { new() };
+            List<List<CssToken>> parts = [new()];
             var depth = 0;
             foreach (var t in tokens)
             {

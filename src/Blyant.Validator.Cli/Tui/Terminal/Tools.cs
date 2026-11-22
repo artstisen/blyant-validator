@@ -48,15 +48,23 @@ internal static class Tools
         ChoiceBox.Forget();
     }
 
+    /// <summary>
+    /// True for what the console throws when it cannot do what is asked: no window (output redirected), a system
+    /// without the feature, a place outside the window. The TUI goes on without it
+    /// </summary>
+    internal static bool IsConsoleFailure(Exception e) =>
+        e is IOException or PlatformNotSupportedException or InvalidOperationException or ArgumentOutOfRangeException or
+            UnauthorizedAccessException;
+
     public static void ShowCursor()
     {
         try
         {
             Console.CursorVisible = true;
         }
-        catch
+        catch (Exception e) when (IsConsoleFailure(e))
         {
-            // Do nothing
+            // Without a cursor to show
         }
     }
 
@@ -66,9 +74,9 @@ internal static class Tools
         {
             Console.CursorVisible = false;
         }
-        catch
+        catch (Exception e) when (IsConsoleFailure(e))
         {
-            // Do nothing
+            // Without a cursor to hide
         }
     }
 
@@ -91,7 +99,7 @@ internal static class Tools
 
             Console.SetCursorPosition(left, top);
         }
-        catch
+        catch (Exception e) when (IsConsoleFailure(e))
         {
             _redrawRequested = true;
         }
@@ -106,7 +114,7 @@ internal static class Tools
             var height = Console.WindowHeight;
             return width > 0 && height > 0 && (column >= width || row >= height);
         }
-        catch
+        catch (Exception e) when (IsConsoleFailure(e))
         {
             return false;
         }

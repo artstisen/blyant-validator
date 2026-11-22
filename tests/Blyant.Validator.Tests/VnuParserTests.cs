@@ -3,7 +3,7 @@ using Blyant.Validator.Vnu;
 
 namespace Blyant.Validator.Tests;
 
-public class VnuParserTests
+public sealed class VnuParserTests
 {
     [Fact]
     public void Parse_MapsTypesAndPositions()

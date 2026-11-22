@@ -3,7 +3,7 @@
 namespace Blyant.Validator.Tests;
 
 /// <summary>Checks the rules in AGENTS.md that can be checked by reading the files of the repository.</summary>
-public partial class ProjectRulesTests
+public sealed partial class ProjectRulesTests
 {
     private static readonly string Root = FindRoot();
 
@@ -34,7 +34,7 @@ public partial class ProjectRulesTests
     [Fact]
     public void NoEmailAddresses_ExceptGitHubNoreply()
     {
-        var found = new List<string>();
+        List<string> found = [];
         foreach (var file in RepositoryFiles())
         {
             var text = File.ReadAllText(file);
@@ -66,7 +66,7 @@ public partial class ProjectRulesTests
     [Fact]
     public void SourceFiles_AreUtf8WithBomAndCrlf()
     {
-        var wrong = new List<string>();
+        List<string> wrong = [];
         foreach (var file in RepositoryFiles(".cs", ".csproj", ".props", ".slnx"))
         {
             var bytes = File.ReadAllBytes(file);

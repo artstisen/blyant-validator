@@ -4,7 +4,7 @@ using Blyant.Validator.Html;
 namespace Blyant.Validator.Tests;
 
 /// <summary>The rules for obsolete features, attributes and content models.</summary>
-public class HtmlRuleTests
+public sealed class HtmlRuleTests
 {
     private const string Head = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body>";
     private const string Tail = "</body></html>";

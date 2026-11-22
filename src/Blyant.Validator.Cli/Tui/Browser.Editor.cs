@@ -65,13 +65,16 @@ internal static partial class Browser
             return;
         }
 
-        var psi = new ProcessStartInfo(program!)
+        // (a program that is not found is a problem above: here it is there)
+        if (program is null) return;
+
+        var psi = new ProcessStartInfo(program)
         {
             UseShellExecute = false,
             WorkingDirectory = Path.GetDirectoryName(item.Path) ?? ".",
         };
         foreach (var argument in editor.ArgumentsFor(item.Path, line)) psi.ArgumentList.Add(argument);
-        var windowed = OperatingSystem.IsWindows() && EditorCommand.IsWindowsGui(program!);
+        var windowed = OperatingSystem.IsWindows() && EditorCommand.IsWindowsGui(program);
 
         string? failed = null;
         if (!windowed) GiveTerminal();

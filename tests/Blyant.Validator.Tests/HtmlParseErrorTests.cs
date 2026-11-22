@@ -3,7 +3,7 @@ using Blyant.Validator.Html;
 
 namespace Blyant.Validator.Tests;
 
-public class HtmlParseErrorTests
+public sealed class HtmlParseErrorTests
 {
     private const string Head = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body>";
     private const string Tail = "</body></html>";

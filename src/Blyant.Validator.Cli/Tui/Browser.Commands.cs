@@ -38,9 +38,9 @@ internal static partial class Browser
                 break;
             case "accessibility":
                 // The accessibility hints of HTML files on or off (kept in the settings)
-                _results.Accessibility = !_results.Accessibility;
-                _message = !_results.Accessibility ? "Accessibility hints off"
-                    : _results.Engines.Vnu ? "Accessibility hints on: with :engine native (vnu gives none)"
+                Results.Accessibility = !Results.Accessibility;
+                _message = !Results.Accessibility ? "Accessibility hints off"
+                    : Results.Engines.Vnu ? "Accessibility hints on: with :engine native (vnu gives none)"
                     : "Accessibility hints on: shown as info (i) in the peek";
                 break;
             case "h" or "help":
@@ -91,11 +91,11 @@ internal static partial class Browser
             case "engine":
                 if (argument.Length == 0)
                 {
-                    _message = $"Engine: {_results.Engines} (:engine native, vnu, typst or vnu,typst)";
+                    _message = $"Engine: {Results.Engines} (:engine native, vnu, typst or vnu,typst)";
                 }
                 else if (Engines.Parse(argument) is { } engines)
                 {
-                    _results.Engines = engines;
+                    Results.Engines = engines;
                     _message = engines.ToString() switch
                     {
                         "vnu" => "Engine: vnu (the Nu Html Checker for HTML and CSS, run with Java for each file)",
@@ -153,11 +153,11 @@ internal static partial class Browser
     private static void ToggleFragment()
     {
         if (RulesFolder() is not { } folder) return;
-        var rules = _results.Rules.ForDirectory(folder);
-        _results.SetRules(folder, rules with { Fragment = !rules.Fragment });
+        var rules = Results.Rules.ForDirectory(folder);
+        Results.SetRules(folder, rules with { Fragment = !rules.Fragment });
         _message = !rules.Fragment
             ? "HTML here is checked as fragments (the content of a <body>)" +
-              (_results.Engines.Vnu ? ", with the native engine only" : "")
+              (Results.Engines.Vnu ? ", with the native engine only" : "")
             : "HTML here is checked as full pages";
         _peekSource = null;
     }
@@ -167,7 +167,7 @@ internal static partial class Browser
     private static void Ignore(string argument)
     {
         if (RulesFolder() is not { } folder) return;
-        var rules = _results.Rules.ForDirectory(folder);
+        var rules = Results.Rules.ForDirectory(folder);
         IReadOnlyList<string> codes = IgnoreList.Split(argument);
         if (codes.Count == 0)
         {
@@ -195,7 +195,7 @@ internal static partial class Browser
             return;
         }
 
-        _results.SetRules(folder, rules with { Ignore = [.. rules.Ignore, .. added] });
+        Results.SetRules(folder, rules with { Ignore = [.. rules.Ignore, .. added] });
         _message = "Ignored here: " + string.Join(", ", added) + " (:unignore to undo)";
         _peekSource = null;
     }
@@ -204,7 +204,7 @@ internal static partial class Browser
     private static void Unignore(string argument)
     {
         if (RulesFolder() is not { } folder) return;
-        var rules = _results.Rules.ForDirectory(folder);
+        var rules = Results.Rules.ForDirectory(folder);
         var codes = IgnoreList.Split(argument);
         var removed = codes.Count == 0 ? rules.Ignore.ToList() : rules.Ignore.Where(codes.Contains).ToList();
         if (removed.Count == 0)
@@ -214,7 +214,7 @@ internal static partial class Browser
             return;
         }
 
-        _results.SetRules(folder, rules with { Ignore = [.. rules.Ignore.Except(removed)] });
+        Results.SetRules(folder, rules with { Ignore = [.. rules.Ignore.Except(removed)] });
         _message = "No longer ignored here: " + string.Join(", ", removed);
         _peekSource = null;
     }
@@ -241,8 +241,8 @@ internal static partial class Browser
             return;
         }
 
-        var changes = new List<(string Path, string Text, bool Bom, int Before, int After, DateTime Written, long Length)>();
-        var refused = new List<string>();
+        List<(string Path, string Text, bool Bom, int Before, int After, DateTime Written, long Length)> changes = [];
+        List<string> refused = [];
         foreach (var path in paths)
         {
             try
@@ -286,7 +286,7 @@ internal static partial class Browser
         if (refused.Count > 0) note += $" {refused.Count} cannot be formatted.";
         if (!ChoiceBox.Confirm("Format", question, note)) return;
 
-        var done = new List<string>();
+        List<string> done = [];
         foreach (var change in changes)
         {
             try
@@ -301,7 +301,7 @@ internal static partial class Browser
                 }
 
                 DocumentIo.SafeWriteAllText(change.Path, change.Text, change.Bom);
-                _results.Refresh(change.Path);
+                Results.Refresh(change.Path);
                 done.Add(Path.GetFileName(change.Path));
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)

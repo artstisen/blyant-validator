@@ -31,7 +31,7 @@ internal sealed class EditorCommand
     public static EditorCommand? Parse(string text)
     {
         text = text.Trim();
-        var words = new List<string>();
+        List<string> words = [];
         var word = new StringBuilder();
         var inWord = false;
         var quoted = false;

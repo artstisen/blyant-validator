@@ -48,7 +48,7 @@ internal static class SelectorChecker
     /// <param name="relative">True for nested rules, which may start with a combinator.</param>
     public static List<SelectorProblem> Check(IReadOnlyList<CssToken> prelude, string source, bool relative)
     {
-        var problems = new List<SelectorProblem>();
+        List<SelectorProblem> problems = [];
         var parts = SplitAtCommas(prelude);
         foreach (var part in parts) CheckComplex(part, source, relative, problems);
         return problems;
@@ -56,7 +56,7 @@ internal static class SelectorChecker
 
     private static List<List<CssToken>> SplitAtCommas(IReadOnlyList<CssToken> tokens)
     {
-        var parts = new List<List<CssToken>> { new() };
+        List<List<CssToken>> parts = [new()];
         var depth = 0;
         foreach (var t in tokens)
         {
@@ -172,11 +172,11 @@ internal static class SelectorChecker
     }
 
     /// <summary>The pseudo-classes of WebKit's scrollbar pseudo-elements (::-webkit-scrollbar-thumb:horizontal …).</summary>
-    private static readonly HashSet<string> WebKitScrollbarStates = new(StringComparer.OrdinalIgnoreCase)
-    {
+    private static readonly FrozenSet<string> WebKitScrollbarStates = FrozenSet.Create(StringComparer.OrdinalIgnoreCase,
+    [
         "horizontal", "vertical", "decrement", "increment", "start", "end", "double-button", "single-button",
         "no-button", "corner-present",
-    };
+    ]);
 
     // True when the compound selector before the pseudo-class at i has a vendor pseudo-element (::-webkit-…)
     private static bool AfterVendorPseudoElement(List<CssToken> tokens, int i)

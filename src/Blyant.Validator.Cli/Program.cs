@@ -127,7 +127,7 @@ if (command.Name == "format" && parsed.Flag("--check") && parsed.Flag("--write")
 var engines = Engines.Native;
 if (command.Name is "validate" or "browse")
 {
-    if (Engines.Parse(parsed.Text("--engine")!) is not { } chosen)
+    if (Engines.Parse(parsed.Value("--engine")) is not { } chosen)
     {
         Console.Error.WriteLine($"{CommandLine.Program}: '{parsed.Text("--engine")}' is not an engine: use native, vnu, typst or vnu,typst.");
         Console.Error.WriteLine($"Run '{CommandLine.Program} {command.Name} --help' to see the options.");
@@ -166,7 +166,7 @@ try
             [.. parsed.Arguments],
             parsed.Flag("--recursive"),
             engines,
-            parsed.Text("--output")!,
+            parsed.Value("--output"),
             parsed.Text("--vnu-jar"),
             parsed.Text("--java"),
             parsed.Flag("--fragment"),

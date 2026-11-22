@@ -3,7 +3,7 @@ using Blyant.Validator.Html;
 
 namespace Blyant.Validator.Tests;
 
-public class HtmlValidatorTests
+public sealed class HtmlValidatorTests
 {
     private static async Task<IReadOnlyList<Diagnostic>> Validate(string html) =>
         await new HtmlValidator().ValidateAsync(new SourceDocument("test.html", html, DocumentKind.Html));

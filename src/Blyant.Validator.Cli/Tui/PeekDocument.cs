@@ -35,7 +35,7 @@ internal sealed class PeekDocument
         var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
         // (the line break at the end of the last line does not start another line)
         var count = lines.Length > 1 && lines[^1].Length == 0 ? lines.Length - 1 : lines.Length;
-        var kept = new List<string>();
+        List<string> kept = [];
         var characters = 0;
         IsCut = cut;
         for (var i = 0; i < count; i++)

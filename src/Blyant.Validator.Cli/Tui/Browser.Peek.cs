@@ -89,8 +89,8 @@ internal static partial class Browser
     {
         if (SelectedItem() is not { IsDirectory: false } item) return PeekedDirectory() ?? string.Empty;
         if (!ResultStore.IsValidated(item.Path)) return item.Name + " - not checked";
-        var result = _results.Last(item.Path);
-        var summary = result is null || _results.IsPending(item.Path) ? "checking..."
+        var result = Results.Last(item.Path);
+        var summary = result is null || Results.IsPending(item.Path) ? "checking..."
             : result.Failure is not null ? "could not be checked"
             : (result.Errors, result.Warnings) switch
             {
@@ -100,13 +100,13 @@ internal static partial class Browser
                 _ => Plural(result.Errors, "error") + ", " + Plural(result.Warnings, "warning"),
             };
         // (info, such as the accessibility hints, is counted when there is any)
-        var infos = result is { Failure: null } ? result.Diagnostics.Count(d => d.Severity == Severity.Info) : 0;
-        if (infos > 0 && !_results.IsPending(item.Path))
-            summary = result!.Errors + result.Warnings == 0 ? $"{infos} info" : $"{summary}, {infos} info";
+        if (result is { Failure: null } && result.Diagnostics.Count(d => d.Severity == Severity.Info) is var infos and > 0 &&
+            !Results.IsPending(item.Path))
+            summary = result.Errors + result.Warnings == 0 ? $"{infos} info" : $"{summary}, {infos} info";
         // Not a full check: said with the result
         if (result is { Failure: null } && (result.Fragment || result.Ignored > 0))
         {
-            var notes = new List<string>();
+            List<string> notes = [];
             if (result.Fragment) notes.Add("fragment");
             if (result.Ignored > 0) notes.Add(result.Ignored + " ignored");
             summary += " (" + string.Join(", ", notes) + ")";
@@ -131,7 +131,7 @@ internal static partial class Browser
         if (SelectedItem() is not { IsDirectory: false } item) return false;
         var info = new FileInfo(item.Path);
         if (!info.Exists) return _peekSource is not null;
-        var result = _results.Get(item.Path);
+        var result = Results.Get(item.Path);
         return _peekSource is not { } source || source.Path != item.Path || source.Written != info.LastWriteTimeUtc ||
                source.Length != info.Length || !ReferenceEquals(source.Result, result);
     }
@@ -159,7 +159,7 @@ internal static partial class Browser
             return;
         }
 
-        var result = _results.Get(item.Path);
+        var result = Results.Get(item.Path);
         var source = new PeekSource(item.Path, info.LastWriteTimeUtc, info.Length, result);
         if (source == _peekSource) return;
         _peekSource = source;
@@ -286,7 +286,7 @@ internal static partial class Browser
     // colors, with the place of each error and warning highlighted
     private static void DrawText(int left, int width, bool focused)
     {
-        var document = _peekDocument!;
+        if (_peekDocument is not { } document) return;
         var numberWidth = Math.Max(3, document.Lines.Count.ToString().Length);
         var textLeft = left + numberWidth + 2;
         var textWidth = Math.Max(1, left + width - textLeft);
@@ -394,7 +394,7 @@ internal static partial class Browser
     // The problems of the file: "12:5  E  message", the selected one highlighted when the focus is in the peek
     private static void DrawProblems(int left, int width, bool focused)
     {
-        var document = _peekDocument!;
+        if (_peekDocument is not { } document) return;
         var result = _peekSource?.Result;
         IReadOnlyList<string> notes = !ResultStore.IsValidated(document.Path)
                 ? ["Not checked: not HTML, CSS, XML, Markdown or Typst"]
@@ -476,7 +476,7 @@ internal static partial class Browser
         var message = string.Empty;
         while (true)
         {
-            var document = _peekDocument!;
+            if (_peekDocument is not { } document) return;
             KeepPeekCursorInView(document);
             DrawPaneHeader(1 - _active);
             DrawPeekBody(true);
@@ -591,7 +591,7 @@ internal static partial class Browser
         if (problems.Count == 0)
             return _peekMode == PeekMode.Problems ? "No problems in this file" : "No problem on this line";
 
-        var texts = new List<(string, ConsoleColors.ColorPreset)>();
+        List<(string, ConsoleColors.ColorPreset)> texts = [];
         foreach (var d in problems)
         {
             if (texts.Count > 0) texts.Add((string.Empty, ConsoleColors.ColorPreset.Normal));

@@ -4,7 +4,7 @@ using Blyant.Validator.Css.Values;
 namespace Blyant.Validator.Tests;
 
 /// <summary>Checks the embedded grammar files, so a mistake in them shows here and not as a false error.</summary>
-public class CssDataTests
+public sealed class CssDataTests
 {
     [Fact]
     public void Data_IsLoaded()
@@ -48,7 +48,8 @@ public class CssDataTests
     [InlineData("width", "fit-content(20em)", true)]
     public void Grammar_MatchesExpectedValues(string property, string value, bool valid)
     {
-        var grammar = CssData.Properties[property]!;
+        var grammar = CssData.Properties[property];
+        Assert.NotNull(grammar);
         var tokens = CssTokenizer.Tokenize(value, out _);
         tokens.RemoveAt(tokens.Count - 1);
         var result = GrammarMatcher.Match(grammar, CssComponent.Build(tokens));

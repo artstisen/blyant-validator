@@ -36,7 +36,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
     public static IReadOnlyList<Diagnostic> Validate(string path, string text, TypstFiles? files = null)
     {
         files ??= new TypstFiles();
-        var diagnostics = new List<Diagnostic>();
+        List<Diagnostic> diagnostics = [];
         var lines = new LineMap(text);
         var reader = TypstReader.Read(text);
 
@@ -108,7 +108,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
     /// </summary>
     private static IEnumerable<string> Around(string full, TypstFiles files)
     {
-        var folders = new List<string>();
+        List<string> folders = [];
         for (var folder = Path.GetDirectoryName(full); folder is not null && folders.Count < Levels; folder = Path.GetDirectoryName(folder))
             folders.Add(folder);
         return folders.SelectMany(f => files.TypstFilesIn!(f).Select(Path.GetFullPath).Order(StringComparer.Ordinal))
@@ -220,8 +220,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
         var counts = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var (file, imported) in document)
         {
-            var reader = parsed.Get(file)!;
-            if (reader.HasDynamicLabels || reader.HasDynamicIncludes) return false;
+            if (parsed.Get(file) is not { } reader || reader.HasDynamicLabels || reader.HasDynamicIncludes) return false;
             foreach (var label in reader.Labels)
             {
                 present.Add(label.Name);
@@ -282,7 +281,7 @@ public sealed partial class TypstValidator(TypstFiles? files = null) : IValidato
     {
         var files = parsed.Files;
         if (files.TypstFilesIn is null || files.Read is null) return [];
-        var result = new List<string>();
+        List<string> result = [];
         foreach (var other in Around(full, files))
         {
             if (SamePath(other, full, files) || parsed.Get(other) is not { } reader) continue;

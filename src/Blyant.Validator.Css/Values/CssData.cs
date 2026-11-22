@@ -21,7 +21,7 @@ public static class CssData
         Properties = LoadDefinitions("properties.txt", allowUnchecked: true)
             .ToFrozenDictionary(p => p.Key, p => p.Value, Ci);
         Types = LoadDefinitions("types.txt", allowUnchecked: false)
-            .ToFrozenDictionary(p => p.Key.Trim('<', '>'), p => p.Value!, Ci);
+            .ToFrozenDictionary(p => p.Key.Trim('<', '>'), p => p.Value ?? throw new InvalidOperationException($"The type {p.Key} has no grammar."), Ci);
     }
 
     /// <summary>
@@ -32,10 +32,11 @@ public static class CssData
     {
         var assembly = typeof(CssData).Assembly;
         var resource = assembly.GetManifestResourceNames().Single(n => n.EndsWith("." + file, StringComparison.Ordinal));
-        using var stream = assembly.GetManifestResourceStream(resource)!;
+        using var stream = assembly.GetManifestResourceStream(resource) ??
+                           throw new InvalidOperationException($"{resource} is not in the program.");
         using var reader = new StreamReader(stream);
 
-        var logical = new List<string>();
+        List<string> logical = [];
         while (reader.ReadLine() is { } line)
         {
             if (line.TrimStart().StartsWith("//", StringComparison.Ordinal) || line.Trim().Length == 0) continue;

@@ -57,11 +57,14 @@ public sealed class HtmlFormatter : IFormatter
             _lineDepth = depth;
         }
 
-        private void Append(string text) => _line!.Append(text);
+        // The line begun with BeginLine (Append and EndLine come after it)
+        private StringBuilder CurrentLine => _line ?? throw new InvalidOperationException("No line is begun.");
+
+        private void Append(string text) => CurrentLine.Append(text);
 
         private void EndLine()
         {
-            var text = _line!.ToString().Trim(' ');
+            var text = CurrentLine.ToString().Trim(' ');
             _line = null;
             if (text.Length > 0) Line(_lineDepth, text);
         }
@@ -75,7 +78,7 @@ public sealed class HtmlFormatter : IFormatter
         /// <param name="foreign">Inside SVG or MathML.</param>
         public void FormatChildren(List<HNode> children, int depth, bool container, bool foreign)
         {
-            var run = new List<HNode>();
+            List<HNode> run = [];
             var emitted = false;
             var newlinesSinceLast = 0;
 

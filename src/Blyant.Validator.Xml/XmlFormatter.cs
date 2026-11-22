@@ -30,7 +30,7 @@ public sealed class XmlFormatter : IFormatter
         var root = XmlSourceReader.Read(document.Content, out var depth);
         if (depth > MaxDepth)
             throw new Core.FormatException($"Elements are nested more than {MaxDepth} deep.");
-        var lines = new List<string>();
+        List<string> lines = [];
         WriteChildren(document.Content, root.Children, 0, options.IndentUnit, lines, preserveBlankLines: true);
         return lines.Count == 0 ? string.Empty : string.Join(newline, lines.Select(l => Newlines(l, newline))) + newline;
     }

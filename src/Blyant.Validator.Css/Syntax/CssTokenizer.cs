@@ -23,7 +23,7 @@ public sealed class CssTokenizer
     public static List<CssToken> Tokenize(string source, out List<CssSyntaxError> errors)
     {
         var tokenizer = new CssTokenizer(source);
-        var tokens = new List<CssToken>();
+        List<CssToken> tokens = [];
         while (true)
         {
             var token = tokenizer.Next();

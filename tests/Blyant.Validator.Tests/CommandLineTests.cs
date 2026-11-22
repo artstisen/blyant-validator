@@ -2,7 +2,7 @@
 
 namespace Blyant.Validator.Tests;
 
-public class CommandLineTests
+public sealed class CommandLineTests
 {
     private static readonly CommandSpec Command = new("format", "Format files.",
     [

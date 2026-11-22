@@ -113,7 +113,7 @@ internal static class Keyboard
         {
             return (Console.WindowWidth, Console.WindowHeight);
         }
-        catch
+        catch (Exception e) when (Tools.IsConsoleFailure(e))
         {
             return unknown;
         }

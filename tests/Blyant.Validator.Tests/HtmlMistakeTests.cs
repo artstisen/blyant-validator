@@ -8,7 +8,7 @@ namespace Blyant.Validator.Tests;
 /// language tags, empty URLs …), typos and broken links (warnings), the warnings of the Nu Html Checker (roles,
 /// sections without a heading), and the accessibility hints (info, only when asked for)
 /// </summary>
-public class HtmlMistakeTests
+public sealed class HtmlMistakeTests
 {
     private const string Head = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body>";
     private const string Tail = "</body></html>";
@@ -144,7 +144,7 @@ public class HtmlMistakeTests
     [Fact]
     public async Task RelativeLinks_AreLookedUp_ThroughTheGivenFunction()
     {
-        var asked = new List<string>();
+        List<string> asked = [];
         var options = new HtmlCheckOptions(Exists: path =>
         {
             asked.Add(path);
@@ -202,7 +202,7 @@ public class HtmlMistakeTests
     [Fact]
     public async Task CharacterReferences_InALink_AreDecoded()
     {
-        var asked = new List<string>();
+        List<string> asked = [];
         var options = new HtmlCheckOptions(Exists: path => { asked.Add(path); return true; });
         await Check(Head + "<a href=\"sub/Caf&eacute;.html\">c</a><a href=\"R&amp;D.html\">r</a><a href=\"my&#32;page.html\">m</a>" +
                     "<h2 id=\"caf&eacute;\">x</h2><a href=\"#caf&eacute;\">x</a>" + Tail, options);
@@ -239,7 +239,7 @@ public class HtmlMistakeTests
     public async Task ALinkInOtherCase_IsTold_WithTheNameAsWritten()
     {
         // (a folder with images/logo.png, given as functions: the same on every system)
-        var folder = Path.GetDirectoryName(Path.GetFullPath("t.html"))!;
+        var folder = Path.GetDirectoryName(Path.GetFullPath("t.html")) ?? ".";
         var images = Path.Combine(folder, "images");
         IReadOnlyList<string> NamesIn(string f) => f == folder ? ["images", "t.html"] : f == images ? ["logo.png"] : [];
         var options = new HtmlCheckOptions(Exists: _ => true, NamesIn: NamesIn);

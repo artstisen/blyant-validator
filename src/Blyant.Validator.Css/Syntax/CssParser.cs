@@ -97,6 +97,7 @@ public sealed class CssParser
     private readonly CssStylesheet _sheet;
     private int _i;
 
+    // (private: a parser is only made by Parse; a primary constructor would be public)
     private CssParser(CssStylesheet sheet)
     {
         _sheet = sheet;
@@ -214,7 +215,7 @@ public sealed class CssParser
     {
         var name = Current;
         _i++;
-        var prelude = new List<CssToken>();
+        List<CssToken> prelude = [];
         while (true)
         {
             var token = Current;
@@ -242,7 +243,7 @@ public sealed class CssParser
     private CssItem ParseQualifiedRule()
     {
         var start = Current;
-        var prelude = new List<CssToken>();
+        List<CssToken> prelude = [];
         while (true)
         {
             var token = Current;
@@ -363,7 +364,7 @@ public sealed class CssParser
     private CssItem ParseDeclaration()
     {
         var start = Current;
-        var tokens = new List<CssToken>();
+        List<CssToken> tokens = [];
         var custom = start.Type == CssTokenType.Ident && start.Value.StartsWith("--", StringComparison.Ordinal);
         while (Current.Type is not (CssTokenType.Semicolon or CssTokenType.RightCurly or CssTokenType.EndOfFile))
             tokens.AddRange(ConsumeComponent(allowBraces: custom));
@@ -412,7 +413,7 @@ public sealed class CssParser
     {
         var token = Current;
         _i++;
-        var result = new List<CssToken> { token };
+        List<CssToken> result = [token];
 
         var close = token.Type switch
         {

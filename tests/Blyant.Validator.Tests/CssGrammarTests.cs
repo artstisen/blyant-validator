@@ -7,7 +7,7 @@ namespace Blyant.Validator.Tests;
 /// Real-world values of the properties whose grammars came last (grid, generated content, fonts, masks, border
 /// images, SVG, timelines …): the valid ones must give no error, the wrong ones an invalid-value error.
 /// </summary>
-public class CssGrammarTests
+public sealed class CssGrammarTests
 {
     private static IReadOnlyList<Diagnostic> Errors(string property, string value) =>
         [.. CssValidator.Validate("t.css", $".a {{ {property}: {value} }}").Where(d => d.Severity == Severity.Error)];

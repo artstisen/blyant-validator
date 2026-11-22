@@ -23,10 +23,11 @@ public sealed record HtmlCheckOptions(
 /// Native HTML validator. Reads the document with <see cref="HtmlReader"/> (which reports parse errors)
 /// and then runs conformance rules over the tree.
 /// </summary>
-public sealed class HtmlValidator : IValidator
+/// <param name="rules">The rules to run.</param>
+/// <param name="options">What they are asked to do: each rule asks for itself whether the file is a fragment.</param>
+public sealed class HtmlValidator(IReadOnlyList<IHtmlRule> rules, HtmlCheckOptions? options = null) : IValidator
 {
-    private readonly IReadOnlyList<IHtmlRule> _rules;
-    private readonly HtmlCheckOptions _options;
+    private readonly HtmlCheckOptions _options = options ?? new HtmlCheckOptions();
 
     public HtmlValidator() : this(new HtmlCheckOptions()) { }
 
@@ -38,21 +39,13 @@ public sealed class HtmlValidator : IValidator
     {
     }
 
-    /// <param name="rules">The rules to run.</param>
-    /// <param name="options">What they are asked to do: each rule asks for itself whether the file is a fragment.</param>
-    public HtmlValidator(IReadOnlyList<IHtmlRule> rules, HtmlCheckOptions? options = null)
-    {
-        _rules = rules;
-        _options = options ?? new HtmlCheckOptions();
-    }
-
     public string Engine => "native";
 
     public bool CanValidate(DocumentKind kind) => kind == DocumentKind.Html;
 
     public Task<IReadOnlyList<Diagnostic>> ValidateAsync(SourceDocument document, CancellationToken cancellationToken = default)
     {
-        var diagnostics = new List<Diagnostic>();
+        List<Diagnostic> diagnostics = [];
         var lines = new LineMap(document.Content);
         var result = HtmlReader.Read(document.Content);
 
@@ -74,7 +67,7 @@ public sealed class HtmlValidator : IValidator
         }
 
         var context = new HtmlRuleContext(document, result.Root, lines, diagnostics) { Options = _options };
-        foreach (var rule in _rules)
+        foreach (var rule in rules)
         {
             cancellationToken.ThrowIfCancellationRequested();
             rule.Check(context);

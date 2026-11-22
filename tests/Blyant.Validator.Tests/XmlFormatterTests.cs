@@ -3,7 +3,7 @@ using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Tests;
 
-public class XmlFormatterTests
+public sealed class XmlFormatterTests
 {
     private static string Format(string xml, string? newline = "\n") =>
         new XmlFormatter().Format(new SourceDocument("t.xml", xml.ReplaceLineEndings("\n"), DocumentKind.Xml),

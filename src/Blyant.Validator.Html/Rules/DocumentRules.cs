@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Frozen;
+using System.Text;
 using System.Text.RegularExpressions;
 using Blyant.Validator.Core;
 using Blyant.Validator.Html.Parsing;
@@ -19,7 +20,12 @@ public sealed partial class CharsetRule : IHtmlRule
     public void Check(HtmlRuleContext context)
     {
         if (context.Options.Fragment) return;
-        var declarations = context.FindAll("meta").Select(m => (Meta: m, Charset: CharsetOf(m))).Where(d => d.Charset is not null).ToList();
+        List<(HElement Meta, string Charset)> declarations = [];
+        foreach (var meta in context.FindAll("meta"))
+        {
+            if (CharsetOf(meta) is { } declared) declarations.Add((meta, declared));
+        }
+
         if (declarations.Count == 0)
         {
             if (!context.Document.HasUtf8Bom)
@@ -34,7 +40,7 @@ public sealed partial class CharsetRule : IHtmlRule
             context.Report(first, Severity.Error, "html.charset-late",
                 $"The character encoding is declared after the first {MaxBytes} bytes of the file: move <meta charset> to the start of the “head”.");
         // (a template fills in the charset when the page is made)
-        if (!charset!.Trim().Equals("utf-8", StringComparison.OrdinalIgnoreCase) && !charset.Trim().Equals("utf8", StringComparison.OrdinalIgnoreCase) &&
+        if (!charset.Trim().Equals("utf-8", StringComparison.OrdinalIgnoreCase) && !charset.Trim().Equals("utf8", StringComparison.OrdinalIgnoreCase) &&
             !Templates.IsTemplate(charset))
             context.Report(first, Severity.Error, "html.charset-mismatch",
                 $"The character encoding is declared as “{charset.Trim()}”, but the file is UTF-8: declare <meta charset=\"utf-8\">.");
@@ -90,10 +96,10 @@ public sealed partial class LangRule : IHtmlRule
     }
 
     // The old registered tags that do not have the form of a language tag (deprecated, but valid: the IANA registry)
-    private static readonly HashSet<string> Irregular = new(StringComparer.OrdinalIgnoreCase)
-    {
+    private static readonly FrozenSet<string> Irregular = FrozenSet.Create(StringComparer.OrdinalIgnoreCase,
+    [
         "en-GB-oed", "sgn-BE-FR", "sgn-BE-NL", "sgn-CH-DE",
-    };
+    ]);
 
     // language (2 or 3 letters, and extended subtags), script, region, variants, extensions, private use; or private
     // use alone (x-…), or the old tags that start with "i-"

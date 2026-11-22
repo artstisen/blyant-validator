@@ -10,7 +10,7 @@ internal static class FileCollector
     public static List<string> Collect(IEnumerable<string> paths, bool recursive, TextWriter errors, out int missing)
     {
         missing = 0;
-        var files = new List<string>();
+        List<string> files = [];
         // Names are matched without regard to case on every system (INDEX.HTML is HTML on Linux too), and folders that
         // cannot be read are passed over
         var options = new EnumerationOptions
@@ -46,7 +46,7 @@ internal static class FileCollector
         // A file given twice (by itself and in its folder) is done once. Two paths that differ only in case are the
         // same file on Windows and (usually) macOS, two files on Linux and on a case-sensitive volume of macOS: the
         // folder tells
-        var result = new List<string>();
+        List<string> result = [];
         var seen = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         foreach (var file in files)
         {

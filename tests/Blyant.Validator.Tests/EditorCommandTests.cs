@@ -11,14 +11,22 @@ public sealed class EditorCommandTests : IDisposable
 
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 
+    // A command the test expects to be read (it fails when it is not)
+    private static EditorCommand Parse(string text)
+    {
+        var editor = EditorCommand.Parse(text);
+        Assert.NotNull(editor);
+        return editor;
+    }
+
     [Fact]
     public void TheFile_IsTheLastArgument_UnlessItsPlaceIsMarked()
     {
         var file = Path.Combine(_dir, "a page.html");
-        Assert.Equal(["--wait", file], EditorCommand.Parse("code --wait")!.ArgumentsFor(file, 12));
-        Assert.Equal(["+12", file], EditorCommand.Parse("nvim +{line} {file}")!.ArgumentsFor(file, 12));
-        Assert.Equal(["--goto", file + ":1"], EditorCommand.Parse("code --goto {file}:{line}")!.ArgumentsFor(file, 0));
-        Assert.Equal([file], EditorCommand.Parse("  vim  ")!.ArgumentsFor(file, 3));
+        Assert.Equal(["--wait", file], Parse("code --wait").ArgumentsFor(file, 12));
+        Assert.Equal(["+12", file], Parse("nvim +{line} {file}").ArgumentsFor(file, 12));
+        Assert.Equal(["--goto", file + ":1"], Parse("code --goto {file}:{line}").ArgumentsFor(file, 0));
+        Assert.Equal([file], Parse("  vim  ").ArgumentsFor(file, 3));
     }
 
     [Fact]
@@ -45,14 +53,14 @@ public sealed class EditorCommandTests : IDisposable
     {
         var program = Path.Combine(_dir, "my editor");
         File.WriteAllText(program, "");
-        var editor = EditorCommand.Parse($"\"{program}\" -n")!;
+        var editor = Parse($"\"{program}\" -n");
         Assert.Equal(program, editor.Resolve());
         Assert.Null(editor.Problem(editor.Resolve()));
 
-        var missing = EditorCommand.Parse($"\"{Path.Combine(_dir, "none")}\"")!;
+        var missing = Parse($"\"{Path.Combine(_dir, "none")}\"");
         Assert.Null(missing.Resolve());
         Assert.StartsWith("Not found", missing.Problem(missing.Resolve()), StringComparison.Ordinal);
-        Assert.Null(EditorCommand.Parse("no-such-editor-" + Guid.NewGuid().ToString("N"))!.Resolve());
+        Assert.Null(Parse("no-such-editor-" + Guid.NewGuid().ToString("N")).Resolve());
     }
 
     [Theory]
@@ -62,7 +70,7 @@ public sealed class EditorCommandTests : IDisposable
     {
         var program = Path.Combine(_dir, name);
         File.WriteAllText(program, "");
-        var editor = EditorCommand.Parse($"\"{program}\"")!;
+        var editor = Parse($"\"{program}\"");
         Assert.Contains("cmd.exe", editor.Problem(editor.Resolve()), StringComparison.Ordinal);
     }
 

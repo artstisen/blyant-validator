@@ -42,7 +42,7 @@ internal static class ValidateCommand
         if (settings.Accessibility && engines.Vnu)
             Console.Error.WriteLine("blyant-validator: --accessibility works with the native engine only; vnu gives no accessibility hints.");
 
-        var all = new List<Diagnostic>();
+        List<Diagnostic> all = [];
         var checkedCount = 0;
         var ignoredCount = 0;
         var failed = missing > 0;
@@ -113,7 +113,7 @@ internal static class ValidateCommand
         {
             get
             {
-                var parts = new List<string>();
+                List<string> parts = [];
                 if (Fragment) parts.Add("HTML checked as fragments");
                 if (Ignore.Count > 0)
                     parts.Add($"{IgnoredCount} problem(s) ignored ({string.Join(", ", Ignore)})");

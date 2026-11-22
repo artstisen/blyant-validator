@@ -3,7 +3,7 @@ using Blyant.Validator.Xml;
 
 namespace Blyant.Validator.Tests;
 
-public class FeedTests
+public sealed class FeedTests
 {
     // (e-mail addresses are made here, so that none is written in the files of the repository: AGENTS.md)
     private const string At = "@";

@@ -23,7 +23,7 @@ public sealed class CssComponent(CssToken token, List<CssComponent>? children = 
 
     private static List<CssComponent> BuildList(IReadOnlyList<CssToken> tokens, ref int index, CssTokenType? close)
     {
-        var list = new List<CssComponent>();
+        List<CssComponent> list = [];
         while (index < tokens.Count)
         {
             var token = tokens[index++];

@@ -4,7 +4,7 @@ using Blyant.Validator.Css.Syntax;
 
 namespace Blyant.Validator.Tests;
 
-public class CssFormatterTests
+public sealed class CssFormatterTests
 {
     // The raw string literals below get the line endings of this file, so inputs are made LF first.
     private static string Format(string css, FormatOptions? options = null) =>

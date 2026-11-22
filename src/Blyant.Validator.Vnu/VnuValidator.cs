@@ -133,7 +133,7 @@ public sealed class VnuValidator(VnuOptions options) : IValidator
     public static IReadOnlyList<Diagnostic> Parse(string file, string json)
     {
         using var doc = JsonDocument.Parse(json);
-        var result = new List<Diagnostic>();
+        List<Diagnostic> result = [];
         if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty("messages", out var messages) ||
             messages.ValueKind != JsonValueKind.Array)
             return result;

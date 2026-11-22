@@ -99,7 +99,7 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
     /// </summary>
     public static IReadOnlyList<Diagnostic> ParseAll(string output, string compiled)
     {
-        var files = new List<string> { compiled };
+        List<string> files = [compiled];
         foreach (var line in output.Split('\n').Select(l => l.TrimEnd('\r')))
         {
             if (Located().Match(line) is { Success: true } located && FullPath(located.Groups["path"].Value, compiled) is { } where &&
@@ -151,7 +151,7 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
     /// <param name="compiled">The full path of the file that was compiled (the file, or the main file it is in).</param>
     public static IReadOnlyList<Diagnostic> Parse(string output, string path, string file, string compiled)
     {
-        var result = new List<Diagnostic>();
+        List<Diagnostic> result = [];
         foreach (var line in output.Split('\n').Select(l => l.TrimEnd('\r')))
         {
             SourcePosition at;

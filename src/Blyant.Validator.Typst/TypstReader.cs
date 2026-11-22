@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Frozen;
+using System.Text;
 
 namespace Blyant.Validator.Typst;
 
@@ -29,25 +30,25 @@ public sealed class TypstReader
     public const int MaxDepth = 256;
 
     // The words after # that start a statement, which goes on to the end of its line (or a ";")
-    private static readonly HashSet<string> Statements = new(StringComparer.Ordinal)
-    {
+    private static readonly FrozenSet<string> Statements = FrozenSet.Create(StringComparer.Ordinal,
+    [
         "let", "set", "show", "import", "include", "return", "break", "continue",
-    };
+    ]);
 
     // The words after # that start an expression with a body in brackets: #if x [..] else [..], #for, #while
-    private static readonly HashSet<string> Conditionals = new(StringComparer.Ordinal) { "if", "for", "while" };
+    private static readonly FrozenSet<string> Conditionals = FrozenSet.Create(StringComparer.Ordinal, [ "if", "for", "while" ]);
 
     // The functions whose first argument is the path of a file
-    private static readonly HashSet<string> PathFunctions = new(StringComparer.Ordinal)
-    {
+    private static readonly FrozenSet<string> PathFunctions = FrozenSet.Create(StringComparer.Ordinal,
+    [
         "image", "read", "json", "csv", "yaml", "toml", "xml", "cbor", "bibliography", "plugin",
-    };
+    ]);
 
     // The functions that make labels or references the reading cannot follow (from strings, from a bibliography)
-    private static readonly HashSet<string> DynamicFunctions = new(StringComparer.Ordinal)
-    {
+    private static readonly FrozenSet<string> DynamicFunctions = FrozenSet.Create(StringComparer.Ordinal,
+    [
         "label", "bibliography", "cite", "ref", "query", "locate",
-    };
+    ]);
 
     private readonly string _s;
     private int _pos;
@@ -128,7 +129,7 @@ public sealed class TypstReader
         return false;
     }
 
-    #region Markup
+    // ---- Markup
 
     // The markup of the file (contentOpen -1), or of content in [ ] (contentOpen: where its "[" is), to its "]"
     private void Markup(int contentOpen)
@@ -386,9 +387,7 @@ public sealed class TypstReader
         return true;
     }
 
-    #endregion
-
-    #region What the modes share
+    // ---- What the modes share
 
     private void LineComment()
     {
@@ -535,9 +534,7 @@ public sealed class TypstReader
         _depth--;
     }
 
-    #endregion
-
-    #region Code
+    // ---- Code
 
     // # in markup or math: a statement (#let x = 1, to the end of its line), a name with its fields and calls
     // (#calc.pi, #figure(..)[..]), or code, content or a string in brackets (#(1 + 2), #{ .. }, #[ .. ], #"text")
@@ -889,5 +886,4 @@ public sealed class TypstReader
         }
     }
 
-    #endregion
 }

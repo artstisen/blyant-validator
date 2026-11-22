@@ -5,7 +5,7 @@ using Blyant.Validator.Css.Values;
 namespace Blyant.Validator.Tests;
 
 /// <summary>The grammars of the newest features: anchor positioning, motion paths, mask borders and more.</summary>
-public class CssGrammarNewFeaturesTests
+public sealed class CssGrammarNewFeaturesTests
 {
     private static IReadOnlyList<Diagnostic> Errors(string property, string value) =>
         [.. CssValidator.Validate("t.css", $".a {{ {property}: {value} }}").Where(d => d.Severity == Severity.Error)];

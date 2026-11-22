@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Frozen;
+using System.Text.RegularExpressions;
 using Blyant.Validator.Core;
 using Blyant.Validator.Html.Parsing;
 
@@ -16,7 +17,7 @@ public sealed partial class TextRule : IHtmlRule
 {
     // Elements whose text is code, where "/name>" may be meant (the text of xmp and plaintext is raw text, not
     // read as text nodes; listing is read as pre is)
-    private static readonly HashSet<string> Code = new(StringComparer.Ordinal) { "pre", "code", "kbd", "samp", "var", "listing" };
+    private static readonly FrozenSet<string> Code = FrozenSet.Create(StringComparer.Ordinal, [ "pre", "code", "kbd", "samp", "var", "listing" ]);
 
     public void Check(HtmlRuleContext context) => Walk(context.Root, context);
 

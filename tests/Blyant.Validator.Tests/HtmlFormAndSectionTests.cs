@@ -4,7 +4,7 @@ using Blyant.Validator.Html;
 namespace Blyant.Validator.Tests;
 
 /// <summary>Forms, headings, sectioning, and the attributes of &lt;input&gt; per type.</summary>
-public class HtmlFormAndSectionTests
+public sealed class HtmlFormAndSectionTests
 {
     private const string Head = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>T</title></head><body>";
     private const string Tail = "</body></html>";

@@ -147,13 +147,13 @@ internal static class TypstHighlighter
 
         private void StartStatement()
         {
-            _statements ??= new List<int>();
+            _statements ??= [];
             if (!InStatement) _statements.Add(_depth);
         }
 
         private void EndStatement()
         {
-            if (InStatement) _statements!.RemoveAt(_statements.Count - 1);
+            if (InStatement && _statements is { } statements) statements.RemoveAt(statements.Count - 1);
         }
 
         // Close a bracket (_pos is after it)
@@ -529,7 +529,7 @@ internal static class TypstHighlighter
                 if (At(_pos) is '(' or '[')
                 {
                     // (a call deeper than the brackets that are followed is not remembered)
-                    if (_depth < MaxDepth) (_calls ??= new List<int>()).Add(_depth);
+                    if (_depth < MaxDepth) (_calls ??= []).Add(_depth);
                     Push(At(_pos) == '[');
                     _pos++;
                 }

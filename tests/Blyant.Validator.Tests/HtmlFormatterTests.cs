@@ -3,7 +3,7 @@ using Blyant.Validator.Html;
 
 namespace Blyant.Validator.Tests;
 
-public class HtmlFormatterTests
+public sealed class HtmlFormatterTests
 {
     // The raw string literals below get the line endings of this file, so inputs are made LF first.
     private static string Format(string html, FormatOptions? options = null) =>

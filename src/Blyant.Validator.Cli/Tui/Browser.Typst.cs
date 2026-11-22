@@ -48,6 +48,7 @@ internal static partial class Browser
             var task = TypstExporter.PrepareAsync(_typst, main, format, stop.Token);
             try
             {
+                // (the TUI is a synchronous loop on the console, as Main is: it waits here, and reads Esc meanwhile)
                 while (!task.Wait(100))
                 {
                     while (Console.KeyAvailable)
@@ -102,7 +103,7 @@ internal static partial class Browser
             var written = export.Placed;
             foreach (var pane in Panes.Where(p => p.Directory.Length > 0 && SamePath(p.Directory, Path.GetDirectoryName(main) ?? string.Empty))) Reload(pane);
             // (made HTML is checked, as any other)
-            foreach (var path in written.Where(p => ResultStore.IsValidated(p))) _results.Refresh(path);
+            foreach (var path in written.Where(p => ResultStore.IsValidated(p))) Results.Refresh(path);
             var warnings = export.Problems.Count;
             _message = failed is null
                 ? $"Made {Made(export)}" + (warnings > 0 ? $" ({warnings} warning{(warnings == 1 ? "" : "s")} of Typst)" : "")
@@ -165,11 +166,11 @@ internal static partial class Browser
     private static void ShowTypstProblems(PreparedExport export, string main)
     {
         var folder = Path.GetDirectoryName(main) ?? string.Empty;
-        var texts = new List<(string, ConsoleColors.ColorPreset)>
-        {
+        List<(string, ConsoleColors.ColorPreset)> texts =
+        [
             ($"{Path.GetFileName(main)} was not made into a file: nothing was written.", ConsoleColors.ColorPreset.Normal),
             (string.Empty, ConsoleColors.ColorPreset.Normal),
-        };
+        ];
         foreach (var problem in export.Problems.OrderBy(p => p.Severity == Severity.Error ? 0 : 1))
         {
             var where = Path.GetRelativePath(folder, problem.File);

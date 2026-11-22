@@ -6,7 +6,7 @@ namespace Blyant.Validator.Tests;
 /// A count in front of a key in the panes of the file browser (5j, 12k, 5gg, 5G), and the numbers of the rows.
 /// Adapted from Blyant's ListCountTests.cs
 /// </summary>
-public class ListCountTests
+public sealed class ListCountTests
 {
     private static ConsoleKeyInfo Key(char c, ConsoleModifiers modifiers = 0) =>
         new(c, ConsoleKey.NoName, (modifiers & ConsoleModifiers.Shift) != 0, (modifiers & ConsoleModifiers.Alt) != 0,

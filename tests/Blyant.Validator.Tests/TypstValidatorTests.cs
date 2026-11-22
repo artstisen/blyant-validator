@@ -7,7 +7,7 @@ namespace Blyant.Validator.Tests;
 /// The Typst checks. The cases were tried with the Typst compiler (0.15): what it refuses is an error here, what it
 /// takes is not.
 /// </summary>
-public class TypstValidatorTests
+public sealed class TypstValidatorTests
 {
     private static IReadOnlyList<Diagnostic> Check(string text, TypstFiles? files = null) =>
         TypstValidator.Validate(Path.GetFullPath("doc.typ"), text.ReplaceLineEndings("\n"), files);
@@ -114,7 +114,7 @@ public class TypstValidatorTests
     [Fact]
     public void AnEscapedCharacter_InAPath_IsDecoded()
     {
-        var asked = new List<string>();
+        List<string> asked = [];
         Check("#image(\"\\u{61}.png\")\n", new TypstFiles(p => { asked.Add(p); return true; }));
         Assert.Equal(Path.GetFullPath("a.png"), Assert.Single(asked));
     }
@@ -206,7 +206,7 @@ public class TypstValidatorTests
     [Fact]
     public void Files_AreCheckedThroughTheGivenFunction()
     {
-        var asked = new List<string>();
+        List<string> asked = [];
         bool Exists(string path)
         {
             asked.Add(path);

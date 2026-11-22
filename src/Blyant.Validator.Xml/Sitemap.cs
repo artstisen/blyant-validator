@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections.Frozen;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -17,7 +18,7 @@ internal static partial class Sitemap
     private const int MaxBytes = 50 * 1024 * 1024;
     private const int MaxLocLength = 2048;
 
-    private static readonly HashSet<string> ChangeFrequencies =
+    private static readonly FrozenSet<string> ChangeFrequencies =
         ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
 
     public static bool IsSitemap(XElement root) => root.Name.LocalName is "urlset" or "sitemapindex";
@@ -49,7 +50,7 @@ internal static partial class Sitemap
         if (Encoding.UTF8.GetByteCount(xml) > MaxBytes)
             Report(root, Severity.Error, "sitemap.too-large", "A sitemap must not be larger than 50 MB (uncompressed).");
 
-        var entries = new List<XElement>();
+        List<XElement> entries = [];
         foreach (var child in root.Elements())
         {
             if (child.Name.NamespaceName != Namespace) continue;

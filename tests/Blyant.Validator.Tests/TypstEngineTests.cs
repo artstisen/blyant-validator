@@ -71,7 +71,8 @@ public sealed class TypstEngineTests : IDisposable
     {
         var engines = Engines.Parse(text);
         Assert.Equal(new Engines(vnu, typst), engines);
-        Assert.Equal(engines, Engines.Parse(engines!.ToString()));
+        Assert.NotNull(engines);
+        Assert.Equal(engines, Engines.Parse(engines.ToString()));
     }
 
     [Theory]

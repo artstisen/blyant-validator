@@ -3,7 +3,7 @@ using Blyant.Validator.Css;
 
 namespace Blyant.Validator.Tests;
 
-public class CssValidatorTests
+public sealed class CssValidatorTests
 {
     private static IReadOnlyList<Diagnostic> Validate(string css) => CssValidator.Validate("test.css", css);
 

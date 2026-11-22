@@ -151,14 +151,14 @@ public sealed class FragmentAndIgnoreTests : IDisposable
 
         store.Get(path);
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
-        var page = store.Get(path)!;
+        var page = store.Result(path);
         Assert.False(page.Fragment);
         Assert.Equal(4, page.Errors); // The doctype, the title, the character encoding and the CSS
 
         store.SetRules(_dir, new CheckRules(true, ["css.unknown-property"]));
         Assert.Null(store.Get(path));
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
-        var fragment = store.Get(path)!;
+        var fragment = store.Result(path);
         Assert.True(fragment.Fragment);
         Assert.Equal(1, fragment.Ignored);
         Assert.Empty(fragment.Diagnostics);
@@ -175,7 +175,7 @@ public sealed class FragmentAndIgnoreTests : IDisposable
         using var store = new ResultStore(Engines.Native, new VnuOptions());
         store.Get(path);
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
-        var before = store.Get(path)!;
+        var before = store.Result(path);
         Assert.True(ResultStore.HasLinkProblem(before));
 
         Directory.CreateDirectory(Path.Combine(_dir, "img"));
@@ -185,7 +185,7 @@ public sealed class FragmentAndIgnoreTests : IDisposable
         // (the result is shown until the new one is in: the old one, or already the new one, never none)
         Assert.NotNull(store.Get(path));
         await store.WaitIdleAsync(TimeSpan.FromSeconds(10));
-        Assert.Empty(store.Get(path)!.Diagnostics);
+        Assert.Empty(store.Result(path).Diagnostics);
     }
 
     [Fact]

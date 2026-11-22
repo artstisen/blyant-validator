@@ -64,9 +64,9 @@ internal static partial class Browser
         Tools.ClearScreen();
         Menu.WriteModeLabel(Caption);
         Menu.WriteNameInTopBar();
-        if (!_results.Engines.IsNative)
+        if (!Results.Engines.IsNative)
         {
-            var marker = " ENGINE: " + _results.Engines.ToString().ToUpperInvariant() + " ";
+            var marker = " ENGINE: " + Results.Engines.ToString().ToUpperInvariant() + " ";
             Tools.SetCursor(0, Math.Max(0, Screen.LineWidth - marker.Length - 1));
             ConsoleColors.SetColors(ConsoleColors.ColorPreset.AttentionInverted);
             Console.Write(marker);
@@ -172,7 +172,7 @@ internal static partial class Browser
         var title = peek ? PeekTitle() : pane.Directory.Length == 0 ? "Drives" : pane.Directory;
         // The badges of a folder that is not fully checked, at the end of the line (left out if the title would
         // get too short)
-        var badge = peek || pane.Directory.Length == 0 ? string.Empty : Badge(_results.Rules.ForDirectory(pane.Directory));
+        var badge = peek || pane.Directory.Length == 0 ? string.Empty : Badge(Results.Rules.ForDirectory(pane.Directory));
         if (badge.Length > 0 && room - badge.Length - 1 < 12) badge = string.Empty;
         if (badge.Length > 0) room -= badge.Length + 1;
         title = TextMetrics.KeepEnd(title, room);
@@ -261,7 +261,7 @@ internal static partial class Browser
     private static void WriteResult(string path)
     {
         if (!ResultStore.IsValidated(path)) return;
-        var result = _results.Get(path);
+        var result = Results.Get(path);
         if (result is null)
         {
             ConsoleColors.SetColors(ConsoleColors.ColorPreset.Divider);
@@ -387,7 +387,7 @@ internal static partial class Browser
         var warnings = 0;
         foreach (var item in pane.Items)
         {
-            if (item.IsDirectory || _results.Last(item.Path) is not { } result) continue;
+            if (item.IsDirectory || Results.Last(item.Path) is not { } result) continue;
             if (result.Errors > 0 || result.Failure is not null) errors++;
             else if (result.Warnings > 0) warnings++;
         }

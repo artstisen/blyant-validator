@@ -64,7 +64,7 @@ internal sealed class FolderRules
     public CheckRules ForDirectory(string directory)
     {
         var folder = Normalize(directory);
-        var chain = new List<string>();
+        List<string> chain = [];
         for (var current = folder; !string.IsNullOrEmpty(current); current = Path.GetDirectoryName(current)) chain.Add(current);
 
         var rules = CheckRules.Full;

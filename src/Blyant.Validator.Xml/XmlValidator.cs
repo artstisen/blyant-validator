@@ -27,7 +27,7 @@ public sealed partial class XmlValidator : IValidator
     /// <summary>Validates XML given as text.</summary>
     public static IReadOnlyList<Diagnostic> Validate(string path, string xml)
     {
-        var diagnostics = new List<Diagnostic>();
+        List<Diagnostic> diagnostics = [];
         var document = Parse(path, xml, diagnostics);
         // An entity in another file is never read (there is no resolver): its content is not checked
         foreach (Match external in ExternalEntity().Matches(xml))
