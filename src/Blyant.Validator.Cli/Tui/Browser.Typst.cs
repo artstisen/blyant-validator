@@ -45,7 +45,7 @@ internal static partial class Browser
         PreparedExport export;
         using (var stop = new CancellationTokenSource())
         {
-            var task = TypstExporter.PrepareAsync(_typst, main, format, stop.Token);
+            var task = TypstExporter.PrepareAsync(_typst, main, format, DocumentIo.NamesIn, stop.Token);
             try
             {
                 // (the TUI is a synchronous loop on the console, as Main is: it waits here, and reads Esc meanwhile)

@@ -72,7 +72,10 @@ of a release. They follow Blyant's `AGENTS.md` ("Texts and languages"), so the t
 The TUI (`Cli/Tui`) is adapted from the file browser of Blyant (MIT License, same author). Its terminal parts
 (`Tui/Terminal`: keys, colors, boxes, the command line, the help) and the highlighters (`Tui/Highlighting`) are
 copies of Blyant's code, trimmed; each file says what it was adapted from. They are kept apart from Blyant on
-purpose: a fix in one is carried to the other by hand, when it matters.
+purpose: a fix in one is carried to the other by hand, when it matters. Here the copies follow the CSharp Coding Kit
+(`is null`, collection expressions, a `catch` that names what it catches, the failures of the console in
+`Tools.IsConsoleFailure`), so they differ from Blyant's in form: when a fix is carried across, compare what the code
+does, not how it is written.
 
 - It looks and works like Blyant's file browser: the same keys where they do the same thing (`j`/`k`, `gg`/`G`,
   `Tab`, `T`, `V`, `/`, `:`, `?`), the same colors (Blyant's Default scheme) and the same layout

@@ -153,8 +153,10 @@ public static class TypstExporter
     }
 
     /// <summary>Run Typst on the main file of a document, into a hidden folder next to it.</summary>
+    /// <param name="namesIn">The names in a folder, as they are written, to tell the files of the problems apart (see
+    /// <see cref="TypstCompilerValidator.ParseAll"/>).</param>
     public static async Task<PreparedExport> PrepareAsync(TypstCompilerOptions options, string mainFile, TypstFormat format,
-        CancellationToken cancellationToken = default)
+        Func<string, IReadOnlyList<string>>? namesIn = null, CancellationToken cancellationToken = default)
     {
         var main = Path.GetFullPath(mainFile);
         var folder = Path.Combine(Path.GetDirectoryName(main) ?? ".", $".bv-typst-{Guid.NewGuid():N}");
@@ -210,7 +212,7 @@ public static class TypstExporter
                 throw new TypstNotAvailableException($"Typst did not finish within {TypstCompilerValidator.Timeout.TotalMinutes:0} minutes, and was stopped.");
             }
 
-            var problems = TypstCompilerValidator.ParseAll(output, main);
+            var problems = TypstCompilerValidator.ParseAll(output, main, namesIn);
             var made = Directory.GetFiles(folder);
             if (process.ExitCode != 0 && !problems.Any(p => p.Severity == Severity.Error))
             {

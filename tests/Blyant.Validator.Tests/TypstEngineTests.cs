@@ -46,6 +46,24 @@ public sealed class TypstEngineTests : IDisposable
     }
 
     [Fact]
+    public void FilesThatDifferOnlyInCase_AreTwo_WhenTheFolderHasBoth()
+    {
+        var main = Path.Combine(_dir, "main.typ");
+        var upper = Path.Combine(_dir, "ch", "A.typ");
+        var lower = Path.Combine(_dir, "ch", "a.typ");
+        var output = "ch/a.typ:2:1: error: unexpected argument: bogus\n";
+        IReadOnlyList<string> Both(string folder) => folder.EndsWith("ch", StringComparison.Ordinal) ? ["A.typ", "a.typ"] : ["ch", "main.typ"];
+        IReadOnlyList<string> One(string folder) => folder.EndsWith("ch", StringComparison.Ordinal) ? ["A.typ"] : ["ch", "main.typ"];
+
+        // (a file system that tells case apart, with both files: the error is in a.typ only)
+        Assert.Empty(TypstCompilerValidator.Parse(output, "ch/A.typ", upper, main, Both));
+        Assert.Single(TypstCompilerValidator.Parse(output, "ch/a.typ", lower, main, Both));
+        Assert.Equal(lower, Assert.Single(TypstCompilerValidator.ParseAll(output, main, Both)).File);
+        // (one file, written in another case: the error is in it)
+        Assert.Single(TypstCompilerValidator.Parse(output, "ch/A.typ", upper, main, One));
+    }
+
+    [Fact]
     public void PathsFromTheWorkingDirectory_AreRead_AsTypstWritesThemOnLinuxAndMacOS()
     {
         // (Typst runs in the folder of the main file, and tells the files of the document from there)

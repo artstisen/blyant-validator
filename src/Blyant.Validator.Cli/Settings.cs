@@ -37,7 +37,7 @@ internal sealed class Settings
     public bool Accessibility { get; set; }
 
     /// <summary>The folders whose files are not fully checked (:fragment, :ignore).</summary>
-    public FolderRules Checks { get; set; } = new();
+    public FolderRules Checks { get; set; } = new(DocumentIo.NamesIn);
 
     /// <summary>The data directory, for tests (so nothing is written next to the program).</summary>
     internal static string? DirectoryOverride { get; set; }
@@ -111,7 +111,7 @@ internal sealed class Settings
         settings.FileNumbers = Get("filenumbers").Equals("true", StringComparison.OrdinalIgnoreCase);
         settings.Editor = Get("editor");
         settings.Accessibility = Get("accessibility").Equals("true", StringComparison.OrdinalIgnoreCase);
-        settings.Checks = FolderRules.Read(values);
+        settings.Checks = FolderRules.Read(values, DocumentIo.NamesIn);
         return settings;
     }
 

@@ -54,7 +54,7 @@ internal sealed class ResultStore : IDisposable
         _engines = engines;
         _vnu = vnu;
         _typst = typst ?? new TypstCompilerOptions();
-        Rules = rules ?? new FolderRules();
+        Rules = rules ?? new FolderRules(DocumentIo.NamesIn);
         _worker = Task.Run(WorkAsync);
     }
 

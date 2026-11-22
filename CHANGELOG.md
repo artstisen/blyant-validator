@@ -20,6 +20,10 @@
 - A long value quoted in a message is not cut inside a character of two UTF-16 units (an emoji): the message showed
   “�”. The nine copies of the code are one (`Texts.Shorten`)
 - `O` in the TUI always tells why an editor cannot be started
+- Two files whose names differ only in case, on a file system that tells case apart (Linux, some macOS volumes), are
+  two files also for the typst engine and `:typst`: the problems of one are not told on the other. In the same way the
+  rules of a folder (`:fragment`, `:ignore`) are not given to another folder of the name in another case. Here too
+  the folders are asked, not the system
 
 ## 0.6.2 (2026-11-19)
 

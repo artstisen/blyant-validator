@@ -84,7 +84,7 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
                 throw new TypstNotAvailableException($"Typst did not finish within {Timeout.TotalMinutes:0} minutes, and was stopped.");
             }
 
-            var found = Parse(errors, document.Path, file, main);
+            var found = Parse(errors, document.Path, file, main, files?.NamesIn);
             // (an exit code of failure with nothing to tell: the compiler could not run)
             if (process.ExitCode != 0 && found.Count == 0 && !Diagnostics().IsMatch(errors))
                 throw new TypstNotAvailableException($"typst failed (exit code {process.ExitCode}). {errors.Trim()}");
@@ -97,17 +97,19 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
     /// its files they are (each told with its full path); the problems of the document as a whole are told on the
     /// compiled file.
     /// </summary>
-    public static IReadOnlyList<Diagnostic> ParseAll(string output, string compiled)
+    /// <param name="namesIn">The names in a folder, as they are written, to tell paths that differ only in case apart
+    /// (<see cref="DiskPaths.SamePlace"/>); without it they are taken as the same file.</param>
+    public static IReadOnlyList<Diagnostic> ParseAll(string output, string compiled, Func<string, IReadOnlyList<string>>? namesIn = null)
     {
         List<string> files = [compiled];
         foreach (var line in output.Split('\n').Select(l => l.TrimEnd('\r')))
         {
             if (Located().Match(line) is { Success: true } located && FullPath(located.Groups["path"].Value, compiled) is { } where &&
-                !files.Contains(where, PathComparer))
+                !files.Any(f => SameFile(f, where, namesIn)))
                 files.Add(where);
         }
 
-        return [.. files.SelectMany(file => Parse(output, file, file, compiled))];
+        return [.. files.SelectMany(file => Parse(output, file, file, compiled, namesIn))];
     }
 
     // Typst tells a file of the document by a path from its working directory, which is the folder of the compiled file:
@@ -125,9 +127,10 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
         }
     }
 
-    // (the paths Typst tells are those of files it read: in any case of letters they are the same file, unless a file
-    // system that tells case apart has two such files, which then are taken as one)
-    private static StringComparer PathComparer => StringComparer.OrdinalIgnoreCase;
+    // (the paths Typst tells are those of files it read: in another case of letters they are the same file, unless a
+    // folder holds both spellings, as on a file system that tells case apart)
+    private static bool SameFile(string a, string b, Func<string, IReadOnlyList<string>>? namesIn) =>
+        namesIn is null ? string.Equals(a, b, StringComparison.OrdinalIgnoreCase) : DiskPaths.SamePlace(a, b, namesIn);
 
     /// <summary>
     /// The problems of a file in the output of <c>typst compile --diagnostic-format short</c> of a document: lines
@@ -137,7 +140,9 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
     /// <param name="path">The path of the file, as the diagnostics tell it.</param>
     /// <param name="file">Its full path.</param>
     /// <param name="compiled">The full path of the file that was compiled (the file, or the main file it is in).</param>
-    public static IReadOnlyList<Diagnostic> Parse(string output, string path, string file, string compiled)
+    /// <param name="namesIn">As for <see cref="ParseAll"/>.</param>
+    public static IReadOnlyList<Diagnostic> Parse(string output, string path, string file, string compiled,
+        Func<string, IReadOnlyList<string>>? namesIn = null)
     {
         List<Diagnostic> result = [];
         foreach (var line in output.Split('\n').Select(l => l.TrimEnd('\r')))
@@ -146,12 +151,12 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
             string severity, message;
             if (Located().Match(line) is { Success: true } located)
             {
-                if (FullPath(located.Groups["path"].Value, compiled) is not { } where || !PathComparer.Equals(where, file)) continue;
+                if (FullPath(located.Groups["path"].Value, compiled) is not { } where || !SameFile(where, file, namesIn)) continue;
                 at = new SourcePosition(int.Parse(located.Groups["line"].Value, System.Globalization.CultureInfo.InvariantCulture),
                     int.Parse(located.Groups["column"].Value, System.Globalization.CultureInfo.InvariantCulture) + 1);
                 (severity, message) = (located.Groups["severity"].Value, located.Groups["message"].Value);
             }
-            else if (Unlocated().Match(line) is { Success: true } unlocated && PathComparer.Equals(file, compiled))
+            else if (Unlocated().Match(line) is { Success: true } unlocated && SameFile(file, compiled, namesIn))
             {
                 at = new SourcePosition(1, 1);
                 (severity, message) = (unlocated.Groups["severity"].Value, unlocated.Groups["message"].Value);

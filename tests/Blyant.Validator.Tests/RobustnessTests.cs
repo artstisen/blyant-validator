@@ -108,6 +108,25 @@ public sealed class RobustnessTests : IDisposable
     }
 
     [Fact]
+    public void FolderRules_FoldersThatDifferOnlyInCase_AreOneOrTwo_AsTheFolderHasThem()
+    {
+        var upper = Path.Combine(_dir, "Site");
+        var lower = Path.Combine(_dir, "site");
+        var fragment = new CheckRules(true, []);
+
+        // (one folder, written in another case: the rules are its)
+        var one = new FolderRules(folder => folder == _dir ? ["Site"] : []);
+        one.Set(upper, fragment);
+        Assert.Equal(fragment, one.ForDirectory(lower));
+
+        // (a file system that tells case apart, with both folders: the rules are of Site only)
+        var two = new FolderRules(folder => folder == _dir ? ["Site", "site"] : []);
+        two.Set(upper, fragment);
+        Assert.Equal(fragment, two.ForDirectory(upper));
+        Assert.Equal(CheckRules.Full, two.ForDirectory(lower));
+    }
+
+    [Fact]
     public void FolderRules_UnignoreInASubfolder_IsKept()
     {
         var docs = Path.Combine(_dir, "docs");

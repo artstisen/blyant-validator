@@ -40,15 +40,14 @@ internal sealed record FolderRule(bool? Fragment, IReadOnlyList<string> Ignore, 
 /// The check rules of the TUI per folder (<c>:fragment</c>, <c>:ignore</c>), kept in settings.ini. The rules of a
 /// folder apply to its subfolders too: a subfolder keeps only what it changes of them, so a later change of the folder
 /// above still reaches it. Read on the background thread of the results and changed on the main thread, so it locks.
-/// It does not touch the console or the disk, so it can be tested.
+/// It does not touch the console or the disk, so it can be tested: whether two paths that differ only in case are one
+/// folder is asked through the function it is given (the program gives DocumentIo.NamesIn).
 /// </summary>
-internal sealed class FolderRules
+/// <param name="namesIn">The names in a folder, as they are written (<see cref="DiskPaths.SamePlace"/>). Without it,
+/// names are case-sensitive on Linux, and not on Windows and macOS.</param>
+internal sealed class FolderRules(Func<string, IReadOnlyList<string>>? namesIn = null)
 {
-    // Names of files are case-sensitive on Linux, not on Windows and (by default) macOS
-    private static readonly StringComparer PathComparer =
-        OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
-
-    private readonly Dictionary<string, FolderRule> _folders = new(PathComparer);
+    private readonly Dictionary<string, FolderRule> _folders = new(new SamePlaceComparer(namesIn));
     private readonly Lock _lock = new();
 
     /// <summary>The folders with rules of their own, and what they change.</summary>
@@ -56,7 +55,7 @@ internal sealed class FolderRules
     {
         get
         {
-            lock (_lock) return [.. _folders.OrderBy(f => f.Key, PathComparer)];
+            lock (_lock) return [.. _folders.OrderBy(f => f.Key, StringComparer.OrdinalIgnoreCase).ThenBy(f => f.Key, StringComparer.Ordinal)];
         }
     }
 
@@ -100,6 +99,18 @@ internal sealed class FolderRules
         }
     }
 
+    // Two paths are one folder as the disk has them. The hash ignores case: paths that are one folder differ in case at
+    // most
+    private sealed class SamePlaceComparer(Func<string, IReadOnlyList<string>>? namesIn) : IEqualityComparer<string>
+    {
+        public bool Equals(string? a, string? b) =>
+            a is null || b is null ? a is null && b is null
+            : namesIn is not null ? DiskPaths.SamePlace(a, b, namesIn, whenUnknown: !OperatingSystem.IsLinux())
+            : string.Equals(a, b, OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
+
+        public int GetHashCode(string path) => StringComparer.OrdinalIgnoreCase.GetHashCode(path);
+    }
+
     // A full path without a separator at the end (except a root: "C:\", "/")
     private static string Normalize(string directory)
     {
@@ -113,9 +124,9 @@ internal sealed class FolderRules
     /// as the folders above), "checkignore1=css.*,html.x" and "checkunignore1=html.y". Codes that are not valid are
     /// left out
     /// </summary>
-    public static FolderRules Read(IReadOnlyDictionary<string, string> values)
+    public static FolderRules Read(IReadOnlyDictionary<string, string> values, Func<string, IReadOnlyList<string>>? namesIn = null)
     {
-        var result = new FolderRules();
+        var result = new FolderRules(namesIn);
         string Get(string name) => values.TryGetValue(name, out var value) ? value.Trim() : string.Empty;
         IReadOnlyList<string> Codes(string name) => [.. IgnoreList.Split(Get(name)).Where(IgnoreList.IsValid)];
         for (var n = 1; Get("checkdir" + n) is { Length: > 0 } folder; n++)
