@@ -483,3 +483,8 @@ $RECYCLE.BIN/
 
 # The template of the read-me of the releases (not a build folder)
 !/docs/release/
+
+# Local files that are not part of the project: inspection reports (JetBrains Rider) and the data folder of the
+# program (settings.ini), when it is run from here
+rider-report*.xml
+/data/

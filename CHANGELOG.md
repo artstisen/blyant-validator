@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.3 (unreleased)
+## 0.6.3 (2026-11-22)
 
 ### Changed
 - The code follows the CSharp Coding Kit (https://github.com/artstisen/csharp-coding-kit) where `AGENTS.md` does not
