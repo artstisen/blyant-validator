@@ -5,7 +5,7 @@
     <Authors>Lars Brandt Stisen</Authors>
     <!-- The same as the copyright line of LICENSE (ProjectRulesTests checks it); shown by :about in the TUI -->
     <Copyright>Copyright (c) 2026 Lars Brandt Stisen</Copyright>
-    <Version>0.6.2</Version>
+    <Version>0.6.3</Version>
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>

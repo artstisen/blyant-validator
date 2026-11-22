@@ -16,7 +16,8 @@ public partial class ProjectRulesTests
 
     private static IEnumerable<string> RepositoryFiles(params string[] extensions)
     {
-        string[] skipped = ["bin", "obj", ".git", ".vs", ".idea", "TestResults", "publish"];
+        // (and the local settings and tools of coding assistants, which are not files of the project: .claude)
+        string[] skipped = ["bin", "obj", ".git", ".vs", ".idea", ".claude", "TestResults", "publish"];
         return Directory.EnumerateFiles(Root, "*", SearchOption.AllDirectories)
             .Where(f =>
             {

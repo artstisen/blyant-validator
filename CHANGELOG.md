@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.6.3 (unreleased)
+
 ## 0.6.2 (2026-11-19)
 
 ### Added

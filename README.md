@@ -10,7 +10,7 @@ folders it shows and checks a file again the moment it is saved, so the errors a
 Markdown and Typst are always up to date while you work, in any editor. Peek at a file to see each problem in place, and
 format it when you are done.
 
-> **Status: early development (0.6.2).** HTML, CSS, XML, Markdown and Typst validation and the HTML, CSS and
+> **Status: early development (0.6.3).** HTML, CSS, XML, Markdown and Typst validation and the HTML, CSS and
 > XML formatters work, and are tried on real sites; more rules will follow.
 >
 > Blyant Validator has no dependencies besides .NET.
@@ -35,18 +35,18 @@ and the licence. The program is a single file with the .NET runtime in it: nothi
 
 | System | Archive |
 | --- | --- |
-| Windows (most PCs) | `BlyantValidator-0.6.2-win-x64.zip` |
-| Windows on ARM | `BlyantValidator-0.6.2-win-arm64.zip` |
-| Linux (most PCs) | `BlyantValidator-0.6.2-linux-x64.tar.gz` |
-| Linux on 64-bit ARM (Raspberry Pi with a 64-bit system) | `BlyantValidator-0.6.2-linux-arm64.tar.gz` |
-| Linux on 32-bit ARM (Raspberry Pi with a 32-bit system) | `BlyantValidator-0.6.2-linux-arm.tar.gz` |
-| macOS on Apple silicon (M1 and later) | `BlyantValidator-0.6.2-osx-arm64.tar.gz` |
-| macOS on Intel | `BlyantValidator-0.6.2-osx-x64.tar.gz` |
-| Any system with the .NET 10 runtime | `BlyantValidator-0.6.2-portable.zip` |
+| Windows (most PCs) | `BlyantValidator-0.6.3-win-x64.zip` |
+| Windows on ARM | `BlyantValidator-0.6.3-win-arm64.zip` |
+| Linux (most PCs) | `BlyantValidator-0.6.3-linux-x64.tar.gz` |
+| Linux on 64-bit ARM (Raspberry Pi with a 64-bit system) | `BlyantValidator-0.6.3-linux-arm64.tar.gz` |
+| Linux on 32-bit ARM (Raspberry Pi with a 32-bit system) | `BlyantValidator-0.6.3-linux-arm.tar.gz` |
+| macOS on Apple silicon (M1 and later) | `BlyantValidator-0.6.3-osx-arm64.tar.gz` |
+| macOS on Intel | `BlyantValidator-0.6.3-osx-x64.tar.gz` |
+| Any system with the .NET 10 runtime | `BlyantValidator-0.6.3-portable.zip` |
 
 - **Windows**: unzip it, and run `blyant-validator` in a terminal (Windows Terminal) in that folder, or add the folder
   to your `PATH` to run it anywhere.
-- **Linux and macOS**: unpack it with `tar -xzf BlyantValidator-0.6.2-linux-x64.tar.gz` (with the name of the file
+- **Linux and macOS**: unpack it with `tar -xzf BlyantValidator-0.6.3-linux-x64.tar.gz` (with the name of the file
   you downloaded), and run `./blyant-validator` (names are case-sensitive). If it was not unpacked with `tar` (some
   programs leave out that it can be run), make it executable once with `chmod +x blyant-validator`. On macOS the
   program is not signed: if macOS refuses to open it, allow it once with `xattr -d com.apple.quarantine
@@ -59,7 +59,7 @@ and compare the SHA-256 of the archive with the one listed in that file:
 
 - **Linux**: `sha256sum -c SHA256SUMS.txt --ignore-missing` (it says `OK` for the archive)
 - **macOS**: `shasum -a 256 -c SHA256SUMS.txt --ignore-missing`
-- **Windows** (PowerShell): `(Get-FileHash BlyantValidator-0.6.2-win-x64.zip).Hash` gives the hash, to compare with
+- **Windows** (PowerShell): `(Get-FileHash BlyantValidator-0.6.3-win-x64.zip).Hash` gives the hash, to compare with
   the line of the archive in `SHA256SUMS.txt` (in any case of letters)
 
 The settings of the TUI are kept in a folder `data` next to the program, or, if that folder cannot be written to, in
