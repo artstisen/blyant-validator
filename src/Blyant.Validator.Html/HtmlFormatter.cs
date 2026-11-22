@@ -49,7 +49,7 @@ public sealed class HtmlFormatter : IFormatter
             return sb.ToString();
         }
 
-        private void Line(int depth, string text) => _lines.Add(Indent(depth) + NormalizeNewlines(text));
+        private void Line(int depth, string text) => _lines.Add(Indent(depth) + LineBreaks.Normalize(text, newline));
 
         private void BeginLine(int depth)
         {
@@ -68,11 +68,6 @@ public sealed class HtmlFormatter : IFormatter
             _line = null;
             if (text.Length > 0) Line(_lineDepth, text);
         }
-
-        private string NormalizeNewlines(string text) =>
-            text.Contains('\n') || text.Contains('\r')
-                ? text.Replace("\r\n", "\n").Replace('\r', '\n').Replace("\n", newline)
-                : text;
 
         /// <param name="container">The parent lays out its children itself (svg, select …): every element child gets a line.</param>
         /// <param name="foreign">Inside SVG or MathML.</param>
@@ -93,7 +88,7 @@ public sealed class HtmlFormatter : IFormatter
                 if (run.Count == 0) return;
                 if (run.All(n => n is HText t && IsWhitespace(t.Raw)))
                 {
-                    newlinesSinceLast += run.Sum(n => CountNewlines(((HText)n).Raw));
+                    newlinesSinceLast += run.Sum(n => LineBreaks.Count(((HText)n).Raw));
                     run.Clear();
                     return;
                 }
@@ -114,7 +109,7 @@ public sealed class HtmlFormatter : IFormatter
                 var child = children[index];
                 if (container && child is HText t && IsWhitespace(t.Raw))
                 {
-                    newlinesSinceLast += CountNewlines(t.Raw);
+                    newlinesSinceLast += LineBreaks.Count(t.Raw);
                     continue;
                 }
 
@@ -171,13 +166,13 @@ public sealed class HtmlFormatter : IFormatter
                 var raw = t.Raw;
                 if (IsWhitespace(raw))
                 {
-                    count += CountNewlines(raw);
+                    count += LineBreaks.Count(raw);
                     continue;
                 }
                 var edge = leading
                     ? raw[..raw.TakeWhile(IsHtmlSpace).Count()]
                     : raw[(raw.Length - raw.Reverse().TakeWhile(IsHtmlSpace).Count())..];
-                count += CountNewlines(edge);
+                count += LineBreaks.Count(edge);
                 break;
             }
             return count;
@@ -429,7 +424,5 @@ public sealed class HtmlFormatter : IFormatter
         private static bool IsHtmlSpace(char c) => c is ' ' or '\t' or '\n' or '\r' or '\f';
 
         private static bool IsWhitespace(string text) => text.All(IsHtmlSpace);
-
-        private static int CountNewlines(string text) => text.Replace("\r\n", "\n").Count(c => c is '\n' or '\r');
     }
 }

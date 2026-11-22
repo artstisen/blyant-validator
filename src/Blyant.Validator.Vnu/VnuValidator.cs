@@ -98,7 +98,7 @@ public sealed class VnuValidator(VnuOptions options) : IValidator
             catch (OperationCanceledException)
             {
                 // Stopped (the program closes) or too slow: Java must not go on running on its own
-                Stop(process);
+                Programs.Stop(process);
                 if (cancellationToken.IsCancellationRequested) throw;
                 throw new VnuNotAvailableException($"vnu did not answer within {Timeout.TotalMinutes:0} minutes, and was stopped.");
             }
@@ -114,18 +114,6 @@ public sealed class VnuValidator(VnuOptions options) : IValidator
             {
                 throw new VnuNotAvailableException($"vnu's output could not be read: {e.Message}", e);
             }
-        }
-    }
-
-    private static void Stop(Process process)
-    {
-        try
-        {
-            if (!process.HasExited) process.Kill(entireProcessTree: true);
-        }
-        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
-        {
-            // It ended meanwhile, or cannot be stopped
         }
     }
 

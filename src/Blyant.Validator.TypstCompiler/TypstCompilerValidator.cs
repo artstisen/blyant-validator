@@ -79,7 +79,7 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
             catch (OperationCanceledException)
             {
                 // Stopped (the program closes) or too slow: the compiler must not go on running on its own
-                Stop(process);
+                Programs.Stop(process);
                 if (cancellationToken.IsCancellationRequested) throw;
                 throw new TypstNotAvailableException($"Typst did not finish within {Timeout.TotalMinutes:0} minutes, and was stopped.");
             }
@@ -128,18 +128,6 @@ public sealed partial class TypstCompilerValidator(TypstCompilerOptions options,
     // (the paths Typst tells are those of files it read: in any case of letters they are the same file, unless a file
     // system that tells case apart has two such files, which then are taken as one)
     private static StringComparer PathComparer => StringComparer.OrdinalIgnoreCase;
-
-    internal static void Stop(Process process)
-    {
-        try
-        {
-            if (!process.HasExited) process.Kill(entireProcessTree: true);
-        }
-        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
-        {
-            // It ended meanwhile, or cannot be stopped
-        }
-    }
 
     /// <summary>
     /// The problems of a file in the output of <c>typst compile --diagnostic-format short</c> of a document: lines

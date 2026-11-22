@@ -289,7 +289,7 @@ internal static partial class Feeds
     {
         if (url.Length == 0) return "The URL is empty.";
         if (url.Any(char.IsWhiteSpace)) return $"“{Texts.Shorten(url, 60)}” contains a space: use “%20” instead.";
-        return Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" && uri.Host.Length > 0
+        return Urls.IsAbsoluteHttp(url)
             ? null
             : $"“{Texts.Shorten(url, 60)}” is not an absolute http or https URL.";
     }

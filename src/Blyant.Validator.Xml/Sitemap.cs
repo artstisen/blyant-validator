@@ -127,8 +127,7 @@ internal static partial class Sitemap
         if (url.Length == 0) return "The “loc” element must not be empty.";
         if (url.Length > MaxLocLength) return $"A URL in a sitemap must not be longer than {MaxLocLength} characters.";
         if (url.Any(char.IsWhiteSpace)) return $"“{Texts.Shorten(url, 60)}” contains a space: use “%20” instead.";
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https") ||
-            uri.Host.Length == 0)
+        if (!Urls.IsAbsoluteHttp(url))
             return $"“{Texts.Shorten(url, 60)}” is not an absolute http or https URL (with the host, as “https://example.org/page.html”).";
         return null;
     }

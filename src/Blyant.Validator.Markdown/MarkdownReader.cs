@@ -62,7 +62,7 @@ public sealed partial class MarkdownReader
     public static MarkdownReader Read(string text)
     {
         var reader = new MarkdownReader();
-        reader.ReadLines(text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'));
+        reader.ReadLines(LineBreaks.Split(text));
         return reader;
     }
 

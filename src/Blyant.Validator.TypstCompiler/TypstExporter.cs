@@ -204,7 +204,7 @@ public static class TypstExporter
             }
             catch (OperationCanceledException)
             {
-                TypstCompilerValidator.Stop(process);
+                Programs.Stop(process);
                 Delete(folder);
                 if (cancellationToken.IsCancellationRequested) throw;
                 throw new TypstNotAvailableException($"Typst did not finish within {TypstCompilerValidator.Timeout.TotalMinutes:0} minutes, and was stopped.");

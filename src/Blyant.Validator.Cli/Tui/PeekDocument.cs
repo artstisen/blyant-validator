@@ -32,7 +32,7 @@ internal sealed class PeekDocument
         Diagnostics = [.. diagnostics.OrderBy(d => d.Start.Line).ThenBy(d => d.Start.Column)];
         _kind = SyntaxHighlighter.KindOf(path);
 
-        var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        var lines = LineBreaks.Split(text);
         // (the line break at the end of the last line does not start another line)
         var count = lines.Length > 1 && lines[^1].Length == 0 ? lines.Length - 1 : lines.Length;
         List<string> kept = [];
