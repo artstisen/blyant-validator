@@ -591,6 +591,7 @@ dotnet publish src/Blyant.Validator.Cli -c Release -r win-x64 --self-contained
 | `tests/Blyant.Validator.Tests` | xUnit tests. |
 
 Rules for working on the code are in [AGENTS.md](AGENTS.md); changes are listed in [CHANGELOG.md](CHANGELOG.md).
+Coding Guidelines: [CSharp Coding Kit](https://github.com/artstisen/csharp-coding-kit)
 
 ## Roadmap
 
