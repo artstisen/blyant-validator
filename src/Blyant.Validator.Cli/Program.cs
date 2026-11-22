@@ -1,4 +1,5 @@
 ﻿using Blyant.Validator.Cli;
+using Blyant.Validator.Cli.Tui.Terminal;
 
 // Exit codes: 0 = no errors, 1 = errors found (or files need formatting), 2 = the tool itself failed.
 
@@ -65,9 +66,9 @@ if (args.Length > 0)
     {
         Console.OutputEncoding = new System.Text.UTF8Encoding(false);
     }
-    catch (Exception e) when (e is IOException or PlatformNotSupportedException)
+    catch (Exception e) when (Tools.IsConsoleFailure(e))
     {
-        // The console keeps its own
+        // The console keeps the encoding it has
     }
 }
 

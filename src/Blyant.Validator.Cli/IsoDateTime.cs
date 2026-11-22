@@ -14,7 +14,7 @@ internal static class IsoDateTime
     internal static DateTime UtcNow(TimeProvider? clock = null) => (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
 
     /// <summary>A time as a person reads it: in local time (a time in UTC is converted; a local one is as it is).</summary>
-    internal static DateTime Local(DateTime time) => time.Kind == DateTimeKind.Utc ? time.ToLocalTime() : time;
+    private static DateTime Local(DateTime time) => time.Kind == DateTimeKind.Utc ? time.ToLocalTime() : time;
 
     /// <summary>A time in local time, written in a format the same in all cultures ("yyyy-MM-dd HH:mm:ss").</summary>
     internal static string Local(DateTime time, string format) => Local(time).ToString(format, CultureInfo.InvariantCulture);

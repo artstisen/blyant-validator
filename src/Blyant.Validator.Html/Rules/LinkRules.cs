@@ -1,6 +1,5 @@
 ﻿using System.Collections.Frozen;
 using Blyant.Validator.Core;
-using Blyant.Validator.Html.Parsing;
 
 namespace Blyant.Validator.Html.Rules;
 

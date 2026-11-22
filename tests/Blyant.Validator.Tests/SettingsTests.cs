@@ -27,6 +27,20 @@ public sealed class SettingsTests : IDisposable
     }
 
     [Fact]
+    public void TheTimeWritten_IsThatOfTheClock_InLocalTime()
+    {
+        var utc = new DateTimeOffset(2026, 3, 29, 0, 30, 15, TimeSpan.Zero);
+        var text = new Settings().Format(new FixedClock(utc));
+        var local = utc.UtcDateTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+        Assert.StartsWith($"; Last modified {local}\n", text, StringComparison.Ordinal);
+    }
+
+    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    [Fact]
     public void Settings_AreWrittenAndReadBack()
     {
         var written = new Settings

@@ -885,5 +885,4 @@ public sealed class TypstReader
             _pos--;
         }
     }
-
 }

@@ -70,7 +70,7 @@ internal static partial class Browser
             controlC = Console.TreatControlCAsInput;
             Console.TreatControlCAsInput = true;
         }
-        catch (Exception e) when (e is IOException or PlatformNotSupportedException)
+        catch (Exception e) when (Tools.IsConsoleFailure(e))
         {
             // A terminal that cannot be set up keeps what it has
         }
@@ -99,7 +99,7 @@ internal static partial class Browser
                 Console.TreatControlCAsInput = controlC;
                 Console.OutputEncoding = encoding;
             }
-            catch (Exception e) when (e is IOException or PlatformNotSupportedException)
+            catch (Exception e) when (Tools.IsConsoleFailure(e))
             {
                 // As it was set
             }

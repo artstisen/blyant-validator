@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using System.Text;
+﻿using System.Text;
 
 namespace Blyant.Validator.Cli;
 
@@ -135,12 +134,12 @@ internal sealed class Settings
         return settings;
     }
 
-    /// <summary>The text of the settings file.</summary>
-    internal string Format()
+    /// <summary>The text of the settings file, with the time it was written (from the clock given, or the system's).</summary>
+    internal string Format(TimeProvider? clock = null)
     {
         var text = new StringBuilder();
         // (in local time: a person reads it)
-        text.Append("; Last modified ").Append(IsoDateTime.LocalNow("yyyy-MM-dd HH:mm:ss")).Append('\n');
+        text.Append("; Last modified ").Append(IsoDateTime.LocalNow("yyyy-MM-dd HH:mm:ss", clock)).Append('\n');
         text.Append("[SETTINGS]\n");
         text.Append('\n');
         text.Append("; FILE BROWSER\n");

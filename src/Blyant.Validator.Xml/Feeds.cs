@@ -276,6 +276,8 @@ internal static partial class Feeds
         DateTimeOffset.TryParse(value.Length > 19 && value[17..19] == "60" ? value[..17] + "59" + value[19..] : value,
             CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
 
+    // ---- Shared by RSS and Atom
+
     private static void CheckUrl(XElement? element, Reporter report)
     {
         if (element is not null && UrlProblem(element.Value.Trim()) is { } problem)

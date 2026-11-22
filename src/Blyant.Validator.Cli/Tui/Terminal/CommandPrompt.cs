@@ -16,7 +16,7 @@ internal static class CommandPrompt
         {
             return Math.Min(Screen.LineWidth, Console.WindowWidth);
         }
-        catch (Exception e) when (e is IOException or PlatformNotSupportedException)
+        catch (Exception e) when (Tools.IsConsoleFailure(e))
         {
             return Screen.LineWidth;
         }

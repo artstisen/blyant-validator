@@ -90,7 +90,7 @@ internal static class Clipboard
                 Console.Out.Flush();
             }
         }
-        catch (Exception e) when (Tools.IsConsoleFailure(e) || e is ObjectDisposedException)
+        catch (Exception e) when (Tools.IsConsoleFailure(e))
         {
             // Without a terminal there is no clipboard to send to
         }
